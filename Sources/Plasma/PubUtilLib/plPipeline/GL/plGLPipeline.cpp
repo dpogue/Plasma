@@ -48,20 +48,31 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "HeadSpin.h"
 
+#include <GL/gl.h>
+
 #include "plGLPipeline.h"
+
+#include "hsTimer.h"
+
 #include "plPipeline/plPipelineCreate.h"
+#include "plDrawable/plDrawableSpans.h"
+#include "plSurface/hsGMaterial.h"
 
 #ifdef HS_SIMD_INCLUDE
 #   include HS_SIMD_INCLUDE
 #endif
 
-plGLPipeline::plGLPipeline(hsWindowHndl window, const hsG3DDeviceModeRecord* devModeRec)
+plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3DDeviceModeRecord* devModeRec)
 :   pl3DPipeline(devModeRec)
 {
+    fDevice.fDevice = display;
     fDevice.fWindow = window;
     fDevice.fPipeline = this;
 
     fDevice.InitDevice();
+
+    glClearColor(0.f, 0.f, 0.5f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 plGLPipeline::~plGLPipeline()
@@ -105,7 +116,23 @@ plGLPipeline::~plGLPipeline()
  * STUBS STUBS STUBS
  *****************************************************************************/
 
-bool plGLPipeline::PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr) { return false; }
+bool plGLPipeline::PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr)
+{
+    plDrawableSpans *ds = plDrawableSpans::ConvertNoRef(drawable);
+    if (!ds)
+    {
+        return false;
+    }
+
+    if ((ds->GetType() & fView.GetDrawableTypeMask()) == 0)
+    {
+        return false;
+    }
+
+    fView.GetVisibleSpans(ds, visList, visMgr);
+
+    return visList.GetCount() > 0;
+}
 
 bool plGLPipeline::PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr) { return false; }
 
@@ -131,9 +158,52 @@ void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth)
 
 hsGDeviceRef* plGLPipeline::MakeRenderTargetRef(plRenderTarget* owner) { return nullptr; }
 
-bool plGLPipeline::BeginRender() { return false; }
+bool plGLPipeline::BeginRender()
+{
+    // offset transform
+    RefreshScreenMatrices();
 
-bool plGLPipeline::EndRender() { return false; }
+    // If this is the primary BeginRender, make sure we're really ready.
+    if (fInSceneDepth++ == 0)
+    {
+        //fDevice.BeginRender();
+    }
+
+    fRenderCnt++;
+
+    // Would probably rather this be an input.
+    fTime = hsTimer::GetSysSeconds();
+
+    return false;
+}
+
+bool plGLPipeline::EndRender() {
+    bool retVal = false;
+
+    /// Actually end the scene
+    if (--fInSceneDepth == 0)
+    {
+        retVal = fDevice.EndRender();
+
+        //IClearShadowSlaves();
+    }
+
+    // Do this last, after we've drawn everything
+    // Just letting go of things we're done with for the frame.
+    hsRefCnt_SafeUnRef(fCurrMaterial);
+    fCurrMaterial = nullptr;
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (fLayerRef[i])
+        {
+            hsRefCnt_SafeUnRef(fLayerRef[i]);
+            fLayerRef[i] = nullptr;
+        }
+    }
+
+    return retVal;
+}
 
 void plGLPipeline::RenderScreenElements() {}
 

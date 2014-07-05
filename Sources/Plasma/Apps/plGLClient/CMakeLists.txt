@@ -13,9 +13,12 @@ include_directories(${PYTHON_INCLUDE_DIR})
 include_directories(${CURL_INCLUDE_DIR})
 
 set(plGLClient_HEADERS
+    plGLClient.h
 )
 
 set(plGLClient_SOURCES
+    plCreatables.cpp
+    plGLClient.cpp
     main.cpp
 )
 
@@ -27,11 +30,11 @@ target_link_libraries(plGLClient pnNetCommon)
 target_link_libraries(plGLClient plDrawable)
 target_link_libraries(plGLClient plGLight)
 target_link_libraries(plGLClient plPipeline)
+target_link_libraries(plGLClient plResMgr)
 
 # System Libs
 target_link_libraries(plGLClient xcb)
 target_link_libraries(plGLClient X11)
-target_link_libraries(plGLClient X11-xcb)
 #target_link_libraries(plGLClient ${JPEG_LIBRARY})
 #target_link_libraries(plGLClient ${PNG_LIBRARY})
 

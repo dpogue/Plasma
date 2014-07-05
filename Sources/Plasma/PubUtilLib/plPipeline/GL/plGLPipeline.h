@@ -53,7 +53,7 @@ protected:
     friend class plGLDevice;
 
 public:
-    plGLPipeline(hsWindowHndl window, const hsG3DDeviceModeRecord *devMode);
+    plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3DDeviceModeRecord *devMode);
     virtual ~plGLPipeline();
 
     CLASSNAME_REGISTER(plGLPipeline);
