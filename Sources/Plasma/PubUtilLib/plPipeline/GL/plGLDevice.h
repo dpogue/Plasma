@@ -42,6 +42,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #ifndef _plGLDevice_h_
 #define _plGLDevice_h_
 
+#include <EGL/egl.h>
+
 #include "hsMatrix44.h"
 
 class plGLPipeline;
@@ -51,9 +53,14 @@ class plGLDevice
 {
 public:
     plGLPipeline*       fPipeline;
+    hsWindowHndl        fDevice;
     hsWindowHndl        fWindow;
 
     const char*         fErrorMsg;
+
+    EGLDisplay          fDisplay;
+    EGLSurface          fSurface;
+    EGLContext          fContext;
 
 public:
     plGLDevice();
@@ -68,8 +75,14 @@ public:
      */
     void SetRenderTarget(plRenderTarget* target);
 
-    /** Translate our viewport into a D3D viewport. */
+    /** Translate our viewport into a GL viewport. */
     void SetViewport();
+
+    /**
+     * Tell GL we're through rendering for this frame, and flip the back buffer
+     * to front.
+     */
+    bool EndRender();
 
     const char* GetErrorString() const { return fErrorMsg; }
 

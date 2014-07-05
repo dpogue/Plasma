@@ -333,10 +333,8 @@ REGISTER_CREATABLE(plRenderRequestMsg);
 REGISTER_CREATABLE(plReplaceGeometryMsg);
 REGISTER_CREATABLE(plSwapSpansRefMsg);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plResMgrHelperMsg.h"
 REGISTER_CREATABLE(plResMgrHelperMsg);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plResPatcherMsg.h"

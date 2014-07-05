@@ -42,9 +42,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plGLDevice.h"
 
-#include <EGL/egl.h>
 
 plGLDevice::plGLDevice()
+:   fErrorMsg(nullptr),
+    fDisplay(EGL_NO_DISPLAY),
+    fSurface(EGL_NO_SURFACE),
+    fContext(EGL_NO_CONTEXT)
 {
 }
 
@@ -57,18 +60,63 @@ bool plGLDevice::InitDevice()
         return false;
     }
 
-    EGLDisplay display = eglGetDisplay((EGLNativeDisplayType)fWindow);
-    if (display == EGL_NO_DISPLAY)
+    /* Set up the display */
+    fDisplay = eglGetDisplay((EGLNativeDisplayType)fDevice);
+    if (fDisplay == EGL_NO_DISPLAY)
     {
         fErrorMsg = "Could not get the display";
         return false;
     }
 
-    if (!eglInitialize(display, nullptr, nullptr))
+    if (!eglInitialize(fDisplay, nullptr, nullptr))
     {
         fErrorMsg = "Could not initialize the display";
         return false;
     }
+
+
+    /* Set up the config attributes for EGL */
+    EGLConfig  config;
+    EGLint     config_count;
+    EGLint config_attrs[] = {
+        EGL_BUFFER_SIZE, 16,
+        EGL_RENDERABLE_TYPE,
+        EGL_OPENGL_BIT,
+        EGL_NONE
+    };
+
+    if (!eglChooseConfig(fDisplay, config_attrs, &config, 1, &config_count) || config_count != 1)
+    {
+        fErrorMsg = "Could not choose appropriate config";
+        return false;
+    }
+
+
+    /* Set up the rendering surface */
+    fSurface = eglCreateWindowSurface(fDisplay, config, (EGLNativeWindowType)fWindow, nullptr);
+    if (fSurface == EGL_NO_SURFACE)
+    {
+        fErrorMsg = "Unable to create rendering surface";
+        return false;
+    }
+
+
+    /* Set up the GL context */
+    EGLint ctx_attrs[] = {
+        EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL_NONE
+    };
+
+    fContext = eglCreateContext(fDisplay, config, EGL_NO_CONTEXT, ctx_attrs);
+    if (fContext == EGL_NO_CONTEXT)
+    {
+        fErrorMsg = "Unable to create rendering context";
+        return false;
+    }
+
+
+    /* Associate everything */
+    eglMakeCurrent(fDisplay, fSurface, fSurface, fContext);
 
     return true;
 }
@@ -79,6 +127,13 @@ void plGLDevice::SetRenderTarget(plRenderTarget* target)
 
 void plGLDevice::SetViewport()
 {
+}
+
+
+bool plGLDevice::EndRender()
+{
+    eglSwapBuffers(fDisplay, fSurface);
+    return true;
 }
 
 void plGLDevice::SetProjectionMatrix(const hsMatrix44& src)
