@@ -45,7 +45,7 @@ int main()
     resMgr->SetDataPath("dat");
     hsgResMgr::Init(resMgr);
 
-    plGLClient* gClient = new plGLClient();
+    plClient* gClient = new plClient();
     if (gClient == nullptr)
     {
         return 1;

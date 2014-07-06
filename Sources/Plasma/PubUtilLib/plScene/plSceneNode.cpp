@@ -113,8 +113,12 @@ void plSceneNode::Read(hsStream* s, hsResMgr* mgr)
     fGenericPool.clear();
     for( i = 0; i < n; i++ )
     {
+#ifdef MINIMAL_GL_BUILD
+        mgr->ReadKey(s);
+#else
         plNodeRefMsg* refMsg = new plNodeRefMsg(GetKey(), plRefMsg::kOnCreate, -1, plNodeRefMsg::kGeneric);
         mgr->ReadKeyNotifyMe(s, refMsg, plRefFlags::kActiveRef);
+#endif
     }
 }
 

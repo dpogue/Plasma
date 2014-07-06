@@ -233,8 +233,14 @@ void hsGMaterial::Read(hsStream* s)
 
     IClearLayers();
     int n = s->ReadLE32();
+#ifdef MINIMAL_GL_BUILD
+    n = 0;
+#endif
     fLayers.SetCountAndZero(n);
     n = s->ReadLE32();
+#ifdef MINIMAL_GL_BUILD
+    n = 0;
+#endif
     fPiggyBacks.SetCountAndZero(n);
 }
 
@@ -262,17 +268,25 @@ void hsGMaterial::Read(hsStream *stream, hsResMgr *group)
 
     Read(stream);
 
-    int iLay;    
+    int iLay;
     // Assign texture(s)
     for (iLay = 0; iLay < GetNumLayers(); iLay++)
     {
+#ifdef MINIMAL_GL_BUILD
+        group->ReadKey(stream);
+#else
         plMatRefMsg* msg = new plMatRefMsg(GetKey(), plRefMsg::kOnCreate, iLay, plMatRefMsg::kLayer);
         plKey key = group->ReadKeyNotifyMe(stream, msg, plRefFlags::kActiveRef);
+#endif
     }
     for (iLay = 0; iLay < GetNumPiggyBacks(); iLay++)
     {
+#ifdef MINIMAL_GL_BUILD
+        group->ReadKey(stream);
+#else
         plMatRefMsg* msg = new plMatRefMsg(GetKey(), plRefMsg::kOnCreate, iLay, plMatRefMsg::kPiggyBack);
         plKey key = group->ReadKeyNotifyMe(stream, msg, plRefFlags::kActiveRef);
+#endif
     }
 }
 
