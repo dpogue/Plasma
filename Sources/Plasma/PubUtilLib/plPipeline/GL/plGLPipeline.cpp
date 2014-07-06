@@ -71,8 +71,9 @@ plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3
 
     fDevice.InitDevice();
 
-    glClearColor(0.f, 0.f, 0.5f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.f, 0.f, 0.f, 0.f);
+    glClearDepth(1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 plGLPipeline::~plGLPipeline()
@@ -154,7 +155,25 @@ void plGLPipeline::PopRenderRequest(plRenderRequest* req) {}
 
 void plGLPipeline::ClearRenderTarget(plDrawable* d) {}
 
-void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth) {}
+void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth)
+{
+    if (fView.fRenderState & (kRenderClearColor | kRenderClearDepth))
+    {
+        hsColorRGBA clearColor = col ? *col : GetClearColor();
+        float clearDepth = depth ? *depth : fView.GetClearDepth();
+
+        GLuint masks = 0;
+        if (fView.fRenderState & kRenderClearColor)
+            masks |= GL_COLOR_BUFFER_BIT;
+        if (fView.fRenderState & kRenderClearDepth)
+            masks |= GL_DEPTH_BUFFER_BIT;
+
+        glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+        glClearDepth(clearDepth);
+
+        glClear(masks);
+    }
+}
 
 hsGDeviceRef* plGLPipeline::MakeRenderTargetRef(plRenderTarget* owner) { return nullptr; }
 
