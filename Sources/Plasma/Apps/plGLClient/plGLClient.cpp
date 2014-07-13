@@ -106,18 +106,18 @@ bool plClient::InitPipeline()
 
     hsVector3 up;
     hsPoint3 from, at;
-    //from.Set(0, 0, 10.f);
-    from.Set(-260.4492f, -246.5235f, 224.1992f);
-    //at.Set(0, 20.f, 10.f);
-    at.Set(-239.9391f, 22.2739f, 104.351f);
-    up.Set(0,0,-1.f);
+    //from.Set(0.f, -20.f, 5.f);
+    from.Set(-24.5391f, -22.1473f, 10.f);
+    //at.Set(0.f, 5.f, 0.f);
+    at.Set(-23.6462f, 2.2479f, 10.f);
+    up.Set(0,0.f,1.f);
     hsMatrix44 cam;
     cam.MakeCamera(&from,&at,&up);
 
     float yon = 500.0f;
 
     pipe->SetFOV(60.f, int32_t(60.f * pipe->Height() / pipe->Width()));
-    pipe->SetDepth(0.3f, yon);
+    pipe->SetDepth(1.f, yon);
 
     hsMatrix44 id;
     id.Reset();
@@ -143,6 +143,7 @@ bool plClient::StartInit()
     plGlobalVisMgr::Init();
     fPageMgr = new plPageTreeMgr();
 
+    //ILoadAge("ParadoxTestAge");
     ILoadAge("GuildPub-Writers");
 
     return true;
