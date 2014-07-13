@@ -512,6 +512,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef *vb, hsG
         return;
     }
 
+#if 1
     /* Vertex Buffer stuff */
     glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
 
@@ -523,9 +524,66 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef *vb, hsG
     glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, 0);
     glVertexAttribPointer(colAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, vRef->fVertexSize, (void*)(sizeof(float) * 3 * 2));
 
-
     /* Index Buffer stuff and drawing */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
 
     glDrawElements(GL_TRIANGLES, iRef->fCount, GL_UNSIGNED_SHORT, 0);
+
+#else
+    /* Hardcoded fake data for now */
+    GLuint handles[2];
+    glGenBuffers(2, handles);
+
+    uint8_t* vbuf = new uint8_t[32 * 3];
+    float* p = (float*)vbuf;
+    p[0] = -1.f;
+    p[1] = 1.f;
+    p[2] = -1.f;
+    p[3] = 1.f;
+    p[4] = 1.f;
+    p[5] = 1.f;
+    ((uint32_t*)p)[6] = 0xFFFF0000;
+    p[7] = 0.f;
+
+    p[8] = 0.f;
+    p[9] = 5.f;
+    p[10] = 1.f;
+    p[11] = 1.f;
+    p[12] = 1.f;
+    p[13] = 1.f;
+    ((uint32_t*)p)[14] = 0xFF00FF00;
+    p[15] = 0.f;
+
+    p[16] = 1.f;
+    p[17] = 1.f;
+    p[18] = -1.f;
+    p[19] = 1.f;
+    p[20] = 1.f;
+    p[21] = 1.f;
+    ((uint32_t*)p)[22] = 0xFF0000FF;
+    p[23] = 0.f;
+
+    uint16_t* inds = new uint16_t[3];
+    inds[0] = 0;
+    inds[1] = 1;
+    inds[2] = 2;
+
+    glBindBuffer(GL_ARRAY_BUFFER, handles[0]);
+    glBufferData(GL_ARRAY_BUFFER, 32 * 3, vbuf, GL_STATIC_DRAW);
+
+    GLint posAttrib = glGetAttribLocation(fDevice.fProgram, "position");
+    GLint colAttrib = glGetAttribLocation(fDevice.fProgram, "color");
+    glEnableVertexAttribArray(posAttrib);
+    glEnableVertexAttribArray(colAttrib);
+
+    glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 32, 0);
+    glVertexAttribPointer(colAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, 32, (void*)24);
+
+
+    /* Index Buffer stuff and drawing */
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handles[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16_t) * 3, inds, GL_STATIC_DRAW);
+
+    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, 0);
+#endif
 }
