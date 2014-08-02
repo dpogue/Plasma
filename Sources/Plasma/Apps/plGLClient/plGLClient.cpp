@@ -8,15 +8,20 @@
 #include "plPipeline/GL/plGLPipeline.h"
 
 #include "pnMessage/plClientMsg.h"
+#include "pnMessage/plTimeMsg.h"
 #include "plMessage/plRenderMsg.h"
+#include "plMessage/plTransitionMsg.h"
+
+#include "pnSceneObject/plCoordinateInterface.h"
 
 #include "plScene/plSceneNode.h"
-
 #include "plScene/plPageTreeMgr.h"
 #include "plScene/plVisMgr.h"
 
 #include "plAgeDescription/plAgeDescription.h"
 #include "plFile/plEncryptedStream.h"
+
+#include "plUnifiedTime/plClientUnifiedTime.h"
 
 #include <X11/Xlib.h>
 
@@ -151,26 +156,17 @@ bool plClient::StartInit()
 
 bool plClient::MainLoop()
 {
-    if (!fDone)
+    if (IUpdate())
     {
-        plGlobalVisMgr::Instance()->Eval(fPipeline->GetViewPositionWorld());
-
-        plRenderMsg* rendMsg = new plRenderMsg(fPipeline);
-        plgDispatch::MsgSend(rendMsg);
-
-        if (fPipeline->BeginRender())
-        {
-            return false;
-        }
-
-        fPipeline->ClearRenderTarget();
-
-        fPageMgr->Render(fPipeline);
-
-        fPipeline->EndRender();
+        return true;
     }
 
-    return true;
+    if (IDraw())
+    {
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -445,4 +441,85 @@ void plClient::IRoomLoaded(plSceneNode* node, bool hold)
             break;
         }
     }
+}
+
+
+bool plClient::IUpdate()
+{
+    // reset timer on first frame if realtime and not clamping, to avoid initial large delta
+    if (hsTimer::GetSysSeconds()==0 && hsTimer::IsRealTime() && hsTimer::GetTimeClamp()==0)
+    {
+        hsTimer::SetRealTime(true);
+    }
+
+    plgDispatch::Dispatch()->MsgQueueProcess();
+
+    hsTimer::IncSysSeconds();
+    plClientUnifiedTime::SetSysTime(); // keep a unified time, based on sysSeconds
+    // Time may have been clamped in IncSysSeconds, depending on hsTimer's current mode.
+
+    double currTime = hsTimer::GetSysSeconds();
+    float delSecs = hsTimer::GetDelSysSeconds();
+
+    plTimeMsg* msg = new plTimeMsg(nullptr, nullptr, nullptr, nullptr);
+    plgDispatch::MsgSend(msg);
+
+    plEvalMsg* eval = new plEvalMsg(nullptr, nullptr, nullptr, nullptr);
+    plgDispatch::MsgSend(eval);
+
+    plTransformMsg* xform = new plTransformMsg(nullptr, nullptr, nullptr, nullptr);
+    plgDispatch::MsgSend(xform);
+
+    plCoordinateInterface::SetTransformPhase(plCoordinateInterface::kTransformPhaseDelayed);
+
+    // At this point, we just register for a plDelayedTransformMsg when dirtied.
+    if (!plCoordinateInterface::GetDelayedTransformsEnabled())
+    {
+        xform = new plTransformMsg(nullptr, nullptr, nullptr, nullptr);
+        plgDispatch::MsgSend(xform);
+    }
+    else
+    {
+        xform = new plDelayedTransformMsg(nullptr, nullptr, nullptr, nullptr);
+        plgDispatch::MsgSend(xform);
+    }
+
+    plCoordinateInterface::SetTransformPhase(plCoordinateInterface::kTransformPhaseNormal);
+
+
+    return false;
+}
+
+
+bool plClient::IDraw()
+{
+    // If we're shutting down, don't attempt to draw. Doing so
+    // tends to cause a device reload each frame.
+    if (fDone)
+    {
+        return true;
+    }
+
+
+    plGlobalVisMgr::Instance()->Eval(fPipeline->GetViewPositionWorld());
+
+    plRenderMsg* rendMsg = new plRenderMsg(fPipeline);
+    plgDispatch::MsgSend(rendMsg);
+
+    if (fPipeline->BeginRender())
+    {
+        return false;
+    }
+
+    fPipeline->ClearRenderTarget();
+
+    fPageMgr->Render(fPipeline);
+
+    fLastProgressUpdate = hsTimer::GetSeconds();
+
+    fPipeline->RenderScreenElements();
+
+    fPipeline->EndRender();
+
+    return false;
 }
