@@ -59,6 +59,7 @@ protected:
 
     hsWindowHndl            fWindowHndl;
     bool                    fDone;
+    double                  fLastProgressUpdate;
 
     bool                    fHoldLoadRequests;
     std::list<LoadRequest*> fLoadRooms;
@@ -95,6 +96,8 @@ public:
 protected:
     // Hackery to avoid all of plAgeLoader and the netclient stuff
     bool ILoadAge(const plString& ageName);
+    bool IUpdate();
+    bool IDraw();
 
     int IFindRoomByLoc(const plLocation& loc);
     bool IIsRoomLoading(const plLocation& loc);

@@ -32,6 +32,7 @@ target_link_libraries(plGLClient plDrawable)
 target_link_libraries(plGLClient plGLight)
 target_link_libraries(plGLClient plPipeline)
 target_link_libraries(plGLClient plResMgr)
+target_link_libraries(plGLClient plUnifiedTime)
 
 # System Libs
 target_link_libraries(plGLClient xcb)
