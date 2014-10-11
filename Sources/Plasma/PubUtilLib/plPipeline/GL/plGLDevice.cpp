@@ -79,7 +79,7 @@ plGLDevice::plGLDevice()
 
 bool plGLDevice::InitDevice()
 {
-    if (!eglBindAPI(EGL_OPENGL_API))
+    if (!eglBindAPI(EGL_OPENGL_ES_API))
     {
         fErrorMsg = "Could not bind to correct API";
         return false;
@@ -106,7 +106,7 @@ bool plGLDevice::InitDevice()
     EGLint config_attrs[] = {
         EGL_BUFFER_SIZE, 16,
         EGL_RENDERABLE_TYPE,
-        EGL_OPENGL_BIT,
+        EGL_OPENGL_ES_BIT,
         EGL_NONE
     };
 
@@ -143,11 +143,11 @@ bool plGLDevice::InitDevice()
     /* Associate everything */
     eglMakeCurrent(fDisplay, fSurface, fSurface, fContext);
 
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
+    //glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
 
 
     /* TEMP: Shader init stuff */
-    const char* vs_src = "#version 130"
+    const char* vs_src = "#version 100"
                      "\n"
                      "\n" "attribute vec3 position;"
                      "\n" "attribute vec4 color;"
@@ -167,7 +167,7 @@ bool plGLDevice::InitDevice()
                      "\n" "    v_color = color.zyxw;"
                      "\n" "}";
 
-    const char* fs_src = "#version 130"
+    const char* fs_src = "#version 100"
                      "\n"
                      "\n" "varying mediump vec4 v_color;"
                      "\n"
