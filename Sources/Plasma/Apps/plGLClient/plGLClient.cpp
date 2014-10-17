@@ -59,6 +59,15 @@ bool plClient::Shutdown()
 
     hsStatusMessage("Shutting down client...\n");
 
+    for (auto room : fRooms)
+    {
+        plSceneNode* sn = room.fNode;
+        GetKey()->Release(sn->GetKey());
+    }
+    fRooms.clear();
+    fRoomsLoading.clear();
+
+
     delete fPipeline;
     fPipeline = nullptr;
 
@@ -125,7 +134,7 @@ bool plClient::InitPipeline()
     pipe->SetDepth(1.f, yon);
 
     hsMatrix44 id;
-    id.Reset();
+    cam.GetInverse(&id);
 
     pipe->SetWorldToCamera(cam, id);
     pipe->RefreshMatrices();
