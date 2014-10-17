@@ -276,11 +276,13 @@ void plPipelineViewSettings::GetVisibleSpans(plDrawableSpans* drawable, hsTArray
     drawable->GetSpaceTree()->Refresh();
 
     if (fCullTreeDirty)
+    {
         RefreshCullTree();
+    }
 
     const float viewDist = GetViewDirWorld().InnerProduct(GetViewPositionWorld());
 
-    const hsTArray<plSpan *>    &spans = drawable->GetSpanArray();
+    const hsTArray<plSpan*>& spans = drawable->GetSpanArray();
 
     plProfile_BeginTiming(Harvest);
     if (visMgr)
