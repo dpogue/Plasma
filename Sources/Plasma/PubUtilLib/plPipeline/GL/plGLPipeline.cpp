@@ -66,6 +66,22 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #   include HS_SIMD_INCLUDE
 #endif
 
+
+#include "plProfile.h"
+
+plProfile_CreateTimer("RenderSpan", "PipeT", RenderSpan);
+plProfile_CreateTimer("  MergeCheck", "PipeT", MergeCheck);
+plProfile_CreateTimer("  MergeSpan", "PipeT", MergeSpan);
+plProfile_CreateTimer("  SpanTransforms", "PipeT", SpanTransforms);
+plProfile_CreateTimer("  SpanFog", "PipeT", SpanFog);
+plProfile_CreateTimer("  SelectLights", "PipeT", SelectLights);
+plProfile_CreateTimer("  SelectProj", "PipeT", SelectProj);
+plProfile_CreateTimer("  CheckDyn", "PipeT", CheckDyn);
+plProfile_CreateTimer("  CheckStat", "PipeT", CheckStat);
+plProfile_CreateTimer("  RenderBuff", "PipeT", RenderBuff);
+plProfile_CreateTimer("  RenderPrim", "PipeT", RenderPrim);
+
+
 plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3DDeviceModeRecord* devModeRec)
 :   pl3DPipeline(devModeRec)
 {
@@ -426,7 +442,11 @@ void plGLPipeline::ResetDisplayDevice(int Width, int Height, int ColorDepth, boo
 
 void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& visList)
 {
-    //plProfile_BeginTiming(RenderSpan);
+    plProfile_BeginTiming(RenderSpan);
+
+    if (ice->GetRenderLevel() != 0) {
+        return;
+    }
 
     hsMatrix44 lastL2W;
     size_t i, j;
@@ -466,27 +486,27 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
                 tempIce.fMaterialIdx = spans[visList[j]]->fMaterialIdx;
             }
 
-            //plProfile_BeginTiming(MergeCheck);
+            plProfile_BeginTiming(MergeCheck);
             if (!spans[visList[j]]->CanMergeInto(&tempIce))
             {
-                //plProfile_EndTiming(MergeCheck);
+                plProfile_EndTiming(MergeCheck);
                 break;
             }
-            //plProfile_EndTiming(MergeCheck);
+            plProfile_EndTiming(MergeCheck);
             //plProfile_Inc(SpanMerge);
 
-            //plProfile_BeginTiming(MergeSpan);
+            plProfile_BeginTiming(MergeSpan);
             spans[visList[j]]->MergeInto(&tempIce);
-            //plProfile_EndTiming(MergeSpan);
+            plProfile_EndTiming(MergeSpan);
         }
 
         if (material != nullptr)
         {
             // What do we change?
 
-            //plProfile_BeginTiming(SpanTransforms);
+            plProfile_BeginTiming(SpanTransforms);
             ISetupTransforms(ice, tempIce, lastL2W);
-            //plProfile_EndTiming(SpanTransforms);
+            plProfile_EndTiming(SpanTransforms);
 
             // Turn on this spans lights and turn off the rest.
             //IEnableLights( &tempIce );
@@ -496,10 +516,11 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
             //ICheckDynBuffers(drawable, drawable->GetBufferGroup(tempIce.fGroupIdx), &tempIce);
             //plProfile_EndTiming(CheckDyn);
 
-            //plProfile_BeginTiming(CheckStat);
-            CheckVertexBufferRef(ice->GetBufferGroup(tempIce.fGroupIdx), tempIce.fVBufferIdx);
-            CheckIndexBufferRef(ice->GetBufferGroup(tempIce.fGroupIdx), tempIce.fIBufferIdx);
-            //plProfile_EndTiming(CheckStat);
+            plProfile_BeginTiming(CheckStat);
+            plGBufferGroup* grp = ice->GetBufferGroup(tempIce.fGroupIdx);
+            CheckVertexBufferRef(grp, tempIce.fVBufferIdx);
+            CheckIndexBufferRef(grp, tempIce.fIBufferIdx);
+            plProfile_EndTiming(CheckStat);
 
             // Draw this span now
             IRenderBufferSpan( tempIce,
@@ -514,7 +535,7 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
         i = j;
     }
 
-    //plProfile_EndTiming(RenderSpan);
+    plProfile_EndTiming(RenderSpan);
     /// All done!
 }
 
@@ -602,7 +623,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef *vb, hsG
     /* Index Buffer stuff and drawing */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
 
-    glDrawElements(GL_TRIANGLES, iRef->fCount, GL_UNSIGNED_SHORT, 0);
+    glDrawElements(GL_TRIANGLES, iLength, GL_UNSIGNED_SHORT, (GLvoid*)(sizeof(uint16_t) * iStart));
 
 #else
     /* Hardcoded fake data for now */
