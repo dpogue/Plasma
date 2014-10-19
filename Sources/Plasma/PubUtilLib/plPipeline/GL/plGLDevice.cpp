@@ -143,8 +143,6 @@ bool plGLDevice::InitDevice()
     /* Associate everything */
     eglMakeCurrent(fDisplay, fSurface, fSurface, fContext);
 
-    //glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
-
 
     /* TEMP: Shader init stuff */
     const char* vs_src = "#version 100"
@@ -311,20 +309,21 @@ void plGLDevice::FillStaticVertexBufferRef(VertexBufferRef* ref, plGBufferGroup*
 
         uint8_t* buffer = new uint8_t[size];
         uint8_t* ptr = buffer;
-        const uint32_t vertSmallSize = group->GetVertexLiteStride() - sizeof( hsPoint3 ) * 2;
+
+        const uint32_t vertSmallSize = group->GetVertexLiteStride() - sizeof(hsPoint3) * 2;
         uint8_t* srcVPtr = group->GetVertBufferData(idx);
-        plGBufferColor* const srcCPtr = group->GetColorBufferData( idx );
+        plGBufferColor* const srcCPtr = group->GetColorBufferData(idx);
 
         const int numCells = group->GetNumCells(idx);
         int i;
-        for( i = 0; i < numCells; i++ )
+        for (i = 0; i < numCells; i++)
         {
-            plGBufferCell   *cell = group->GetCell( idx, i );
+            plGBufferCell* cell = group->GetCell(idx, i);
 
-            if( cell->fColorStart == uint32_t(-1))
+            if (cell->fColorStart == uint32_t(-1))
             {
                 /// Interleaved, do straight copy
-                memcpy( ptr, srcVPtr + cell->fVtxStart, cell->fLength * vertSize );
+                memcpy(ptr, srcVPtr + cell->fVtxStart, cell->fLength * vertSize);
                 ptr += cell->fLength * vertSize;
             }
             else
@@ -354,6 +353,7 @@ void plGLDevice::FillStaticVertexBufferRef(VertexBufferRef* ref, plGBufferGroup*
             }
         }
 
+        hsAssert((ptr - buffer) == size, "Didn't fill the buffer?");
         glBufferData(GL_ARRAY_BUFFER, size, buffer, GL_STATIC_DRAW);
     }
 
