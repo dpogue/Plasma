@@ -105,6 +105,7 @@ bool plGLDevice::InitDevice()
     EGLint     config_count;
     EGLint config_attrs[] = {
         EGL_BUFFER_SIZE, 16,
+        EGL_DEPTH_SIZE, 16,
         EGL_RENDERABLE_TYPE,
         EGL_OPENGL_ES_BIT,
         EGL_NONE
@@ -189,6 +190,9 @@ bool plGLDevice::InitDevice()
     glUseProgram(fProgram);
 
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_TRUE);
+
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 

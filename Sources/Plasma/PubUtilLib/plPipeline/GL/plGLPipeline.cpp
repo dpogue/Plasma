@@ -444,10 +444,6 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 {
     plProfile_BeginTiming(RenderSpan);
 
-    if (ice->GetRenderLevel() != 0) {
-        return;
-    }
-
     hsMatrix44 lastL2W;
     size_t i, j;
     hsGMaterial* material;
