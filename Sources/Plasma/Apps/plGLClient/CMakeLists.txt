@@ -19,8 +19,17 @@ set(plGLClient_HEADERS
 set(plGLClient_SOURCES
     plCreatables.cpp
     plGLClient.cpp
-    main.cpp
 )
+
+if(WIN32)
+    set(plGLClient_SOURCES ${plGLClient_SOURCES}
+        Win32/main.cpp
+    )
+elseif(UNIX)
+    set(plGLClient_SOURCES ${plGLClient_SOURCES}
+        X11/main.cpp
+    )
+endif(WIN32)
 
 add_executable(plGLClient ${plGLClient_SOURCES} ${plGLClient_HEADERS})
 
@@ -35,8 +44,10 @@ target_link_libraries(plGLClient plResMgr)
 target_link_libraries(plGLClient plUnifiedTime)
 
 # System Libs
-target_link_libraries(plGLClient xcb)
-target_link_libraries(plGLClient X11)
+if(UNIX)
+    target_link_libraries(plGLClient xcb)
+    target_link_libraries(plGLClient X11)
+endif(UNIX)
 #target_link_libraries(plGLClient ${JPEG_LIBRARY})
 #target_link_libraries(plGLClient ${PNG_LIBRARY})
 
