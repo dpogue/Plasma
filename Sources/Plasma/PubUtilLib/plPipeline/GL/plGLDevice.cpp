@@ -60,20 +60,25 @@ GLfloat* hsMatrix2GL(const hsMatrix44& src, GLfloat* dst)
     if (src.fFlags & hsMatrix44::kIsIdent)
     {
         memcpy(dst, kIdentityMatrix, sizeof(GLfloat) * 16);
-        return dst;
     }
     else
     {
-        return (GLfloat*)(src.fMap);
+        memcpy(dst, src.fMap, sizeof(GLfloat) * 16);
     }
+
+    return dst;
 }
 
 plGLDevice::plGLDevice()
 :   fErrorMsg(nullptr),
     fDisplay(EGL_NO_DISPLAY),
     fSurface(EGL_NO_SURFACE),
-    fContext(EGL_NO_CONTEXT)
+    fContext(EGL_NO_CONTEXT),
+    fCurrentProgram(0)
 {
+    memcpy(fMatrixL2W, kIdentityMatrix, sizeof(GLfloat) * 16);
+    memcpy(fMatrixW2C, kIdentityMatrix, sizeof(GLfloat) * 16);
+    memcpy(fMatrixProj, kIdentityMatrix, sizeof(GLfloat) * 16);
 }
 
 
@@ -182,12 +187,12 @@ bool plGLDevice::InitDevice()
     glShaderSource(fshader, 1, &fs_src, nullptr);
     glCompileShader(fshader);
 
-    fProgram = glCreateProgram();
-    glAttachShader(fProgram, vshader);
-    glAttachShader(fProgram, fshader);
+    fCurrentProgram = glCreateProgram();
+    glAttachShader(fCurrentProgram, vshader);
+    glAttachShader(fCurrentProgram, fshader);
 
-    glLinkProgram(fProgram);
-    glUseProgram(fProgram);
+    glLinkProgram(fCurrentProgram);
+    glUseProgram(fCurrentProgram);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -416,27 +421,15 @@ void plGLDevice::FillIndexBufferRef(IndexBufferRef* iRef, plGBufferGroup* owner,
 
 void plGLDevice::SetProjectionMatrix(const hsMatrix44& src)
 {
-    static bool printed = false;
-    if (!printed) {
-        hsStatusMessage(ST::format("Proj: {}", src).c_str());
-        printed = true;
-    }
-
-    GLfloat mat[16];
-    GLint uniform = glGetUniformLocation(fProgram, "matrix_proj");
-    glUniformMatrix4fv(uniform, 1, GL_TRUE, hsMatrix2GL(src, mat));
+    hsMatrix2GL(src, fMatrixProj);
 }
 
 void plGLDevice::SetWorldToCameraMatrix(const hsMatrix44& src)
 {
-    GLfloat mat[16];
-    GLint uniform = glGetUniformLocation(fProgram, "matrix_w2c");
-    glUniformMatrix4fv(uniform, 1, GL_TRUE, hsMatrix2GL(src, mat));
+    hsMatrix2GL(src, fMatrixW2C);
 }
 
 void plGLDevice::SetLocalToWorldMatrix(const hsMatrix44& src)
 {
-    GLfloat mat[16];
-    GLint uniform = glGetUniformLocation(fProgram, "matrix_l2w");
-    glUniformMatrix4fv(uniform, 1, GL_TRUE, hsMatrix2GL(src, mat));
+    hsMatrix2GL(src, fMatrixL2W);
 }
