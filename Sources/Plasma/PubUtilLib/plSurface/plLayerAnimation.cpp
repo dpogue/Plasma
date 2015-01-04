@@ -328,10 +328,12 @@ void plLayerAnimation::Read(hsStream* s, hsResMgr* mgr)
     }
     Eval(hsTimer::GetSysSeconds(),0,0);
 
+#ifndef MINIMAL_GL_BUILD
     // add sdl modifier
     delete fLayerSDLMod;
     fLayerSDLMod = new plLayerSDLModifier;
     fLayerSDLMod->SetLayerAnimation(this);
+#endif
 }
 
 
@@ -371,6 +373,8 @@ uint32_t plLayerAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignore)
 
 bool plLayerAnimation::MsgReceive(plMessage* msg)
 {
+    bool retVal = false;
+#ifndef MINIMAL_GL_BUILD
     // pass sdl msg to sdlMod
     plSDLModifierMsg* sdlMsg = plSDLModifierMsg::ConvertNoRef(msg);
     if (sdlMsg && fLayerSDLMod)
@@ -379,7 +383,6 @@ bool plLayerAnimation::MsgReceive(plMessage* msg)
             return true;    // msg handled
     }
 
-    bool retVal = false;
     plAnimCmdMsg* cmdMsg = plAnimCmdMsg::ConvertNoRef(msg);
     if( cmdMsg )
     {
@@ -400,10 +403,11 @@ bool plLayerAnimation::MsgReceive(plMessage* msg)
         }
     }
     else
+#endif
     {
         retVal = plLayerAnimationBase::MsgReceive(msg);
     }
-    
+
     return retVal;
 }
 
@@ -419,6 +423,7 @@ void plLayerAnimation::DefaultAnimation()
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef MINIMAL_GL_BUILD
 plLayerLinkAnimation::plLayerLinkAnimation() : 
     fLinkKey(nil), 
     fLeavingAge(true),
@@ -671,9 +676,11 @@ bool plLayerLinkAnimation::MsgReceive( plMessage* pMsg )
 
     return plLayerAnimation::MsgReceive( pMsg );
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef MINIMAL_GL_BUILD
 plLayerSDLAnimation::plLayerSDLAnimation() : plLayerAnimationBase(), fVar(nil) {}
 
 uint32_t plLayerSDLAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignore)
@@ -745,3 +752,4 @@ void plLayerSDLAnimation::Write(hsStream* s, hsResMgr* mgr)
 
     s->WriteSafeString(fVarName);
 }
+#endif

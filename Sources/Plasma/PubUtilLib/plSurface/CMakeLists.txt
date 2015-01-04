@@ -79,6 +79,7 @@ add_library(plSurface STATIC ${plSurface_SOURCES} ${plSurface_HEADERS} ${plSurfa
 target_link_libraries(plSurface CoreLib)
 target_link_libraries(plSurface pnKeyedObject)
 target_link_libraries(plSurface plGImage)
+target_link_libraries(plSurface plInterp)
 target_link_libraries(plSurface plMessage)
 
 source_group("Source Files" FILES ${plSurface_SOURCES})
