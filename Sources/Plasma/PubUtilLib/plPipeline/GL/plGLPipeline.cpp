@@ -57,6 +57,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsTimer.h"
 
 #include "plPipeline/plPipelineCreate.h"
+#include "plPipeDebugFlags.h"
 #include "plDrawable/plDrawableSpans.h"
 #include "plDrawable/plGBufferGroup.h"
 #include "plScene/plRenderRequest.h"
@@ -69,6 +70,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plProfile.h"
 
+plProfile_CreateCounter("Feed Triangles", "Draw", DrawFeedTriangles);
+plProfile_CreateCounter("Polys", "General", DrawTriangles);
+plProfile_CreateCounter("Draw Prim Static", "Draw", DrawPrimStatic);
+plProfile_CreateMemCounter("Total Texture Size", "Draw", TotalTexSize);
+plProfile_CreateCounter("Material Change", "Draw", MatChange);
+plProfile_CreateCounter("Layer Change", "Draw", LayChange);
+
 plProfile_CreateTimer("RenderSpan", "PipeT", RenderSpan);
 plProfile_CreateTimer("  MergeCheck", "PipeT", MergeCheck);
 plProfile_CreateTimer("  MergeSpan", "PipeT", MergeSpan);
@@ -80,6 +88,19 @@ plProfile_CreateTimer("  CheckDyn", "PipeT", CheckDyn);
 plProfile_CreateTimer("  CheckStat", "PipeT", CheckStat);
 plProfile_CreateTimer("  RenderBuff", "PipeT", RenderBuff);
 plProfile_CreateTimer("  RenderPrim", "PipeT", RenderPrim);
+
+static plRenderNilFunc sRenderNil;
+
+bool plRenderTriListFunc::RenderPrims() const
+{
+    plProfile_IncCount(DrawFeedTriangles, fNumTris);
+    plProfile_IncCount(DrawTriangles, fNumTris);
+    plProfile_Inc(DrawPrimStatic);
+
+    glDrawElements(GL_TRIANGLES, fNumTris, GL_UNSIGNED_SHORT, (GLvoid*)(sizeof(uint16_t) * fIStart));
+    return true; // TODO: Check for GL Error
+}
+
 
 
 plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3DDeviceModeRecord* devModeRec)
@@ -140,13 +161,11 @@ plGLPipeline::~plGLPipeline()
 bool plGLPipeline::PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr)
 {
     plDrawableSpans *ds = plDrawableSpans::ConvertNoRef(drawable);
-    if (!ds)
-    {
+    if (!ds) {
         return false;
     }
 
-    if ((ds->GetType() & fView.GetDrawableTypeMask()) == 0)
-    {
+    if ((ds->GetType() & fView.GetDrawableTypeMask()) == 0) {
         return false;
     }
 
@@ -158,8 +177,7 @@ bool plGLPipeline::PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, p
 bool plGLPipeline::PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr)
 {
     plDrawableSpans* ice = plDrawableSpans::ConvertNoRef(drawable);
-    if (!ice)
-    {
+    if (!ice) {
         return false;
     }
 
@@ -167,8 +185,7 @@ bool plGLPipeline::PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visLis
     ICheckLighting(ice, visList, visMgr);
 
     // Sort our faces
-    if (ice->GetNativeProperty(plDrawable::kPropSortFaces))
-    {
+    if (ice->GetNativeProperty(plDrawable::kPropSortFaces)) {
         ice->SortVisibleSpans(visList, this);
     }
 
@@ -190,16 +207,14 @@ void plGLPipeline::CheckVertexBufferRef(plGBufferGroup* owner, uint32_t idx)
     DeviceType::VertexBufferRef* vRef = (DeviceType::VertexBufferRef*)owner->GetVertexBufferRef(idx);
 
     // If not
-    if (!vRef)
-    {
+    if (!vRef) {
         // Make the blank ref
         vRef = new DeviceType::VertexBufferRef();
 
         fDevice.SetupVertexBufferRef(owner, idx, vRef);
     }
 
-    if (!vRef->IsLinked())
-    {
+    if (!vRef->IsLinked()) {
         vRef->Link(&fVtxBuffRefList);
     }
 
@@ -208,8 +223,7 @@ void plGLPipeline::CheckVertexBufferRef(plGBufferGroup* owner, uint32_t idx)
     // If the owner is volatile, then we hold off. It might not
     // be visible, and we might need to refill it again if we
     // have an overrun of our dynamic buffer.
-    if (!vRef->Volatile())
-    {
+    if (!vRef->Volatile()) {
         // If it's a static buffer, allocate a vertex buffer for it.
         fDevice.CheckStaticVertexBuffer(vRef, owner, idx);
 
@@ -235,16 +249,14 @@ void plGLPipeline::CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx)
 {
     DeviceType::IndexBufferRef* iRef = (DeviceType::IndexBufferRef*)owner->GetIndexBufferRef(idx);
 
-    if (!iRef)
-    {
+    if (!iRef) {
         // Create one from scratch.
         iRef = new DeviceType::IndexBufferRef();
 
         fDevice.SetupIndexBufferRef(owner, idx, iRef);
     }
 
-    if (!iRef->IsLinked())
-    {
+    if (!iRef->IsLinked()) {
         iRef->Link(&fIdxBuffRefList);
     }
 
@@ -252,8 +264,7 @@ void plGLPipeline::CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx)
     fDevice.CheckIndexBuffer(iRef);
 
     // If it's dirty, refill it.
-    if (iRef->IsDirty())
-    {
+    if (iRef->IsDirty()) {
         fDevice.FillIndexBufferRef(iRef, owner, idx);
     }
 }
@@ -301,8 +312,7 @@ void plGLPipeline::PushRenderRequest(plRenderRequest* req)
     }
 #endif
 
-    if (req->GetOverrideMat())
-    {
+    if (req->GetOverrideMat()) {
         PushOverrideMaterial(req->GetOverrideMat());
     }
 
@@ -312,8 +322,7 @@ void plGLPipeline::PushRenderRequest(plRenderRequest* req)
 
     RefreshMatrices();
 
-    if (req->GetIgnoreOccluders())
-    {
+    if (req->GetIgnoreOccluders()) {
         fView.SetMaxCullNodes(0);
     }
 
@@ -322,8 +331,7 @@ void plGLPipeline::PushRenderRequest(plRenderRequest* req)
 
 void plGLPipeline::PopRenderRequest(plRenderRequest* req)
 {
-    if (req->GetOverrideMat())
-    {
+    if (req->GetOverrideMat()) {
         PopOverrideMaterial(nil);
     }
 
@@ -345,8 +353,7 @@ void plGLPipeline::ClearRenderTarget(plDrawable* d) {}
 
 void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth)
 {
-    if (fView.fRenderState & (kRenderClearColor | kRenderClearDepth))
-    {
+    if (fView.fRenderState & (kRenderClearColor | kRenderClearDepth)) {
         hsColorRGBA clearColor = col ? *col : GetClearColor();
         float clearDepth = depth ? *depth : fView.GetClearDepth();
 
@@ -371,8 +378,7 @@ bool plGLPipeline::BeginRender()
     RefreshScreenMatrices();
 
     // If this is the primary BeginRender, make sure we're really ready.
-    if (fInSceneDepth++ == 0)
-    {
+    if (fInSceneDepth++ == 0) {
         fDevice.BeginRender();
     }
 
@@ -388,8 +394,7 @@ bool plGLPipeline::EndRender() {
     bool retVal = false;
 
     /// Actually end the scene
-    if (--fInSceneDepth == 0)
-    {
+    if (--fInSceneDepth == 0) {
         retVal = fDevice.EndRender();
 
         //IClearShadowSlaves();
@@ -400,10 +405,8 @@ bool plGLPipeline::EndRender() {
     hsRefCnt_SafeUnRef(fCurrMaterial);
     fCurrMaterial = nullptr;
 
-    for (int i = 0; i < 8; i++)
-    {
-        if (fLayerRef[i])
-        {
+    for (int i = 0; i < 8; i++) {
+        if (fLayerRef[i]) {
             hsRefCnt_SafeUnRef(fLayerRef[i]);
             fLayerRef[i] = nullptr;
         }
@@ -460,14 +463,10 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 
 
     /// Loop through our spans, combining them when possible
-    for (i = 0; i < visList.GetCount(); )
-    {
-        if (GetOverrideMaterial() != nullptr)
-        {
+    for (i = 0; i < visList.GetCount(); ) {
+        if (GetOverrideMaterial() != nullptr) {
             material = GetOverrideMaterial();
-        }
-        else
-        {
+        } else {
             material = ice->GetMaterial(spans[visList[i]]->fMaterialIdx);
         }
 
@@ -475,16 +474,13 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
         plIcicle tempIce(*((plIcicle*)spans[visList[i]]));
 
         // Start at i + 1, look for as many spans as we can add to tempIce
-        for (j = i + 1; j < visList.GetCount(); j++)
-        {
-            if (GetOverrideMaterial())
-            {
+        for (j = i + 1; j < visList.GetCount(); j++) {
+            if (GetOverrideMaterial()) {
                 tempIce.fMaterialIdx = spans[visList[j]]->fMaterialIdx;
             }
 
             plProfile_BeginTiming(MergeCheck);
-            if (!spans[visList[j]]->CanMergeInto(&tempIce))
-            {
+            if (!spans[visList[j]]->CanMergeInto(&tempIce)) {
                 plProfile_EndTiming(MergeCheck);
                 break;
             }
@@ -496,8 +492,7 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
             plProfile_EndTiming(MergeSpan);
         }
 
-        if (material != nullptr)
-        {
+        if (material != nullptr) {
             // What do we change?
 
             plProfile_BeginTiming(SpanTransforms);
@@ -593,23 +588,37 @@ void plGLPipeline::ISetupTransforms(plDrawableSpans* drawable, const plSpan& spa
 }
 
 
-void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef *vb, hsGDeviceRef *ib, hsGMaterial *material, uint32_t vStart, uint32_t vLength, uint32_t iStart, uint32_t iLength)
+void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
+                                     hsGDeviceRef* ib, hsGMaterial* material,
+                                     uint32_t vStart, uint32_t vLength,
+                                     uint32_t iStart, uint32_t iLength)
 {
+    plProfile_BeginTiming(RenderBuff);
+
     DeviceType::VertexBufferRef* vRef = (DeviceType::VertexBufferRef*)vb;
     DeviceType::IndexBufferRef* iRef = (DeviceType::IndexBufferRef*)ib;
 
-    if (!vRef->fRef || !iRef->fRef)
-    {
+    if (!vRef->fRef || !iRef->fRef) {
+        plProfile_EndTiming(RenderBuff);
+
         hsAssert( false, "Trying to render a nil buffer pair!" );
         return;
     }
 
-#if 1
     /* Vertex Buffer stuff */
     glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
 
-    GLint posAttrib = glGetAttribLocation(fDevice.fProgram, "position");
-    GLint colAttrib = glGetAttribLocation(fDevice.fProgram, "color");
+    GLint uniform = glGetUniformLocation(fDevice.fCurrentProgram, "matrix_proj");
+    glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixProj);
+
+    uniform = glGetUniformLocation(fDevice.fCurrentProgram, "matrix_l2w");
+    glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixL2W);
+
+    uniform = glGetUniformLocation(fDevice.fCurrentProgram, "matrix_w2c");
+    glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixW2C);
+
+    GLint posAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "position");
+    GLint colAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "color");
     glEnableVertexAttribArray(posAttrib);
     glEnableVertexAttribArray(colAttrib);
 
@@ -619,63 +628,10 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef *vb, hsG
     /* Index Buffer stuff and drawing */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
 
-    glDrawElements(GL_TRIANGLES, iLength, GL_UNSIGNED_SHORT, (GLvoid*)(sizeof(uint16_t) * iStart));
+    plRenderTriListFunc render(&fDevice, 0, vStart, vLength, iStart, iLength);
 
-#else
-    /* Hardcoded fake data for now */
-    GLuint handles[2];
-    glGenBuffers(2, handles);
+    plProfile_EndTiming(RenderBuff);
 
-    uint8_t* vbuf = new uint8_t[32 * 3];
-    float* p = (float*)vbuf;
-    p[0] = -1.f;
-    p[1] = 1.f;
-    p[2] = -1.f;
-    p[3] = 1.f;
-    p[4] = 1.f;
-    p[5] = 1.f;
-    ((uint32_t*)p)[6] = 0xFFFF0000;
-    p[7] = 0.f;
-
-    p[8] = 0.f;
-    p[9] = 5.f;
-    p[10] = 1.f;
-    p[11] = 1.f;
-    p[12] = 1.f;
-    p[13] = 1.f;
-    ((uint32_t*)p)[14] = 0xFF00FF00;
-    p[15] = 0.f;
-
-    p[16] = 1.f;
-    p[17] = 1.f;
-    p[18] = -1.f;
-    p[19] = 1.f;
-    p[20] = 1.f;
-    p[21] = 1.f;
-    ((uint32_t*)p)[22] = 0xFF0000FF;
-    p[23] = 0.f;
-
-    uint16_t* inds = new uint16_t[3];
-    inds[0] = 0;
-    inds[1] = 1;
-    inds[2] = 2;
-
-    glBindBuffer(GL_ARRAY_BUFFER, handles[0]);
-    glBufferData(GL_ARRAY_BUFFER, 32 * 3, vbuf, GL_STATIC_DRAW);
-
-    GLint posAttrib = glGetAttribLocation(fDevice.fProgram, "position");
-    GLint colAttrib = glGetAttribLocation(fDevice.fProgram, "color");
-    glEnableVertexAttribArray(posAttrib);
-    glEnableVertexAttribArray(colAttrib);
-
-    glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 32, 0);
-    glVertexAttribPointer(colAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, 32, (void*)24);
-
-
-    /* Index Buffer stuff and drawing */
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handles[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16_t) * 3, inds, GL_STATIC_DRAW);
-
-    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, 0);
-#endif
+    // TEMP
+    render.RenderPrims();
 }
