@@ -140,6 +140,7 @@ public:
     void DefaultAnimation();
 };
 
+#ifndef MINIMAL_GL_BUILD
 class plLayerLinkAnimation : public plLayerAnimation   
 {
 protected:
@@ -207,5 +208,6 @@ public:
     ST::string GetVarName() const { return fVarName; }
     void SetVarName(const ST::string &name) { fVarName = name; }
 };
+#endif
 
 #endif // plLayerAnimation_inc

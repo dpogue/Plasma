@@ -76,7 +76,7 @@ target_link_libraries(plSurface
         CoreLib
         pnKeyedObject
         plGImage
-        #plInterp
+        plInterp
         plMessage
 )
 

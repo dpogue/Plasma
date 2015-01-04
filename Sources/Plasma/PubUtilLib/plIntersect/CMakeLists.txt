@@ -26,7 +26,7 @@ target_link_libraries(plIntersect
     PUBLIC
         CoreLib
         pnKeyedObject
-        #pnSceneObject
+        pnSceneObject
         plMessage
 )
 
