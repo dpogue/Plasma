@@ -3,6 +3,7 @@
 #include "plDrawable/plDrawableCreatable.h"
 #include "plGImage/plGImageCreatable.h"
 #include "plGLight/plGLightCreatable.h"
+#include "plInterp/plInterpCreatable.h"
 #include "plIntersect/plIntersectCreatable.h"
 #include "plPipeline/plPipelineCreatable.h"
 #include "plResMgr/plResMgrCreatable.h"
