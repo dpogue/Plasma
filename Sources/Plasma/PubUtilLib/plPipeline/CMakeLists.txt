@@ -42,6 +42,7 @@ set(plDXPipeline_SOURCES
 set(plGLPipeline_SOURCES
     GL/plGLDevice.cpp
     GL/plGLDeviceRefs.cpp
+    GL/plGLMaterialShaderRef.cpp
     GL/plGLPipeline.cpp
 )
 
@@ -92,6 +93,7 @@ set(plDXPipeline_HEADERS
 set(plGLPipeline_HEADERS
     GL/plGLDevice.h
     GL/plGLDeviceRef.h
+    GL/plGLMaterialShaderRef.h
     GL/plGLPipeline.h
 )
 
@@ -113,7 +115,7 @@ target_link_libraries(plPipeline pnKeyedObject)
 #target_link_libraries(plPipeline pnNucleusInc)
 #target_link_libraries(plPipeline pnSceneObject)
 target_link_libraries(plPipeline plDrawable)
-#target_link_libraries(plPipeline plGLight)
+target_link_libraries(plPipeline plGLight)
 #target_link_libraries(plPipeline plScene)
 #target_link_libraries(plPipeline plSurface)
 

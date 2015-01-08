@@ -49,6 +49,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plLayerInterface.h"
 #include "plLayer.h"
 #include "plMessage/plMatRefMsg.h"
+#include "hsGDeviceRef.h"
 #include "plProfile.h"
 
 plProfile_CreateTimer("MaterialAnims", "Animation", MaterialAnims);
@@ -64,6 +65,9 @@ fLOD(0),
 fCompFlags(0),
 fLoadFlags(0),
 fLastUpdateTime(0)
+#if PLASMA_PIPELINE_GL
+,fDeviceRef(nullptr)
+#endif
 {
 }
 
@@ -215,6 +219,13 @@ void hsGMaterial::SetLayer(plLayerInterface* layer, int32_t which, bool insert, 
             layers.Append(layer);
     }
 }
+
+#if PLASMA_PIPELINE_GL
+void hsGMaterial::SetDeviceRef(hsGDeviceRef* ref)
+{
+    hsRefCnt_SafeAssign(fDeviceRef, ref);
+}
+#endif
 
 
 void hsGMaterial::Write(hsStream* s)

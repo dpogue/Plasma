@@ -49,7 +49,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 class hsScene;
 class hsResMgr;
-class hsG3DDevice;
+class hsGDeviceRef;
 class plLayerInterface;
 class plLayer;
 
@@ -81,14 +81,18 @@ public:
     };
 
 protected:
-    uint32_t                  fLOD;
+    uint32_t                        fLOD;
     hsTArray<plLayerInterface*>     fLayers;
     hsTArray<plLayerInterface*>     fPiggyBacks;
 
-    uint32_t                  fCompFlags;
-    uint32_t                  fLoadFlags;
+    uint32_t                        fCompFlags;
+    uint32_t                        fLoadFlags;
 
-    float                fLastUpdateTime;
+    float                           fLastUpdateTime;
+
+#if PLASMA_PIPELINE_GL
+    hsGDeviceRef*                   fDeviceRef;
+#endif
 
     void                IClearLayers();
     uint32_t              IMakeExtraLayer();
@@ -127,6 +131,11 @@ public:
     bool                    IsDynamic() const           { return (fCompFlags & kCompDynamic); }
     bool                    IsDecal() const             { return (fCompFlags & kCompDecal); }
     bool                    NeedsBlendChannel()         { return (fCompFlags & kCompNeedsBlendChannel); }
+
+#if PLASMA_PIPELINE_GL
+    void SetDeviceRef(hsGDeviceRef* ref);
+    hsGDeviceRef* GetDeviceRef() const { return fDeviceRef; }
+#endif
 
     virtual void        Read(hsStream* s);
     virtual void        Write(hsStream* s);

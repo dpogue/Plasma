@@ -35,13 +35,10 @@ add_executable(plGLClient ${plGLClient_SOURCES} ${plGLClient_HEADERS})
 
 # Plasma Libs
 target_link_libraries(plGLClient CoreLib)
-target_link_libraries(plGLClient pnNetCommon)
 target_link_libraries(plGLClient plAgeDescription)
-target_link_libraries(plGLClient plDrawable)
-target_link_libraries(plGLClient plGLight)
 target_link_libraries(plGLClient plPipeline)
 target_link_libraries(plGLClient plResMgr)
-target_link_libraries(plGLClient plUnifiedTime)
+target_link_libraries(plGLClient plScene)
 
 # System Libs
 if(UNIX)
