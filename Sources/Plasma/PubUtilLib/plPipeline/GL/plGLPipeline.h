@@ -47,12 +47,15 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLDevice.h"
 
 class plIcicle;
+class plGLMaterialShaderRef;
 
 class plGLPipeline : public pl3DPipeline
 {
 protected:
 
     friend class plGLDevice;
+
+    plGLMaterialShaderRef* fMatRefList;
 
 public:
     plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3DDeviceModeRecord *devMode);

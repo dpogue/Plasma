@@ -127,9 +127,9 @@ public:
     {
     }
 
-    virtual ~plGLVertexBufferRef() {}
+    virtual ~plGLVertexBufferRef();
 
-    void Release() {}
+    void Release();
 };
 
 
@@ -173,9 +173,9 @@ public:
     {
     }
 
-    virtual ~plGLIndexBufferRef() {}
+    virtual ~plGLIndexBufferRef();
 
-    void Release() {}
+    void Release();
 };
 
 

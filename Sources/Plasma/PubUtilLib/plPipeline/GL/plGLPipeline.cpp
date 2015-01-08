@@ -50,6 +50,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "hsTemplates.h"
 #include "plGLPipeline.h"
+#include "plGLMaterialShaderRef.h"
 
 #include <GL/gl.h>
 #include <GL/glext.h>
@@ -104,7 +105,7 @@ bool plRenderTriListFunc::RenderPrims() const
 
 
 plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3DDeviceModeRecord* devModeRec)
-:   pl3DPipeline(devModeRec)
+:   pl3DPipeline(devModeRec), fMatRefList(nullptr)
 {
     fDevice.fDevice = display;
     fDevice.fWindow = window;
@@ -456,7 +457,7 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 
     /// Set this (*before* we do our TestVisibleWorld stuff...)
     lastL2W.Reset();
-    ISetLocalToWorld( lastL2W, lastL2W );   // This is necessary; otherwise, we have to test for
+    ISetLocalToWorld(lastL2W, lastL2W);     // This is necessary; otherwise, we have to test for
                                             // the first transform set, since this'll be identity
                                             // but the actual device transform won't be (unless
                                             // we do this)
@@ -493,6 +494,24 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
         }
 
         if (material != nullptr) {
+            // First, do we have a device ref at this index?
+            plGLMaterialShaderRef* mRef = (plGLMaterialShaderRef*)material->GetDeviceRef();
+
+            if (mRef == nullptr) {
+                mRef = new plGLMaterialShaderRef(material);
+                material->SetDeviceRef(mRef);
+
+                glUseProgram(mRef->fRef);
+                fDevice.fCurrentProgram = mRef->fRef;
+            }
+
+            if (!mRef->IsLinked()) {
+                mRef->Link(&fMatRefList);
+            }
+
+            glUseProgram(mRef->fRef);
+            fDevice.fCurrentProgram = mRef->fRef;
+
             // What do we change?
 
             plProfile_BeginTiming(SpanTransforms);
@@ -547,32 +566,23 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 
 void plGLPipeline::ISetupTransforms(plDrawableSpans* drawable, const plSpan& span, hsMatrix44& lastL2W)
 {
-    if( span.fNumMatrices )
-    {
-        if( span.fNumMatrices <= 2 )
-        {
+    if (span.fNumMatrices) {
+        if (span.fNumMatrices <= 2) {
             ISetLocalToWorld( span.fLocalToWorld, span.fWorldToLocal );
             lastL2W = span.fLocalToWorld;
-        }
-        else
-        {
+        } else {
             lastL2W.Reset();
             ISetLocalToWorld( lastL2W, lastL2W );
             fView.fLocalToWorldLeftHanded = span.fLocalToWorld.GetParity();
         }
-    }
-    else
-    if( lastL2W != span.fLocalToWorld )
-    {
+    } else if (lastL2W != span.fLocalToWorld) {
         ISetLocalToWorld( span.fLocalToWorld, span.fWorldToLocal );
         lastL2W = span.fLocalToWorld;
-    }
-    else
-    {
+    } else {
         fView.fLocalToWorldLeftHanded = lastL2W.GetParity();
     }
 
-#if 0
+#if 0 // Skinning
     if( span.fNumMatrices == 2 )
     {
         D3DXMATRIX  mat;
@@ -585,6 +595,19 @@ void plGLPipeline::ISetupTransforms(plDrawableSpans* drawable, const plSpan& spa
         fD3DDevice->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_DISABLE);
     }
 #endif
+
+
+    if (fDevice.fCurrentProgram) {
+        /* Push the matrices into the GLSL shader now */
+        GLint uniform = glGetUniformLocation(fDevice.fCurrentProgram, "uMatrixProj");
+        glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixProj);
+
+        uniform = glGetUniformLocation(fDevice.fCurrentProgram, "uMatrixW2C");
+        glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixW2C);
+
+        uniform = glGetUniformLocation(fDevice.fCurrentProgram, "uMatrixL2W");
+        glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixL2W);
+    }
 }
 
 
@@ -608,17 +631,8 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
     /* Vertex Buffer stuff */
     glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
 
-    GLint uniform = glGetUniformLocation(fDevice.fCurrentProgram, "matrix_proj");
-    glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixProj);
-
-    uniform = glGetUniformLocation(fDevice.fCurrentProgram, "matrix_l2w");
-    glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixL2W);
-
-    uniform = glGetUniformLocation(fDevice.fCurrentProgram, "matrix_w2c");
-    glUniformMatrix4fv(uniform, 1, GL_TRUE, fDevice.fMatrixW2C);
-
-    GLint posAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "position");
-    GLint colAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "color");
+    GLint posAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "aVtxPosition");
+    GLint colAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "aVtxColor");
     glEnableVertexAttribArray(posAttrib);
     glEnableVertexAttribArray(colAttrib);
 
