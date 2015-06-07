@@ -416,10 +416,6 @@ void DebugMsg(const char* fmt, ...);
 
 #endif  // HS_DEBUGGING
 
-#ifdef MINIMAL_GL_BUILD
-#define hsDebugCode(code)                   code
-#define hsAssert(expr, msg)                     (void)( ((expr) != 0) || (hsStatusMessage(msg), 0) )
-#endif
 
 #ifdef _MSC_VER
 #define  DEFAULT_FATAL(var)  default: FATAL("No valid case for switch variable '" #var "'"); __assume(0); break;
