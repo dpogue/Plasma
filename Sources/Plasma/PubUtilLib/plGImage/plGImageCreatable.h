@@ -78,9 +78,7 @@ REGISTER_CREATABLE(plFontCache);
 REGISTER_CREATABLE(plLODMipmap);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plMipmap.h"
 REGISTER_CREATABLE(plMipmap);
-#endif
 
 #endif // plGImageCreatable_inc

@@ -129,3 +129,20 @@ void plGLIndexBufferRef::Release()
     }
     SetDirty(true);
 }
+
+
+
+
+plGLTextureRef::~plGLTextureRef()
+{
+    Release();
+}
+
+
+void plGLTextureRef::Release()
+{
+    if (fRef) {
+        glDeleteTextures(1, &fRef);
+        fRef = 0;
+    }
+}
