@@ -45,6 +45,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLDeviceRef.h"
 
 class hsGMaterial;
+class plGLDevice;
 
 class plGLMaterialShaderRef : public plGLDeviceRef
 {
@@ -52,6 +53,7 @@ protected:
     hsGMaterial*    fMaterial;
     GLuint          fVertShaderRef;
     GLuint          fFragShaderRef;
+    int32_t         fNumUVs;
 
 public:
     void                    Link(plGLMaterialShaderRef** back) { plGLDeviceRef::Link((plGLDeviceRef**)back); }
@@ -69,6 +71,11 @@ public:
     virtual ~plGLMaterialShaderRef();
 
     void Release();
+
+
+    void SetupTextureRefs();
+
+    int32_t GetNumUVs() const { return fNumUVs; }
 
 protected:
     void ICompile();

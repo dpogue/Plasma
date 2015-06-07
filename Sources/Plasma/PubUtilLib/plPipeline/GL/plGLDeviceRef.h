@@ -49,6 +49,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <GL/gl.h>
 
 class plGBufferGroup;
+class plMipmap;
 
 
 class plGLDeviceRef : public hsGDeviceRef
@@ -174,6 +175,27 @@ public:
     }
 
     virtual ~plGLIndexBufferRef();
+
+    void Release();
+};
+
+
+
+class plGLTextureRef : public plGLDeviceRef
+{
+public:
+    plMipmap*       fOwner;
+
+    void             Link(plGLTextureRef** back) { plGLDeviceRef::Link((plGLDeviceRef**)back); }
+    plGLTextureRef*  GetNext() { return (plGLTextureRef*)fNext; }
+
+    plGLTextureRef() :
+        plGLDeviceRef(),
+        fOwner(nullptr)
+    {
+    }
+
+    virtual ~plGLTextureRef();
 
     void Release();
 };

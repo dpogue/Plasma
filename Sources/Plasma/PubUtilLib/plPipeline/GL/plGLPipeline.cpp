@@ -501,8 +501,8 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
                 mRef = new plGLMaterialShaderRef(material);
                 material->SetDeviceRef(mRef);
 
-                glUseProgram(mRef->fRef);
-                fDevice.fCurrentProgram = mRef->fRef;
+                //glUseProgram(mRef->fRef);
+                //fDevice.fCurrentProgram = mRef->fRef;
             }
 
             if (!mRef->IsLinked()) {
@@ -511,6 +511,13 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 
             glUseProgram(mRef->fRef);
             fDevice.fCurrentProgram = mRef->fRef;
+
+#ifdef HS_DEBUGGING
+    GLenum e;
+    if ((e = glGetError()) != GL_NO_ERROR) {
+        hsStatusMessage(ST::format("Use Program failed {}", uint32_t(e)).c_str());
+    }
+#endif
 
             // What do we change?
 
@@ -620,6 +627,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 
     DeviceType::VertexBufferRef* vRef = (DeviceType::VertexBufferRef*)vb;
     DeviceType::IndexBufferRef* iRef = (DeviceType::IndexBufferRef*)ib;
+    plGLMaterialShaderRef* mRef = (plGLMaterialShaderRef*)material->GetDeviceRef();
 
     if (!vRef->fRef || !iRef->fRef) {
         plProfile_EndTiming(RenderBuff);
@@ -628,16 +636,59 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
         return;
     }
 
+#ifdef HS_DEBUGGING
+    GLenum e;
+    if ((e = glGetError()) != GL_NO_ERROR) {
+        hsStatusMessage(ST::format("PRE Render failed {}", uint32_t(e)).c_str());
+    }
+#endif
+
+    mRef->SetupTextureRefs();
+
     /* Vertex Buffer stuff */
     glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
 
     GLint posAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "aVtxPosition");
-    GLint colAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "aVtxColor");
-    glEnableVertexAttribArray(posAttrib);
-    glEnableVertexAttribArray(colAttrib);
+    if (posAttrib != -1) {
+        glEnableVertexAttribArray(posAttrib);
+        glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, 0);
+    }
 
-    glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, 0);
-    glVertexAttribPointer(colAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, vRef->fVertexSize, (void*)(sizeof(float) * 3 * 2));
+    GLint norAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "aVtxNormal");
+    if (norAttrib != -1) {
+        glEnableVertexAttribArray(norAttrib);
+        glVertexAttribPointer(norAttrib, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, (void*)(sizeof(float) * 3));
+    }
+
+    GLint colAttrib = glGetAttribLocation(fDevice.fCurrentProgram, "aVtxColor");
+    if (colAttrib != -1) {
+        glEnableVertexAttribArray(colAttrib);
+        glVertexAttribPointer(colAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, vRef->fVertexSize, (void*)(sizeof(float) * 3 * 2));
+    }
+
+#ifdef HS_DEBUGGING
+    if ((e = glGetError()) != GL_NO_ERROR) {
+        hsStatusMessage(ST::format("Vertex Attributes failed {}", uint32_t(e)).c_str());
+    }
+#endif
+
+    for (int i = 0; i < mRef->GetNumUVs(); i++) {
+        ST::string name = ST::format("aVtxUVWSrc{}", i);
+
+        GLint uvwAttrib = glGetAttribLocation(fDevice.fCurrentProgram, name.c_str());
+
+        if (uvwAttrib != -1) {
+            glEnableVertexAttribArray(uvwAttrib);
+
+            glVertexAttribPointer(uvwAttrib, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, (void*)((sizeof(float) * 3 * 2) + (sizeof(uint32_t) * 2) + (sizeof(float) * 3 * i)));
+        }
+
+#ifdef HS_DEBUGGING
+        if ((e = glGetError()) != GL_NO_ERROR) {
+            hsStatusMessage(ST::format("UVW Attributes failed {}", uint32_t(e)).c_str());
+        }
+#endif
+    }
 
     /* Index Buffer stuff and drawing */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
@@ -648,4 +699,10 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 
     // TEMP
     render.RenderPrims();
+
+#ifdef HS_DEBUGGING
+    if ((e = glGetError()) != GL_NO_ERROR) {
+        hsStatusMessage(ST::format("Render failed {}", uint32_t(e)).c_str());
+    }
+#endif
 }
