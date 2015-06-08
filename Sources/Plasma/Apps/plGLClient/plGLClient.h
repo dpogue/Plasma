@@ -51,6 +51,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pnKeyedObject/plUoid.h"
 #include "plScene/plRenderRequest.h"
 
+class plFontCache;
 class plPageTreeMgr;
 class plPipeline;
 class plSceneNode;
@@ -96,6 +97,8 @@ protected:
 
     plPipeline*             fPipeline;
     hsColorRGBA             fClearColor;
+
+    plFontCache             *fFontCache;
 
     hsWindowHndl            fWindowHndl;
     bool                    fDone;

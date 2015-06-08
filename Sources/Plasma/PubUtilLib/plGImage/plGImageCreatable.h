@@ -45,38 +45,26 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnFactory/plCreator.h"
 
-#ifndef MINIMAL_GL_BUILD
 #include "plAVIWriter.h"
 REGISTER_NONCREATABLE(plAVIWriter);
-#endif
 
 #include "plBitmap.h"
 REGISTER_NONCREATABLE(plBitmap);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plCubicEnvironmap.h"
 REGISTER_CREATABLE(plCubicEnvironmap);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynamicTextMap.h"
 REGISTER_CREATABLE(plDynamicTextMap);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plFont.h"
 REGISTER_CREATABLE(plFont);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plFontCache.h"
 REGISTER_CREATABLE(plFontCache);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plLODMipmap.h"
 REGISTER_CREATABLE(plLODMipmap);
-#endif
 
 #include "plMipmap.h"
 REGISTER_CREATABLE(plMipmap);

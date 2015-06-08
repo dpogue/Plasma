@@ -62,6 +62,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plAgeDescription/plAgeDescription.h"
 #include "plFile/plEncryptedStream.h"
+//#include "plGImage/plWinFontCache.h"
+#include "plGImage/plFontCache.h"
 
 #include "plUnifiedTime/plClientUnifiedTime.h"
 
@@ -71,6 +73,7 @@ plClient::plClient()
 :   fPipeline(nullptr),
     fCurrentNode(nullptr),
     fPageMgr(nullptr),
+    fFontCache(nullptr),
     fWindowHndl(nullptr),
     fDone(false),
     fHoldLoadRequests(false),
@@ -92,6 +95,15 @@ plClient::~plClient()
     delete fPageMgr;
 }
 
+
+template<typename T>
+static void IUnRegisterAs(T*& ko, plFixedKeyId id)
+{
+    if (ko) {
+        ko->UnRegisterAs(id);
+        ko = nullptr;
+    }
+}
 
 bool plClient::Shutdown()
 {
@@ -116,6 +128,7 @@ bool plClient::Shutdown()
         fPageMgr->Reset();
     }
 
+    IUnRegisterAs(fFontCache, kFontCache_KEY);
 
     delete fPageMgr;
     fPageMgr = nullptr;
@@ -193,6 +206,17 @@ bool plClient::StartInit()
 
     plGlobalVisMgr::Init();
     fPageMgr = new plPageTreeMgr();
+
+
+    /// Init the font cache
+    fFontCache = new plFontCache();
+
+
+    // Pulled from plClient::IOnAsyncInitComplete
+    // Load our custom fonts from our current dat directory
+    fFontCache->LoadCustomFonts("dat");
+    //plWinFontCache::GetInstance().LoadCustomFonts("dat");
+
 
     //ILoadAge("ParadoxTestAge");
     ILoadAge("GuildPub-Writers");
