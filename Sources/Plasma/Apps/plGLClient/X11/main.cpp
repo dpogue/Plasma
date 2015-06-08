@@ -76,6 +76,16 @@ int main()
                       XCB_CW_EVENT_MASK,             /* masks               */
                       &event_mask);                  /* masks               */
 
+    const char* title = "plGLClient";
+    xcb_change_property(connection,
+                        XCB_PROP_MODE_REPLACE,
+                        window,
+                        XCB_ATOM_WM_NAME,
+                        XCB_ATOM_STRING,
+                        8,
+                        strlen(title),
+                        title);
+
     /* Map the window on the screen */
     xcb_map_window(connection, window);
 
