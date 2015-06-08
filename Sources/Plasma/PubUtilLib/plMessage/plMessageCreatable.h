@@ -162,10 +162,8 @@ REGISTER_CREATABLE(plDynaDecalEnableMsg);
 REGISTER_CREATABLE(plDynamicEnvMapMsg);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynamicTextMsg.h"
 REGISTER_CREATABLE(plDynamicTextMsg);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plExcludeRegionMsg.h"
