@@ -62,7 +62,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plAgeDescription/plAgeDescription.h"
 #include "plFile/plEncryptedStream.h"
-//#include "plGImage/plWinFontCache.h"
 #include "plGImage/plFontCache.h"
 
 #include "plUnifiedTime/plClientUnifiedTime.h"
@@ -215,7 +214,6 @@ bool plClient::StartInit()
     // Pulled from plClient::IOnAsyncInitComplete
     // Load our custom fonts from our current dat directory
     fFontCache->LoadCustomFonts("dat");
-    //plWinFontCache::GetInstance().LoadCustomFonts("dat");
 
 
     //ILoadAge("ParadoxTestAge");
