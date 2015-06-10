@@ -45,8 +45,6 @@ if(UNIX)
     target_link_libraries(plGLClient xcb)
     target_link_libraries(plGLClient X11)
 endif(UNIX)
-target_link_libraries(plGLClient ${JPEG_LIBRARY})
-target_link_libraries(plGLClient ${PNG_LIBRARY})
 
 install(
     TARGETS plGLClient
