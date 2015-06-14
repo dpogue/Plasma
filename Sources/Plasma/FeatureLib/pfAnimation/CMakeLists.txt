@@ -32,5 +32,8 @@ set(pfAnimation_HEADERS
 
 add_library(pfAnimation STATIC ${pfAnimation_SOURCES} ${pfAnimation_HEADERS})
 
+target_link_libraries(pfAnimation CoreLib)
+target_link_libraries(pfAnimation pnModifier)
+
 source_group("Source Files" FILES ${pfAnimation_SOURCES})
 source_group("Header Files" FILES ${pfAnimation_HEADERS})

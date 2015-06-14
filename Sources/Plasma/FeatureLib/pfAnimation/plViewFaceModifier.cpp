@@ -49,10 +49,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plPipeline.h"
 
 #include "plMessage/plRenderMsg.h"
+#include "plResMgr/plResManager.h"
+
+#ifndef MINIMAL_GL_BUILD
 #include "plMessage/plListenerMsg.h"
 #include "plMessage/plAvatarMsg.h"
 #include "plAvatar/plAvBrainHuman.h"
 #include "plAvatar/plArmatureMod.h"
+#endif
 
 plViewFaceModifier::plViewFaceModifier()
 :   fFacePoint(0,0,0),
@@ -123,10 +127,13 @@ void plViewFaceModifier::SetTarget(plSceneObject* so)
     plSingleModifier::SetTarget(so);
 
     plgDispatch::Dispatch()->RegisterForExactType(plRenderMsg::Index(), GetKey());
+
+#ifndef MINIMAL_GL_BUILD
     if( HasFlag(kFaceList) )
         plgDispatch::Dispatch()->RegisterForExactType(plListenerMsg::Index(), GetKey());
     if( HasFlag(kFacePlay) )
         plgDispatch::Dispatch()->RegisterForExactType(plArmatureUpdateMsg::Index(), GetKey());
+#endif
 }
 
 bool plViewFaceModifier::IEval(double secs, float del, uint32_t dirty)
@@ -136,6 +143,7 @@ bool plViewFaceModifier::IEval(double secs, float del, uint32_t dirty)
 
 bool plViewFaceModifier::IFacePoint(plPipeline* pipe, const hsPoint3& at)
 {
+#ifndef MINIMAL_GL_BUILD
 #if 1 // BOUNDSTEST
     extern int mfCurrentTest;
     if( mfCurrentTest != 101 )
@@ -145,26 +153,27 @@ bool plViewFaceModifier::IFacePoint(plPipeline* pipe, const hsPoint3& at)
             return false;
     }
 #endif // BOUNDSTEST
+#endif
 
     if( !(GetTarget() && GetTarget()->GetCoordinateInterface()) )
         return false;
-        
+
     hsMatrix44 worldToLocal = fOrigParentToLocal;   // parentToLocal
     if( GetTarget()->GetCoordinateInterface()->GetParent() && GetTarget()->GetCoordinateInterface()->GetParent() )
     {
         hsMatrix44 m;
         worldToLocal = worldToLocal *  GetTarget()->GetCoordinateInterface()->GetParent()->GetWorldToLocal();
     }
-    
+
     hsPoint3 localAt = worldToLocal * at;
     float len = localAt.MagnitudeSquared();
     if( len <= 0 )
         return false;
     len = -hsFastMath::InvSqrtAppr(len);
-    
+
     hsVector3 dirX, dirY, dirZ;
     dirZ.Set(localAt.fX * len, localAt.fY * len, localAt.fZ * len);
-    
+
     if( HasFlag(kPivotFace) )
     {
         dirY.Set(0.f, 0.f, 1.f);
@@ -206,22 +215,22 @@ bool plViewFaceModifier::IFacePoint(plPipeline* pipe, const hsPoint3& at)
     xInv.fMap[1][0] = x.fMap[0][1] = dirY[0];
     xInv.fMap[2][0] = x.fMap[0][2] = dirZ[0];
     xInv.fMap[3][0] = x.fMap[0][3] = 0;
-    
+
     xInv.fMap[0][1] = x.fMap[1][0] = dirX[1];
     xInv.fMap[1][1] = x.fMap[1][1] = dirY[1];
     xInv.fMap[2][1] = x.fMap[1][2] = dirZ[1];
     xInv.fMap[3][1] = x.fMap[1][3] = 0;
-    
+
     xInv.fMap[0][2] = x.fMap[2][0] = dirX[2];
     xInv.fMap[1][2] = x.fMap[2][1] = dirY[2];
     xInv.fMap[2][2] = x.fMap[2][2] = dirZ[2];
     xInv.fMap[3][2] = x.fMap[2][3] = 0;
-    
+
     x.fMap[3][0] = x.fMap[3][1] = x.fMap[3][2] = 0;
     xInv.fMap[0][3] = xInv.fMap[1][3] = xInv.fMap[2][3] = 0;
-    
+
     xInv.fMap[3][3] = x.fMap[3][3] = 1.f;
-    
+
     x.NotIdentity();
     xInv.NotIdentity();
 
@@ -317,6 +326,7 @@ bool plViewFaceModifier::MsgReceive(plMessage* msg)
         plProfile_EndLap(ViewFace, this->GetKey()->GetUoid().GetObjectName().c_str());
         return true;
     }
+#ifndef MINIMAL_GL_BUILD
     plArmatureUpdateMsg* armMsg = plArmatureUpdateMsg::ConvertNoRef(msg);
     if( armMsg && armMsg->IsLocal() )
     {
@@ -356,6 +366,7 @@ bool plViewFaceModifier::MsgReceive(plMessage* msg)
 
         return true;
     }
+#endif
     plGenRefMsg* refMsg = plGenRefMsg::ConvertNoRef(msg);
     if( refMsg )
     {
