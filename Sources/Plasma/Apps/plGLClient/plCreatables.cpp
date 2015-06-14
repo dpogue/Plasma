@@ -12,5 +12,7 @@
 
 #include "plMessage/plMessageCreatable.h"
 
+//#include "pfAnimation/pfAnimationCreatable.h"
+
 #include "plGLClient.h"
 REGISTER_NONCREATABLE(plClient);

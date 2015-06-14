@@ -136,11 +136,7 @@ void plSceneObject::Read(hsStream* stream, hsResMgr* mgr)
     fGenerics.SetCount(0);
     for( i = 0; i < nGen; i++ )
     {
-#ifndef MINIMAL_GL_BUILD
         mgr->ReadKeyNotifyMe(stream, new plObjRefMsg(GetKey(), plRefMsg::kOnCreate, 0, plObjRefMsg::kInterface), plRefFlags::kActiveRef);
-#else
-        mgr->ReadKey(stream);
-#endif
     }
 
     plObjRefMsg* refMsg;
@@ -150,12 +146,8 @@ void plSceneObject::Read(hsStream* stream, hsResMgr* mgr)
     fModifiers.ExpandAndZero(nOldMods+nNewMods);    // reserve space for new modifiers+existing modifiers
     for( i = nOldMods; i < nOldMods+nNewMods; i++ )
     {
-#ifndef MINIMAL_GL_BUILD
         refMsg = new plObjRefMsg(GetKey(), plRefMsg::kOnCreate, i, plObjRefMsg::kModifier);
         mgr->ReadKeyNotifyMe(stream,refMsg, plRefFlags::kActiveRef);
-#else
-        mgr->ReadKey(stream);
-#endif
     }
 
     plKey nodeKey = mgr->ReadKey(stream);

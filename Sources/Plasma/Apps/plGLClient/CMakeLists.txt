@@ -39,6 +39,7 @@ target_link_libraries(plGLClient plAgeDescription)
 target_link_libraries(plGLClient plPipeline)
 target_link_libraries(plGLClient plResMgr)
 target_link_libraries(plGLClient plScene)
+target_link_libraries(plGLClient pfAnimation)
 
 # System Libs
 if(UNIX)
