@@ -54,6 +54,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #ifndef hsDXTDirectXCodec_inc
 #define hsDXTDirectXCodec_inc
 
+#ifndef MINIMAL_GL_BUILD
+
 #include "hsCodec.h"
 
 class plMipmap;
@@ -114,5 +116,7 @@ private:
     static bool Register();
     static bool fRegistered;
 };
+
+#endif
 
 #endif // hsDXTDirectXCodec_inc

@@ -53,6 +53,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "HeadSpin.h"
 
+#ifndef MINIMAL_GL_BUILD
+
 #include <functional>
 #include <memory>
 
@@ -1249,3 +1251,5 @@ bool hsDXTDirectXCodec::ColorizeCompMipmap( plMipmap *bMap, const uint8_t *color
 {
     return false;
 }
+
+#endif
