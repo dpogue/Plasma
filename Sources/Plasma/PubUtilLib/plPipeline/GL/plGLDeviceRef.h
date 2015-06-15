@@ -45,8 +45,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "HeadSpin.h"
 #include "hsGDeviceRef.h"
 
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
+#if HS_BUILD_FOR_OSX
+    #define GL_GLEXT_PROTOTYPES
+    #include <OpenGL/gl3.h>
+#else
+    #define GL_GLEXT_PROTOTYPES
+    #include <GL/gl.h>
+#endif
 
 class plGBufferGroup;
 class plMipmap;

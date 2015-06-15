@@ -87,6 +87,15 @@ set(plGLPipeline_HEADERS
     GL/plGLPipeline.h
 )
 
+
+if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(plGLPipeline_SOURCES ${plGLPipeline_SOURCES}
+                                GL/OSX/egl_api.c
+                                GL/OSX/eglCocoa.mm
+        )
+endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+
 if(PLASMA_PIPELINE STREQUAL "DirectX")
     add_library(plPipeline STATIC ${plPipeline_SOURCES} ${plDXPipeline_SOURCES} ${plPipeline_HEADERS} ${plDXPipeline_HEADERS})
 
@@ -96,7 +105,12 @@ endif(PLASMA_PIPELINE STREQUAL "DirectX")
 if(PLASMA_PIPELINE STREQUAL "OpenGL")
     add_library(plPipeline STATIC ${plPipeline_SOURCES} ${plGLPipeline_SOURCES} ${plPipeline_HEADERS} ${plGLPipeline_HEADERS})
 
-    target_link_libraries(plPipeline PUBLIC EGL GLESv2)
+    if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        target_include_directories(plPipeline PRIVATE "GL/OSX")
+        target_link_libraries(plPipeline PUBLIC "-framework OpenGL")
+    else()
+        target_link_libraries(plPipeline PUBLIC EGL GLESv2)
+    endif()
 endif(PLASMA_PIPELINE STREQUAL "OpenGL")
 
 target_include_directories(plPipeline PRIVATE "${PLASMA_SOURCE_ROOT}/FeatureLib")

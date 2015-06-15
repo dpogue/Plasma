@@ -52,8 +52,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plGLDevice.h"
 
-#include <GL/gl.h>
-#include <GL/glext.h>
+#if HS_BUILD_FOR_OSX
+    #include <OpenGL/gl3.h>
+    #include <OpenGL/gl3ext.h>
+#else
+    #include <GL/gl.h>
+    #include <GL/glext.h>
+#endif
 
 
 plGLMaterialShaderRef::~plGLMaterialShaderRef()

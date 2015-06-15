@@ -52,8 +52,15 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLPipeline.h"
 #include "plGLMaterialShaderRef.h"
 
-#include <GL/gl.h>
-#include <GL/glext.h>
+#if HS_BUILD_FOR_OSX
+    #include <OpenGL/gl3.h>
+    #include <OpenGL/gl3ext.h>
+
+    #define glClearDepthf glClearDepth
+#else
+    #include <GL/gl.h>
+    #include <GL/glext.h>
+#endif
 
 #include "hsTimer.h"
 
@@ -513,11 +520,18 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
             fDevice.fCurrentProgram = mRef->fRef;
 
 #ifdef HS_DEBUGGING
-    GLenum e;
-    if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(ST::format("Use Program failed {}", uint32_t(e)).c_str());
-    }
+            GLenum e;
+            if ((e = glGetError()) != GL_NO_ERROR) {
+                hsStatusMessage(ST::format("Use Program failed {}", uint32_t(e)).c_str());
+            }
 #endif
+
+            // BEGIN VertexAttribObject hack for OSX
+            // TODO: Figure out how to use VAOs properly :(
+            GLuint vao;
+            glGenVertexArrays(1, &vao);
+            glBindVertexArray(vao);
+            // END VertexAttribObject hack for OSX
 
             // What do we change?
 
