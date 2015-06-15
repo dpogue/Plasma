@@ -25,6 +25,11 @@ if(WIN32)
     set(plGLClient_SOURCES ${plGLClient_SOURCES}
         Win32/main.cpp
     )
+elseif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    include_directories("../../PubUtilLib/plPipeline/GL/OSX")
+    set(plGLClient_SOURCES ${plGLClient_SOURCES}
+        OSX/main.mm
+    )
 elseif(UNIX)
     set(plGLClient_SOURCES ${plGLClient_SOURCES}
         X11/main.cpp
@@ -42,10 +47,12 @@ target_link_libraries(plGLClient plScene)
 target_link_libraries(plGLClient pfAnimation)
 
 # System Libs
-if(UNIX)
+if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(plGLClient "-framework Cocoa")
+elseif(UNIX)
     target_link_libraries(plGLClient xcb)
     target_link_libraries(plGLClient X11)
-endif(UNIX)
+endif()
 
 source_group("Source Files" FILES ${plGLClient_SOURCES})
 source_group("Header Files" FILES ${plGLClient_HEADERS})

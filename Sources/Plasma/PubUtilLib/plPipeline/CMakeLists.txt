@@ -8,6 +8,11 @@ if(PLASMA_PIPELINE STREQUAL "DirectX")
     include_directories(${DirectX_INCLUDE_DIR})
 endif(PLASMA_PIPELINE STREQUAL "DirectX")
 
+if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    include_directories("GL/OSX")
+endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+
 set(plPipeline_SOURCES
     hsG3DDeviceSelector.cpp
     pl3DPipeline.cpp
@@ -97,6 +102,15 @@ set(plGLPipeline_HEADERS
     GL/plGLPipeline.h
 )
 
+
+if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(plGLPipeline_SOURCES ${plGLPipeline_SOURCES}
+                                GL/OSX/egl_api.c
+                                GL/OSX/eglCocoa.mm
+        )
+endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+
 if(PLASMA_PIPELINE STREQUAL "DirectX")
     add_library(plPipeline STATIC ${plPipeline_SOURCES} ${plDXPipeline_SOURCES} ${plPipeline_HEADERS} ${plDXPipeline_HEADERS})
 
@@ -106,8 +120,12 @@ endif(PLASMA_PIPELINE STREQUAL "DirectX")
 if(PLASMA_PIPELINE STREQUAL "OpenGL")
     add_library(plPipeline STATIC ${plPipeline_SOURCES} ${plGLPipeline_SOURCES} ${plPipeline_HEADERS} ${plGLPipeline_HEADERS})
 
-    target_link_libraries(plPipeline EGL)
-    target_link_libraries(plPipeline GLESv2)
+    if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        target_link_libraries(plPipeline "-framework OpenGL")
+    else()
+        target_link_libraries(plPipeline EGL)
+        target_link_libraries(plPipeline GLESv2)
+    endif()
 endif(PLASMA_PIPELINE STREQUAL "OpenGL")
 
 target_link_libraries(plPipeline CoreLib)
