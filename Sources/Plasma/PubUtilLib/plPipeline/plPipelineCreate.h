@@ -65,8 +65,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #ifndef _plPipelineCreate_h
 #define _plPipelineCreate_h
 
+#include "HeadSpin.h"
 #include "hsG3DDeviceSelector.h"
-#include "hsWinRef.h"
 
 //// plPipelineCreate Class Definition ////////////////////////////////////////
 
@@ -74,18 +74,21 @@ class plPipeline;
 
 class plPipelineCreate
 {
-    protected:
+protected:
+    static plPipeline* ICreateDXPipeline(hsWindowHndl hWnd, const hsG3DDeviceModeRecord* devMode);
+    static plPipeline* ICreateGLPipeline(hsWindowHndl disp, hsWindowHndl hWnd, const hsG3DDeviceModeRecord* devMode);
 
-        static plPipeline   *ICreateDXPipeline( hsWinRef hWnd, const hsG3DDeviceModeRecord *devMode );
-
-    public:
-
-        static plPipeline   *CreatePipeline( hsWinRef hWnd, const hsG3DDeviceModeRecord *devMode )
-        {
-            // Just this for now. Later we'll key off of the devMode
-            return ICreateDXPipeline( hWnd, devMode );
-        }
-
+public:
+    static plPipeline* CreatePipeline(hsWindowHndl disp, hsWindowHndl hWnd, const hsG3DDeviceModeRecord* devMode)
+    {
+#if defined(PLASMA_PIPELINE_DX)
+        return ICreateDXPipeline(hWnd, devMode);
+#elif defined(PLASMA_PIPELINE_GL)
+        return ICreateGLPipeline(disp, hWnd, devMode);
+#else
+        return nullptr;
+#endif
+    }
 };
 
 

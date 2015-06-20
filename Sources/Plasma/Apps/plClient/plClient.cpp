@@ -484,7 +484,7 @@ bool plClient::InitPipeline()
         plBitmap::SetGlobalLevelChopCount(2 - plPipeline::fInitialPipeParams.TextureQuality);
     }
 
-    plPipeline *pipe = plPipelineCreate::CreatePipeline( hWnd, &dmr );
+    plPipeline* pipe = plPipelineCreate::CreatePipeline(nullptr, hWnd, &dmr);
     if( pipe->GetErrorString() != nil )
     {
         ISetGraphicsDefaults();
@@ -495,7 +495,7 @@ bool plClient::InitPipeline()
 #endif
         delete pipe;
         devSel.GetDefault(&dmr);
-        pipe = plPipelineCreate::CreatePipeline( hWnd, &dmr );
+        pipe = plPipelineCreate::CreatePipeline(nullptr, hWnd, &dmr);
         if(pipe->GetErrorString() != nil)
         {
             // not much else we can do

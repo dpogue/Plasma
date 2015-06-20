@@ -540,7 +540,7 @@ protected:
     void IResetToDefaults(D3DPRESENT_PARAMETERS *params);
 
 public:
-    plDXPipeline( hsWinRef hWnd, const hsG3DDeviceModeRecord *devMode );
+    plDXPipeline(hsWindowHndl hWnd, const hsG3DDeviceModeRecord* devMode);
     virtual ~plDXPipeline();
 
     CLASSNAME_REGISTER( plDXPipeline );

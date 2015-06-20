@@ -47,7 +47,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plResMgr/plKeyFinder.h"
 #include "pnDispatch/plDispatch.h"
 
-#include "plPipeline/GL/plGLPipeline.h"
+#include "plPipeline.h"
+#include "plPipeline/plPipelineCreate.h"
 
 #include "pnMessage/plClientMsg.h"
 #include "pnMessage/plTimeMsg.h"
@@ -158,7 +159,7 @@ bool plClient::InitPipeline(hsWindowHndl display)
 
 
     /* Create the pipeline */
-    plPipeline* pipe = new plGLPipeline(display, fWindowHndl, &devRec);
+    plPipeline* pipe = plPipelineCreate::CreatePipeline(display, fWindowHndl, &devRec);
     if (pipe->GetErrorString() != nullptr)
     {
         hsStatusMessage(pipe->GetErrorString());

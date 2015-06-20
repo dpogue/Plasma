@@ -547,7 +547,7 @@ uint32_t plDXPipeline::fTexManaged(0);
 uint32_t plDXPipeline::fVtxUsed(0);
 uint32_t plDXPipeline::fVtxManaged(0);
 
-plDXPipeline::plDXPipeline( hsWinRef hWnd, const hsG3DDeviceModeRecord *devModeRec )
+plDXPipeline::plDXPipeline(hsWindowHndl hWnd, const hsG3DDeviceModeRecord* devModeRec)
 :   pl3DPipeline(devModeRec),
     fManagedAlloced(false),
     fAllocUnManaged(false)
@@ -12336,9 +12336,9 @@ void plDXPipeline::IDrawClothingQuad(float x, float y, float w, float h,
 //// Functions from Other Classes That Need to Be Here to Compile Right ///////
 ///////////////////////////////////////////////////////////////////////////////
 
-plPipeline  *plPipelineCreate::ICreateDXPipeline( hsWinRef hWnd, const hsG3DDeviceModeRecord *devMode )
+plPipeline* plPipelineCreate::ICreateDXPipeline(hsWindowHndl hWnd, const hsG3DDeviceModeRecord* devMode)
 {
-    plDXPipeline    *pipe = new plDXPipeline( hWnd, devMode );
+    plDXPipeline* pipe = new plDXPipeline(hWnd, devMode);
 
     // Taken out 8.1.2001 mcn - If we have an error, still return so the client can grab the string
 //  if( pipe->GetErrorString() != nil )

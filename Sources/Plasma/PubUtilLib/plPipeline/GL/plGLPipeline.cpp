@@ -720,3 +720,17 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
     }
 #endif
 }
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+//// Functions from Other Classes That Need to Be Here to Compile Right ///////
+///////////////////////////////////////////////////////////////////////////////
+
+plPipeline* plPipelineCreate::ICreateGLPipeline(hsWindowHndl disp, hsWindowHndl hWnd, const hsG3DDeviceModeRecord* devMode)
+{
+    plGLPipeline* pipe = new plGLPipeline(disp, hWnd, devMode);
+    return pipe;
+}
