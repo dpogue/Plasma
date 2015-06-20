@@ -104,7 +104,7 @@ int main()
         return 1;
     }
 
-    gClient->SetWindowHandle((hsWindowHndl)window);
+    gClient->SetWindowHandle((hsWindowHndl)(uintptr_t)window);
 
     Display* display = XOpenDisplay(nullptr);
 
