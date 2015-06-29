@@ -116,6 +116,8 @@ bool plGLDevice::InitDevice()
     EGLint config_attrs[] = {
         EGL_BUFFER_SIZE, 16,
         EGL_DEPTH_SIZE, 16,
+        EGL_SAMPLE_BUFFERS, 1,
+        EGL_SAMPLES, 4,
         EGL_RENDERABLE_TYPE,
         EGL_OPENGL_ES_BIT,
         EGL_NONE
@@ -155,10 +157,9 @@ bool plGLDevice::InitDevice()
     eglMakeCurrent(fDisplay, fSurface, fSurface, fContext);
 
 
+    glEnable(GL_MULTISAMPLE);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
 
     return true;
 }
