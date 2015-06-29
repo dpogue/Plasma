@@ -34,6 +34,7 @@ set(plGLPipeline_SOURCES
     GL/plGLDeviceRefs.cpp
     GL/plGLMaterialShaderRef.cpp
     GL/plGLPipeline.cpp
+    GL/plShaderNode.cpp
 )
 
 set(plPipeline_HEADERS
@@ -85,6 +86,7 @@ set(plGLPipeline_HEADERS
     GL/plGLDeviceRef.h
     GL/plGLMaterialShaderRef.h
     GL/plGLPipeline.h
+    GL/plShaderNode.h
 )
 
 
