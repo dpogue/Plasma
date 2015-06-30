@@ -594,7 +594,9 @@ bool plSceneObject::IMsgHandle(plMessage* msg)
                 {
                     plObjInterface* oi = (plObjInterface*)refMsg->GetRef();
                     // TODO - This will crash if oi's already been deleted
-                    IRemoveInterface(oi->ClassIndex(), oi);
+                    if (oi) {
+                        IRemoveInterface(oi->ClassIndex(), oi);
+                    }
                 }
             }
             return true;
