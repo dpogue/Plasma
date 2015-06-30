@@ -74,6 +74,12 @@ fLastUpdateTime(0)
 hsGMaterial::~hsGMaterial()
 {
     IClearLayers();
+
+#if PLASMA_PIPELINE_GL
+    if (fDeviceRef != nullptr) {
+        hsRefCnt_SafeUnRef(fDeviceRef);
+    }
+#endif
 }
 
 plLayerInterface* hsGMaterial::GetPiggyBack(uint32_t which)
