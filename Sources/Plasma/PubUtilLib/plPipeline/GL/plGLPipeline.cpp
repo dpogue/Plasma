@@ -701,6 +701,9 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
     for (uint32_t pass = 0; pass < mRef->GetNumPasses(); pass++)
     {
         // Set uniform to pass
+        if (mRef->uPassNumber != -1) {
+            glUniform1i(mRef->uPassNumber, pass);
+        }
 
         hsGMatState s = mRef->GetPassState(pass);
         IHandleZMode(s);

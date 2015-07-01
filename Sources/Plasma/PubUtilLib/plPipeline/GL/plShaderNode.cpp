@@ -169,6 +169,14 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
         }
         break;
 
+        case kConditional:
+        {
+            std::shared_ptr<plConditionNode> cond = static_pointer_cast<plConditionNode>(node);
+
+            return plFormat("if ({}) {{ {}; }", this->RenderNode(cond->condition, fn), this->RenderNode(cond->body, fn));
+        }
+        break;
+
         default:
         return "";
     }
