@@ -382,6 +382,7 @@ bool plLayerAnimation::MsgReceive(plMessage* msg)
         if (fLayerSDLMod->MsgReceive(sdlMsg))
             return true;    // msg handled
     }
+#endif
 
     plAnimCmdMsg* cmdMsg = plAnimCmdMsg::ConvertNoRef(msg);
     if( cmdMsg )
@@ -403,7 +404,6 @@ bool plLayerAnimation::MsgReceive(plMessage* msg)
         }
     }
     else
-#endif
     {
         retVal = plLayerAnimationBase::MsgReceive(msg);
     }
