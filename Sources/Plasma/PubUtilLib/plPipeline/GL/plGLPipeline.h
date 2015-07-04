@@ -107,6 +107,7 @@ protected:
 
     void IHandleZMode(hsGMatState flags);
     void IHandleBlendMode(hsGMatState flags);
+    void ICalcLighting(plGLMaterialShaderRef* mRef, const plLayerInterface* currLayer, const plSpan* currSpan);
 };
 
 #endif // _plGLPipeline_inc_

@@ -371,6 +371,17 @@ void plGLMaterialShaderRef::ISetShaderVariableLocs()
 
     this->uPassNumber   = glGetUniformLocation(fRef, "uPassNumber");
 
+    // Material inputs
+    this->uGlobalAmbient  = glGetUniformLocation(fRef, "uGlobalAmb");
+    this->uMatAmbientCol  = glGetUniformLocation(fRef, "uAmbientCol");
+    this->uMatAmbientSrc  = glGetUniformLocation(fRef, "uAmbientSrc");
+    this->uMatDiffuseCol  = glGetUniformLocation(fRef, "uDiffuseCol");
+    this->uMatDiffuseSrc  = glGetUniformLocation(fRef, "uDiffuseSrc");
+    this->uMatEmissiveCol = glGetUniformLocation(fRef, "uEmissiveCol");
+    this->uMatEmissiveSrc = glGetUniformLocation(fRef, "uEmissiveSrc");
+    this->uMatSpecularCol = glGetUniformLocation(fRef, "uSpecularCol");
+    this->uMatSpecularSrc = glGetUniformLocation(fRef, "uSpecularSrc");
+
     this->aVtxUVWSrc.assign(16, -1);
     for (size_t i = 0; i < 16; i++) {
         ST::string name = ST::format("aVtxUVWSrc{}", i);
@@ -413,11 +424,9 @@ void plGLMaterialShaderRef::ILoopOverLayers()
     for (j = 0; j < fMaterial->GetNumLayers(); )
     {
         size_t iCurrMat = j;
-        hsGMatState currState;
-
         std::shared_ptr<plShaderFunction> fragPass = std::make_shared<plShaderFunction>(ST::format("pass{}", pass), "void");
 
-        j = IHandleMaterial(iCurrMat, currState, fragPass);
+        j = IHandleMaterial(iCurrMat, fragPass);
 
         if (j == -1)
             break;
@@ -428,7 +437,7 @@ void plGLMaterialShaderRef::ILoopOverLayers()
         fragMain->PushOp(COND(IS_EQ(uPass, CONST(ST::format("{}", pass))), CALL(fragPass->name)));
 
         pass++;
-        fPassStates.push_back(currState);
+        fPassIndices.push_back(iCurrMat);
 
 #if 0
         ISetFogParameters(fMaterial->GetLayer(iCurrMat));
@@ -472,7 +481,7 @@ void plGLMaterialShaderRef::ILoopOverLayers()
 }
 
 
-uint32_t plGLMaterialShaderRef::IHandleMaterial(uint32_t layer, hsGMatState& state, std::shared_ptr<plShaderFunction> fn)
+uint32_t plGLMaterialShaderRef::IHandleMaterial(uint32_t layer, std::shared_ptr<plShaderFunction> fn)
 {
     if (!fMaterial || layer >= fMaterial->GetNumLayers() || !fMaterial->GetLayer(layer)) {
         return -1;
@@ -498,7 +507,7 @@ uint32_t plGLMaterialShaderRef::IHandleMaterial(uint32_t layer, hsGMatState& sta
 
     //currLay = IPushOverAllLayer(currLay);
 
-    state = currLay->GetState();
+    hsGMatState state = currLay->GetState();
 
     if (fPipeline->IsDebugFlagSet(plPipeDbg::kFlagDisableSpecular)) {
         state.fShadeFlags &= ~hsGMatState::kShadeSpecular;
@@ -542,10 +551,6 @@ uint32_t plGLMaterialShaderRef::IHandleMaterial(uint32_t layer, hsGMatState& sta
 
     uint32_t currNumLayers = ILayersAtOnce(layer);
 
-#if 0
-    ICalcLighting(currLay);
-#endif
-
     if (state.fMiscFlags & (hsGMatState::kMiscBumpDu | hsGMatState::kMiscBumpDw)) {
         //ISetBumpMatrices(currLay);
     }
@@ -577,20 +582,12 @@ uint32_t plGLMaterialShaderRef::IHandleMaterial(uint32_t layer, hsGMatState& sta
         sb.fPrevAlpha = sb.fCurrAlpha;
     }
 
-    //IHandleTextureMode(layer);
-    //IHandleShadeMode(layer);
-    //IHandleZMode();
-    //IHandleMiscMode()
-    //IHandleTextureStage(0, layer);
-
-    // Multiply in the vertex color at the end (but alpha is premultiplied!)
-    std::shared_ptr<plVaryingNode> vtx_color = IFindVariable<plVaryingNode>("vVtxColor", "vec4");
+    // Multiply in the material color at the end (but alpha is premultiplied!)
     std::shared_ptr<plShaderNode> finalColor;
-
     if (sb.fCurrColor) {
-        finalColor = MUL(PROP(vtx_color, "rgb"), sb.fCurrColor, true);
+        finalColor = MUL(PROP(sb.fMatValues, "rgb"), sb.fCurrColor, true);
     } else {
-        finalColor = PROP(vtx_color, "rgb");
+        finalColor = PROP(sb.fMatValues, "rgb");
     }
 
     sb.fFunction->PushOp(ASSIGN(OUTPUT("gl_FragColor"), CALL("vec4", finalColor, sb.fCurrAlpha)));
@@ -675,18 +672,49 @@ bool plGLMaterialShaderRef::ICanEatLayer(plLayerInterface* lay)
 
 void plGLMaterialShaderRef::IBuildBaseAlpha(plLayerInterface* layer, ShaderBuilder* sb)
 {
+    std::shared_ptr<plVaryingNode> vtxValue = IFindVariable<plVaryingNode>("vVtxColor", "vec4");
+
+    std::shared_ptr<plUniformNode> uGlobalAmb   = IFindVariable<plUniformNode>("uGlobalAmb", "vec4");
+    std::shared_ptr<plUniformNode> uAmbientCol  = IFindVariable<plUniformNode>("uAmbientCol", "vec4");
+    std::shared_ptr<plUniformNode> uAmbientSrc  = IFindVariable<plUniformNode>("uAmbientSrc", "float");
+
+    std::shared_ptr<plUniformNode> uDiffuseCol  = IFindVariable<plUniformNode>("uDiffuseCol", "vec4");
+    std::shared_ptr<plUniformNode> uDiffuseSrc  = IFindVariable<plUniformNode>("uDiffuseSrc", "float");
+
+    std::shared_ptr<plUniformNode> uEmissiveCol = IFindVariable<plUniformNode>("uEmissiveCol", "vec4");
+    std::shared_ptr<plUniformNode> uEmissiveSrc = IFindVariable<plUniformNode>("uEmissiveSrc", "float");
+
+    std::shared_ptr<plUniformNode> uSpecularCol = IFindVariable<plUniformNode>("uSpecularCol", "vec4");
+    std::shared_ptr<plUniformNode> uSpecularSrc = IFindVariable<plUniformNode>("uSpecularSrc", "float");
+
+    // Local vars for the 4 material values
+    std::shared_ptr<plTempVariableNode> diffuse  = std::make_shared<plTempVariableNode>("diffuse", "vec4");
+    std::shared_ptr<plTempVariableNode> ambient  = std::make_shared<plTempVariableNode>("ambient", "vec4");
+    std::shared_ptr<plTempVariableNode> emissive = std::make_shared<plTempVariableNode>("emissive", "vec4");
+    std::shared_ptr<plTempVariableNode> specular = std::make_shared<plTempVariableNode>("specular", "vec4");
+
+    sb->fFunction->PushOp(ASSIGN(ambient, MUL(uGlobalAmb, CALL("mix", vtxValue, uAmbientCol, uAmbientSrc))));
+    sb->fFunction->PushOp(ASSIGN(diffuse, CALL("mix", vtxValue, uDiffuseCol, uDiffuseSrc)));
+    sb->fFunction->PushOp(ASSIGN(emissive, CALL("mix", vtxValue, uEmissiveCol, uEmissiveSrc)));
+    sb->fFunction->PushOp(ASSIGN(specular, CALL("mix", vtxValue, uSpecularCol, uSpecularSrc)));
+
+    std::shared_ptr<plTempVariableNode> matValues = std::make_shared<plTempVariableNode>("material", "vec4");
+
+    //sb->fFunction->PushOp(ASSIGN(matValues, CALL("clamp", ADD(emissive, ADD(ambient, diffuse)), CONST("0.0"), CONST("1.0"))));
+    sb->fFunction->PushOp(ASSIGN(matValues, CALL("clamp", ADD(emissive, ambient), CONST("0.0"), CONST("1.0"))));
+
+    sb->fMatValues = matValues;
+
     // Local variable to store the starting alpha value
     std::shared_ptr<plTempVariableNode> base = std::make_shared<plTempVariableNode>("baseAlpha", "float");
-
-    std::shared_ptr<plVaryingNode> vtxAlpha = IFindVariable<plVaryingNode>("vVtxColor", "vec4");
 
 
     if (layer->GetBlendFlags() & hsGMatState::kBlendInvertVtxAlpha) {
         // base = 1.0 - vVtxColor.a
-        sb->fFunction->PushOp(ASSIGN(base, CALL("invAlpha", PROP(vtxAlpha, "a"))));
+        sb->fFunction->PushOp(ASSIGN(base, CALL("invAlpha", PROP(diffuse, "a"))));
     } else {
         // base = vVtxColor.a
-        sb->fFunction->PushOp(ASSIGN(base, PROP(vtxAlpha, "a")));
+        sb->fFunction->PushOp(ASSIGN(base, PROP(diffuse, "a")));
     }
 
     sb->fPrevAlpha = base;
@@ -754,7 +782,7 @@ void plGLMaterialShaderRef::IBuildLayerTexture(uint32_t idx, plLayerInterface* l
             std::shared_ptr<plUniformNode> sampler = IFindVariable<plUniformNode>(samplerName, "sampler3D");
 
             // image = texture3D(sampler, coords.xyz)
-            sb->fFunction->PushOp(ASSIGN(img, CALL("texture3D", sampler, PROP(sb->fCurrCoord, "xyz"))));
+            sb->fFunction->PushOp(ASSIGN(img, CALL("textureCube", sampler, PROP(sb->fCurrCoord, "xyz"))));
         }
 #endif
     }
