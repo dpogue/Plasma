@@ -698,8 +698,17 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 
     plProfile_EndTiming(RenderBuff);
 
-    for (size_t pass = 0; pass < mRef->GetNumPasses(); pass++)
-    {
+#if 0
+    // Enable this for LayerAnimations, but the timing/speed seems wrong
+    for (size_t i = 0; i < material->GetNumLayers(); i++) {
+        plLayerInterface* lay = material->GetLayer(i);
+        if (lay) {
+            lay->Eval(fTime, fFrame, 0);
+        }
+    }
+#endif
+
+    for (size_t pass = 0; pass < mRef->GetNumPasses(); pass++) {
         // Set uniform to current pass
         if (mRef->uPassNumber != -1) {
             glUniform1i(mRef->uPassNumber, pass);

@@ -140,4 +140,3 @@ void plAGCmdMsg::Write(hsStream* stream, hsResMgr* mgr)
 
     stream->WriteSafeString(fAnimName);
 }
-

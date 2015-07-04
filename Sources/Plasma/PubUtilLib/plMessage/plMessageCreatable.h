@@ -68,13 +68,13 @@ REGISTER_CREATABLE(plInitialAgeStateLoadedMsg);
 REGISTER_CREATABLE(plAngularVelocityMsg);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plAnimCmdMsg.h"
 REGISTER_CREATABLE(plAGCmdMsg);
+#ifndef MINIMAL_GL_BUILD
 REGISTER_CREATABLE(plAGDetachCallbackMsg);
 REGISTER_CREATABLE(plAGInstanceCallbackMsg);
-REGISTER_CREATABLE(plAnimCmdMsg);
 #endif
+REGISTER_CREATABLE(plAnimCmdMsg);
 
 #ifndef MINIMAL_GL_BUILD
 #include "plAvatarFootMsg.h"
