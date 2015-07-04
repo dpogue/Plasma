@@ -130,15 +130,6 @@ bool plGLDevice::InitDevice()
     }
 
 
-    /* Set up the rendering surface */
-    fSurface = eglCreateWindowSurface(fDisplay, config, (EGLNativeWindowType)fWindow, nullptr);
-    if (fSurface == EGL_NO_SURFACE)
-    {
-        fErrorMsg = "Unable to create rendering surface";
-        return false;
-    }
-
-
     /* Set up the GL context */
     EGLint ctx_attrs[] = {
         EGL_CONTEXT_CLIENT_VERSION, 2,
@@ -149,6 +140,15 @@ bool plGLDevice::InitDevice()
     if (fContext == EGL_NO_CONTEXT)
     {
         fErrorMsg = "Unable to create rendering context";
+        return false;
+    }
+
+
+    /* Set up the rendering surface */
+    fSurface = eglCreateWindowSurface(fDisplay, config, (EGLNativeWindowType)fWindow, nullptr);
+    if (fSurface == EGL_NO_SURFACE)
+    {
+        fErrorMsg = "Unable to create rendering surface";
         return false;
     }
 
