@@ -82,8 +82,13 @@ plClient::plClient()
     hsStatusMessage("Constructing client\n");
     plClient::SetInstance(this);
 
+    // Setup the timer. These can be overriden with console commands.
     hsTimer::SetRealTime(true);
-    hsTimer::SetTimeClamp(0.f);
+#ifdef HS_DEBUGGING
+    hsTimer::SetTimeClamp(0.1f);
+#else // HS_DEBUGGING
+    hsTimer::SetTimeClamp(0);
+#endif // HS_DEBUGGING
 }
 
 plClient::~plClient()
@@ -107,12 +112,17 @@ static void IUnRegisterAs(T*& ko, plFixedKeyId id)
 
 bool plClient::Shutdown()
 {
+    plSynchEnabler ps(false);   // disable dirty state tracking during shutdown 
+
+    // Just in case, clear this out (trying to fix a crash bug where this is still active at shutdown)
+    plDispatch::SetMsgRecieveCallback(nullptr);
+
+    // Let the resmanager know we're going to be shutting down.
     hsgResMgr::ResMgr()->BeginShutdown();
 
     hsStatusMessage("Shutting down client...\n");
 
-    for (auto room : fRooms)
-    {
+    for (auto room : fRooms) {
         plSceneNode* sn = room.fNode;
         GetKey()->Release(sn->GetKey());
     }
@@ -123,8 +133,7 @@ bool plClient::Shutdown()
     delete fPipeline;
     fPipeline = nullptr;
 
-    if (fPageMgr)
-    {
+    if (fPageMgr) {
         fPageMgr->Reset();
     }
 
@@ -190,7 +199,7 @@ bool plClient::InitPipeline(hsWindowHndl display)
     pipe->RefreshMatrices();
 
     // Do this so we're still black before we show progress bars, but the correct color coming out of 'em
-    fClearColor.Set( 0.f, 0.f, 0.5f, 1.f );
+    fClearColor.Set( 0.f, 0.f, 0.0f, 1.f );
     pipe->SetClear(&fClearColor);
     pipe->ClearRenderTarget();
 
