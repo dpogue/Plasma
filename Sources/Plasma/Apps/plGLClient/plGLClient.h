@@ -43,8 +43,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #ifndef _plGLClient_h_
 #define _plGLClient_h_
 
-#define MINIMAL_GL_BUILD
-
 #include "HeadSpin.h"
 #include <list>
 #include <vector>
