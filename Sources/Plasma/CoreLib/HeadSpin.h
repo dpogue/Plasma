@@ -42,11 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #ifndef HeadSpinHDefined
 #define HeadSpinHDefined
 
-// HAX
-#ifndef MINIMAL_GL_BUILD
-#define MINIMAL_GL_BUILD
-#endif
-
 // Ensure these get set consistently regardless of what module includes it
 #include "hsConfig.h"
 

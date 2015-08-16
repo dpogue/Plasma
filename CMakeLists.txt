@@ -207,6 +207,7 @@ endif(PLASMA_PIPELINE STREQUAL "DirectX")
 if(PLASMA_PIPELINE STREQUAL "OpenGL")
     find_package(OpenGL REQUIRED)
     add_definitions(-DPLASMA_PIPELINE_GL)
+    add_definitions(-DMINIMAL_GL_BUILD)
 endif(PLASMA_PIPELINE STREQUAL "OpenGL")
 
 #Allow us to disable certain parts of the build

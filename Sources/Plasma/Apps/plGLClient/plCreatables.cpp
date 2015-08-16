@@ -1,5 +1,3 @@
-#define MINIMAL_GL_BUILD
-
 #include "pnNucleusCreatables.h"
 #include "pnMessage/pnMessageCreatable.h"
 #include "plDrawable/plDrawableCreatable.h"
