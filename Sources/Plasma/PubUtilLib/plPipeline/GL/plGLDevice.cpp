@@ -42,3 +42,53 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plGLDevice.h"
 
+#include <EGL/egl.h>
+
+plGLDevice::plGLDevice()
+{
+}
+
+
+bool plGLDevice::InitDevice()
+{
+    if (!eglBindAPI(EGL_OPENGL_API))
+    {
+        fErrorMsg = "Could not bind to correct API";
+        return false;
+    }
+
+    EGLDisplay display = eglGetDisplay((EGLNativeDisplayType)fWindow);
+    if (display == EGL_NO_DISPLAY)
+    {
+        fErrorMsg = "Could not get the display";
+        return false;
+    }
+
+    if (!eglInitialize(display, nullptr, nullptr))
+    {
+        fErrorMsg = "Could not initialize the display";
+        return false;
+    }
+
+    return true;
+}
+
+void plGLDevice::SetRenderTarget(plRenderTarget* target)
+{
+}
+
+void plGLDevice::SetViewport()
+{
+}
+
+void plGLDevice::SetProjectionMatrix(const hsMatrix44& src)
+{
+}
+
+void plGLDevice::SetWorldToCameraMatrix(const hsMatrix44& src)
+{
+}
+
+void plGLDevice::SetLocalToWorldMatrix(const hsMatrix44& src)
+{
+}

@@ -102,13 +102,13 @@ target_link_libraries(plPipeline
     PUBLIC
         CoreLib
         pnKeyedObject
-        pnNucleusInc
-        pnSceneObject
-        plClientResMgr
+        #pnNucleusInc
+        #pnSceneObject
+        #plClientResMgr
         plDrawable
-        plGLight
-        plScene
-        plSurface
+        #plGLight
+        #plScene
+        #plSurface
 )
 
 source_group("Source Files" FILES ${plPipeline_SOURCES})

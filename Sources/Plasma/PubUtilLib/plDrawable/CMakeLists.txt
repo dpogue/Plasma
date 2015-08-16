@@ -107,7 +107,7 @@ target_link_libraries(plDrawable
         CoreLib
         pnKeyedObject
         plMath
-        plGLight
+        #plGLight
         plMessage
         plScene
         plSDL

@@ -16,6 +16,8 @@ if(WIN32)
     endif()
 endif()
 
+add_subdirectory(plGLClient)
+
 if(PLASMA_BUILD_TOOLS)
     add_subdirectory(plPythonPack)
     add_subdirectory(plFileSecure)
