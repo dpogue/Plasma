@@ -45,72 +45,110 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnFactory/plCreator.h"
 
+#ifndef MINIMAL_GL_BUILD
 #include "plActivePrintShape.h"
 REGISTER_CREATABLE(plActivePrintShape);
+#endif
 
 #include "plClusterGroup.h"
 REGISTER_CREATABLE(plClusterGroup);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plCutter.h"
 REGISTER_CREATABLE(plCutter);
+#endif
 
 #include "plDrawableSpans.h"
 REGISTER_CREATABLE(plDrawableSpans);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaBulletMgr.h"
 REGISTER_CREATABLE(plDynaBulletMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaDecalMgr.h"
 REGISTER_NONCREATABLE(plDynaDecalMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaFootMgr.h"
 REGISTER_CREATABLE(plDynaFootMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaPuddleMgr.h"
 REGISTER_CREATABLE(plDynaPuddleMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaRippleMgr.h"
 REGISTER_CREATABLE(plDynaRippleMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaRippleVSMgr.h"
 REGISTER_CREATABLE(plDynaRippleVSMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaTorpedoMgr.h"
 REGISTER_CREATABLE(plDynaTorpedoMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaTorpedoVSMgr.h"
 REGISTER_CREATABLE(plDynaTorpedoVSMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaWakeMgr.h"
 REGISTER_CREATABLE(plDynaWakeMgr);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plInstanceDrawInterface.h"
 REGISTER_CREATABLE(plInstanceDrawInterface);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plMorphDelta.h"
 REGISTER_CREATABLE(plMorphDelta);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plMorphSequence.h"
 REGISTER_CREATABLE(plMorphDataSet);
 REGISTER_CREATABLE(plMorphSequence);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plMorphSequenceSDLMod.h"
 REGISTER_CREATABLE(plMorphSequenceSDLMod);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plPrintShape.h"
 REGISTER_CREATABLE(plPrintShape);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSharedMesh.h"
 REGISTER_CREATABLE(plSharedMesh);
 REGISTER_CREATABLE(plSharedMeshBCMsg);
+#endif
 
 #include "plSpaceTree.h"
 REGISTER_CREATABLE(plSpaceTree);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plWaveSetBase.h"
 REGISTER_NONCREATABLE(plWaveSetBase);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plWaveSet7.h"
 REGISTER_CREATABLE(plWaveSet7);
+#endif
 
 #endif // plDrawableCreatable_inc

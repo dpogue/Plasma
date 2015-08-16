@@ -42,17 +42,125 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           //
 //  plGLPipeline Class Functions                                             //
-//  plPipeline derivative for OpenGL ES                                      //
+//  plPipeline derivative for OpenGL                                         //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "HeadSpin.h"
-#include "hsWindows.h"
-#include "plPipeline/hsWinRef.h"
 
 #include "plGLPipeline.h"
 #include "plPipeline/plPipelineCreate.h"
 
 #ifdef HS_SIMD_INCLUDE
-#  include HS_SIMD_INCLUDE
+#   include HS_SIMD_INCLUDE
 #endif
+
+plGLPipeline::plGLPipeline(hsWindowHndl window, const hsG3DDeviceModeRecord* devModeRec)
+:   pl3DPipeline(devModeRec)
+{
+    fDevice.fWindow = window;
+    fDevice.fPipeline = this;
+
+    fDevice.InitDevice();
+}
+
+plGLPipeline::~plGLPipeline()
+{
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*****************************************************************************
+ * STUBS STUBS STUBS
+ *****************************************************************************/
+
+bool plGLPipeline::PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr) { return false; }
+
+bool plGLPipeline::PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr) { return false; }
+
+plTextFont* plGLPipeline::MakeTextFont(char* face, uint16_t size) { return nullptr; }
+
+void plGLPipeline::CheckVertexBufferRef(plGBufferGroup* owner, uint32_t idx) {}
+
+void plGLPipeline::CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx) {}
+
+bool plGLPipeline::OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly) { return false; }
+
+bool plGLPipeline::CloseAccess(plAccessSpan& acc) { return false; }
+
+void plGLPipeline::CheckTextureRef(plLayerInterface* lay) {}
+
+void plGLPipeline::PushRenderRequest(plRenderRequest* req) {}
+
+void plGLPipeline::PopRenderRequest(plRenderRequest* req) {}
+
+void plGLPipeline::ClearRenderTarget(plDrawable* d) {}
+
+void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth) {}
+
+hsGDeviceRef* plGLPipeline::MakeRenderTargetRef(plRenderTarget* owner) { return nullptr; }
+
+bool plGLPipeline::BeginRender() { return false; }
+
+bool plGLPipeline::EndRender() { return false; }
+
+void plGLPipeline::RenderScreenElements() {}
+
+bool plGLPipeline::IsFullScreen() const { return false; }
+
+void plGLPipeline::Resize(uint32_t width, uint32_t height) {}
+
+bool plGLPipeline::CheckResources() { return false; }
+
+void plGLPipeline::LoadResources() {}
+
+void plGLPipeline::SubmitClothingOutfit(plClothingOutfit* co) {}
+
+bool plGLPipeline::SetGamma(float eR, float eG, float eB) { return false; }
+
+bool plGLPipeline::SetGamma(const uint16_t* const tabR, const uint16_t* const tabG, const uint16_t* const tabB) { return false; }
+
+bool plGLPipeline::CaptureScreen(plMipmap* dest, bool flipVertical, uint16_t desiredWidth, uint16_t desiredHeight) { return false; }
+
+plMipmap* plGLPipeline::ExtractMipMap(plRenderTarget* targ) { return nullptr; }
+
+void plGLPipeline::GetSupportedDisplayModes(std::vector<plDisplayMode> *res, int ColorDepth) {}
+
+int plGLPipeline::GetMaxAnisotropicSamples() { return 0; }
+
+int plGLPipeline::GetMaxAntiAlias(int Width, int Height, int ColorDepth) { return 0; }
+
+void plGLPipeline::ResetDisplayDevice(int Width, int Height, int ColorDepth, bool Windowed, int NumAASamples, int MaxAnisotropicSamples, bool vSync) {}
+
+void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& visList) {}

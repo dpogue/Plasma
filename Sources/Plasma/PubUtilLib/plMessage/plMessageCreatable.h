@@ -45,30 +45,43 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnFactory/plCreator.h"
 
+#ifndef MINIMAL_GL_BUILD
 #include "plAccountUpdateMsg.h"
 REGISTER_CREATABLE(plAccountUpdateMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plActivatorMsg.h"
 REGISTER_CREATABLE(plActivatorMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plAgeLoadedMsg.h"
 REGISTER_CREATABLE(plAgeBeginLoadingMsg);
 REGISTER_CREATABLE(plAgeLoadedMsg);
 REGISTER_CREATABLE(plAgeLoaded2Msg);
 REGISTER_CREATABLE(plInitialAgeStateLoadedMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plAngularVelocityMsg.h"
 REGISTER_CREATABLE(plAngularVelocityMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plAnimCmdMsg.h"
 REGISTER_CREATABLE(plAGCmdMsg);
 REGISTER_CREATABLE(plAGDetachCallbackMsg);
 REGISTER_CREATABLE(plAGInstanceCallbackMsg);
 REGISTER_CREATABLE(plAnimCmdMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plAvatarFootMsg.h"
 REGISTER_CREATABLE(plAvatarFootMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #ifndef NO_AV_MSGS
     #include "plAvatarMsg.h"
     REGISTER_CREATABLE(plArmatureUpdateMsg);
@@ -90,48 +103,76 @@ REGISTER_CREATABLE(plAvatarFootMsg);
         REGISTER_CREATABLE(plAvPushBrainMsg);
     #endif // ndef SERVER
 #endif // ndef NO_AV_MSGS
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plBulletMsg.h"
 REGISTER_CREATABLE(plBulletMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plCaptureRenderMsg.h"
 REGISTER_CREATABLE(plCaptureRenderMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plCCRMessageCreatable.h"  // kept separately for selective server include 
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plClimbEventMsg.h"
 REGISTER_CREATABLE(plClimbEventMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plClimbMsg.h"
 REGISTER_CREATABLE(plClimbMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plCollideMsg.h"
 REGISTER_CREATABLE(plCollideMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plCondRefMsg.h"
 REGISTER_CREATABLE(plCondRefMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plConnectedToVaultMsg.h"
 REGISTER_CREATABLE(plConnectedToVaultMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plConsoleMsg.h"
 REGISTER_CREATABLE(plConsoleMsg);
+#endif
 
 #include "plDeviceRecreateMsg.h"
 REGISTER_CREATABLE(plDeviceRecreateMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynaDecalEnableMsg.h"
 REGISTER_CREATABLE(plDynaDecalEnableMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynamicEnvMapMsg.h"
 REGISTER_CREATABLE(plDynamicEnvMapMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDynamicTextMsg.h"
 REGISTER_CREATABLE(plDynamicTextMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plExcludeRegionMsg.h"
 REGISTER_CREATABLE(plExcludeRegionMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plInputEventMsg.h"
 REGISTER_CREATABLE(plAvatarInputStateMsg);
 REGISTER_CREATABLE(plControlEventMsg);
@@ -142,13 +183,18 @@ REGISTER_CREATABLE(plIMouseYEventMsg);
 REGISTER_CREATABLE(plInputEventMsg);
 REGISTER_CREATABLE(plKeyEventMsg);
 REGISTER_CREATABLE(plMouseEventMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plInputIfaceMgrMsg.h"
 REGISTER_CREATABLE(plInputIfaceMgrMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plInterestingPing.h"
 REGISTER_CREATABLE(plInterestingModMsg);
 REGISTER_CREATABLE(plInterestingPing);
+#endif
 
 #include "plLayRefMsg.h"
 REGISTER_CREATABLE(plLayRefMsg);
@@ -156,9 +202,12 @@ REGISTER_CREATABLE(plLayRefMsg);
 #include "plLightRefMsg.h"
 REGISTER_CREATABLE(plLightRefMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plLinearVelocityMsg.h"
 REGISTER_CREATABLE(plLinearVelocityMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plLinkToAgeMsg.h"
 REGISTER_CREATABLE(plLinkCallbackMsg);
 REGISTER_CREATABLE(plLinkEffectBCMsg);
@@ -170,21 +219,28 @@ REGISTER_CREATABLE(plLinkToAgeMsg);
 REGISTER_CREATABLE(plPseudoLinkAnimCallbackMsg);
 REGISTER_CREATABLE(plPseudoLinkAnimTriggerMsg);
 REGISTER_CREATABLE(plPseudoLinkEffectMsg);
+#endif
 
 #include "plListenerMsg.h"
 REGISTER_CREATABLE(plListenerMsg);
 REGISTER_CREATABLE(plSetListenerMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plLoadAgeMsg.h"
 REGISTER_CREATABLE(plLoadAgeMsg);
 REGISTER_CREATABLE(plLinkInDoneMsg)
 REGISTER_CREATABLE(plLinkOutUnloadMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plLOSHitMsg.h"
 REGISTER_CREATABLE(plLOSHitMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plLOSRequestMsg.h"
 REGISTER_CREATABLE(plLOSRequestMsg);
+#endif
 
 #include "plMatRefMsg.h"
 REGISTER_CREATABLE(plMatRefMsg);
@@ -192,21 +248,30 @@ REGISTER_CREATABLE(plMatRefMsg);
 #include "plMatrixUpdateMsg.h"
 REGISTER_CREATABLE(plMatrixUpdateMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plMemberUpdateMsg.h"
 REGISTER_CREATABLE(plMemberUpdateMsg);
+#endif
 
 #include "plMeshRefMsg.h"
 REGISTER_CREATABLE(plMeshRefMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plMovieMsg.h"
 REGISTER_CREATABLE(plMovieMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plMultistageMsg.h"
 REGISTER_CREATABLE(plMultistageModMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plNetClientMgrMsg.h"
 REGISTER_CREATABLE(plNetClientMgrMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plNetCommMsgs.h"
 REGISTER_CREATABLE(plNetCommActivePlayerMsg);
 REGISTER_CREATABLE(plNetCommAuthConnectedMsg);
@@ -220,61 +285,90 @@ REGISTER_CREATABLE(plNetCommPlayerListMsg);
 REGISTER_CREATABLE(plNetCommPublicAgeListMsg);
 REGISTER_CREATABLE(plNetCommPublicAgeMsg);
 REGISTER_CREATABLE(plNetCommRegisterAgeMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plNetOwnershipMsg.h"
 REGISTER_CREATABLE(plNetOwnershipMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plNetVoiceListMsg.h"
 REGISTER_CREATABLE(plNetVoiceListMsg);
+#endif
 
 #include "plNodeCleanupMsg.h"
 REGISTER_CREATABLE(plNodeCleanupMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plOneShotMsg.h"
 REGISTER_CREATABLE(plOneShotMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plParticleUpdateMsg.h"
 REGISTER_CREATABLE(plParticleFlockMsg);
 REGISTER_CREATABLE(plParticleKillMsg);
 REGISTER_CREATABLE(plParticleTransferMsg);
 REGISTER_CREATABLE(plParticleUpdateMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plPickedMsg.h"
 REGISTER_CREATABLE(plPickedMsg);
+#endif
 
 #include "plRenderMsg.h"
 REGISTER_CREATABLE(plPreResourceMsg);
 REGISTER_CREATABLE(plRenderMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plRenderRequestMsg.h"
 REGISTER_CREATABLE(plRenderRequestAck);
 REGISTER_CREATABLE(plRenderRequestMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plReplaceGeometryMsg.h"
 REGISTER_CREATABLE(plReplaceGeometryMsg);
 REGISTER_CREATABLE(plSwapSpansRefMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plResMgrHelperMsg.h"
 REGISTER_CREATABLE(plResMgrHelperMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plResPatcherMsg.h"
 REGISTER_CREATABLE(plResPatcherMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plResponderMsg.h"
 REGISTER_CREATABLE(plResponderMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plRideAnimatedPhysMsg.h"
 REGISTER_CREATABLE(plRideAnimatedPhysMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plRippleShapeMsg.h"
 REGISTER_CREATABLE(plRippleShapeMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plRoomLoadNotifyMsg.h"
 REGISTER_CREATABLE(plRoomLoadNotifyMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plShadowCastMsg.h"
 REGISTER_CREATABLE(plShadowCastMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSimStateMsg.h"
 // REGISTER_CREATABLE(plSimStateMsg);
 // REGISTER_CREATABLE(plFreezeMsg);
@@ -282,31 +376,47 @@ REGISTER_CREATABLE(plShadowCastMsg);
 // REGISTER_CREATABLE(plEventGroupEnableMsg);
 // REGISTER_CREATABLE(plSuspendEventMsg);
 REGISTER_CREATABLE(plSubWorldMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSpawnModMsg.h"
 REGISTER_CREATABLE(plSpawnModMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSpawnRequestMsg.h"
 REGISTER_CREATABLE(plSpawnRequestMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSwimMsg.h"
 REGISTER_CREATABLE(plSwimMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSynchEnableMsg.h"
 REGISTER_CREATABLE(plSynchEnableMsg);
+#endif
 
 #include "plTimerCallbackMsg.h"
 REGISTER_CREATABLE(plTimerCallbackMsg);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plTransitionMsg.h"
 REGISTER_CREATABLE(plTransitionMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plTriggerMsg.h"
 REGISTER_CREATABLE(plTriggerMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plVaultNotifyMsg.h"
 REGISTER_CREATABLE(plVaultNotifyMsg);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #ifndef SERVER
     #ifndef NO_AV_MSGS
         #include "plAIMsg.h"
@@ -315,6 +425,7 @@ REGISTER_CREATABLE(plVaultNotifyMsg);
         REGISTER_CREATABLE(plAIMsg);
     #endif // NO_AV_MSGS
 #endif // SERVER
+#endif
 
 /*****************************************************************************
 *
@@ -322,6 +433,7 @@ REGISTER_CREATABLE(plVaultNotifyMsg);
 *
 ***/
 
+#ifndef MINIMAL_GL_BUILD
 #ifndef NO_AV_MSGS
     #ifndef SERVER
         #include "plAvCoopMsg.h"
@@ -337,5 +449,6 @@ REGISTER_CREATABLE(plVaultNotifyMsg);
         REGISTER_CREATABLE(plLoadClothingMsg);
     #endif // ndef SERVER
 #endif // ndef NO_AV_MSGS
+#endif
 
 #endif // plMessageCreatable_inc

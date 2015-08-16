@@ -108,6 +108,15 @@ if(PLASMA_PIPELINE STREQUAL "OpenGL")
     target_link_libraries(plPipeline GLESv2)
 endif(PLASMA_PIPELINE STREQUAL "OpenGL")
 
+target_link_libraries(plPipeline CoreLib)
+target_link_libraries(plPipeline pnKeyedObject)
+#target_link_libraries(plPipeline pnNucleusInc)
+#target_link_libraries(plPipeline pnSceneObject)
+target_link_libraries(plPipeline plDrawable)
+#target_link_libraries(plPipeline plGLight)
+#target_link_libraries(plPipeline plScene)
+#target_link_libraries(plPipeline plSurface)
+
 source_group("Source Files" FILES ${plPipeline_SOURCES})
 source_group("Header Files" FILES ${plPipeline_HEADERS})
 

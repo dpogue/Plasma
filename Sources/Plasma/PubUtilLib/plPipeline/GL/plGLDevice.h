@@ -49,10 +49,17 @@ class plRenderTarget;
 
 class plGLDevice
 {
-protected:
+public:
     plGLPipeline*       fPipeline;
+    hsWindowHndl        fWindow;
+
+    const char*         fErrorMsg;
 
 public:
+    plGLDevice();
+
+    bool InitDevice();
+
     /**
      * Set rendering to the specified render target.
      *
@@ -64,6 +71,7 @@ public:
     /** Translate our viewport into a D3D viewport. */
     void SetViewport();
 
+    const char* GetErrorString() const { return fErrorMsg; }
 
     void SetProjectionMatrix(const hsMatrix44& src);
     void SetWorldToCameraMatrix(const hsMatrix44& src);

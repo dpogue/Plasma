@@ -55,6 +55,8 @@ REGISTER_CREATABLE(plLimitedDirLightInfo);
 REGISTER_CREATABLE(plOmniLightInfo);
 REGISTER_CREATABLE(plSpotLightInfo);
 
+#ifndef MINIMAL_GL_BUILD
+
 #include "plLightSpace.h"
 REGISTER_CREATABLE(plLightSpace);
 
@@ -66,5 +68,7 @@ REGISTER_CREATABLE(plShadowCaster);
 
 #include "plShadowMaster.h"
 REGISTER_NONCREATABLE(plShadowMaster);
+
+#endif
 
 #endif // plGLightCreatable_inc
