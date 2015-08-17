@@ -48,14 +48,16 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "HeadSpin.h"
 
-#include <GL/gl.h>
-
 #include "plGLPipeline.h"
+
+#include <GL/gl.h>
+#include <GL/glext.h>
 
 #include "hsTimer.h"
 
 #include "plPipeline/plPipelineCreate.h"
 #include "plDrawable/plDrawableSpans.h"
+#include "plDrawable/plGBufferGroup.h"
 #include "plSurface/hsGMaterial.h"
 
 #ifdef HS_SIMD_INCLUDE
@@ -135,13 +137,108 @@ bool plGLPipeline::PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, p
     return visList.GetCount() > 0;
 }
 
-bool plGLPipeline::PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr) { return false; }
+bool plGLPipeline::PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr)
+{
+    plDrawableSpans* ice = plDrawableSpans::ConvertNoRef(drawable);
+    if (!ice)
+    {
+        return false;
+    }
+
+    // Find our lights
+    ICheckLighting(ice, visList, visMgr);
+
+    // Sort our faces
+    if (ice->GetNativeProperty(plDrawable::kPropSortFaces))
+    {
+        ice->SortVisibleSpans(visList, this);
+    }
+
+    // Prep for render. This is gives the drawable a chance to
+    // do any last minute updates for its buffers, including
+    // generating particle tri lists.
+    ice->PrepForRender(this);
+
+    // Other stuff that we're ignoring for now...
+
+    return true;
+}
 
 plTextFont* plGLPipeline::MakeTextFont(char* face, uint16_t size) { return nullptr; }
 
-void plGLPipeline::CheckVertexBufferRef(plGBufferGroup* owner, uint32_t idx) {}
+void plGLPipeline::CheckVertexBufferRef(plGBufferGroup* owner, uint32_t idx)
+{
+    // First, do we have a device ref at this index?
+    DeviceType::VertexBufferRef* vRef = (DeviceType::VertexBufferRef*)owner->GetVertexBufferRef(idx);
 
-void plGLPipeline::CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx) {}
+    // If not
+    if (!vRef)
+    {
+        // Make the blank ref
+        vRef = new DeviceType::VertexBufferRef();
+
+        fDevice.SetupVertexBufferRef(owner, idx, vRef);
+    }
+
+    if (!vRef->IsLinked())
+    {
+        vRef->Link(&fVtxBuffRefList);
+    }
+
+    // One way or another, we now have a vbufferref[idx] in owner.
+    // Now, does it need to be (re)filled?
+    // If the owner is volatile, then we hold off. It might not
+    // be visible, and we might need to refill it again if we
+    // have an overrun of our dynamic buffer.
+    if (!vRef->Volatile())
+    {
+        // If it's a static buffer, allocate a vertex buffer for it.
+        fDevice.CheckStaticVertexBuffer(vRef, owner, idx);
+
+        // Might want to remove this assert, and replace it with a dirty check
+        // if we have static buffers that change very seldom rather than never.
+        hsAssert(!vRef->IsDirty(), "Non-volatile vertex buffers should never get dirty");
+    }
+    else
+    {
+        // Make sure we're going to be ready to fill it.
+
+#if 0
+        if (!vRef->fData && (vRef->fFormat != owner->GetVertexFormat()))
+        {
+            vRef->fData = new uint8_t[vRef->fCount * vRef->fVertexSize];
+            fDevice.FillVolatileVertexBufferRef(vRef, owner, idx);
+        }
+#endif
+    }
+}
+
+void plGLPipeline::CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx)
+{
+    DeviceType::IndexBufferRef* iRef = (DeviceType::IndexBufferRef*)owner->GetIndexBufferRef(idx);
+
+    if (!iRef)
+    {
+        // Create one from scratch.
+        iRef = new DeviceType::IndexBufferRef();
+
+        fDevice.SetupIndexBufferRef(owner, idx, iRef);
+    }
+
+    if (!iRef->IsLinked())
+    {
+        iRef->Link(&fIdxBuffRefList);
+    }
+
+    // Make sure it has all resources created.
+    fDevice.CheckIndexBuffer(iRef);
+
+    // If it's dirty, refill it.
+    if (iRef->IsDirty())
+    {
+        fDevice.FillIndexBufferRef(iRef, owner, idx);
+    }
+}
 
 bool plGLPipeline::OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly) { return false; }
 
@@ -185,7 +282,7 @@ bool plGLPipeline::BeginRender()
     // If this is the primary BeginRender, make sure we're really ready.
     if (fInSceneDepth++ == 0)
     {
-        //fDevice.BeginRender();
+        fDevice.BeginRender();
     }
 
     fRenderCnt++;
@@ -252,4 +349,183 @@ int plGLPipeline::GetMaxAntiAlias(int Width, int Height, int ColorDepth) { retur
 
 void plGLPipeline::ResetDisplayDevice(int Width, int Height, int ColorDepth, bool Windowed, int NumAASamples, int MaxAnisotropicSamples, bool vSync) {}
 
-void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& visList) {}
+void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& visList)
+{
+    //plProfile_BeginTiming(RenderSpan);
+
+    hsMatrix44 lastL2W;
+    size_t i, j;
+    hsGMaterial* material;
+    const hsTArray<plSpan*>& spans = ice->GetSpanArray();
+
+    //plProfile_IncCount(EmptyList, !visList.GetCount());
+
+    /// Set this (*before* we do our TestVisibleWorld stuff...)
+    lastL2W.Reset();
+    ISetLocalToWorld( lastL2W, lastL2W );   // This is necessary; otherwise, we have to test for
+                                            // the first transform set, since this'll be identity
+                                            // but the actual device transform won't be (unless
+                                            // we do this)
+
+
+    /// Loop through our spans, combining them when possible
+    for (i = 0; i < visList.GetCount(); )
+    {
+        if (GetOverrideMaterial() != nullptr)
+        {
+            material = GetOverrideMaterial();
+        }
+        else
+        {
+            material = ice->GetMaterial(spans[visList[i]]->fMaterialIdx);
+        }
+
+        /// It's an icicle--do our icicle merge loop
+        plIcicle tempIce(*((plIcicle*)spans[visList[i]]));
+
+        // Start at i + 1, look for as many spans as we can add to tempIce
+        for (j = i + 1; j < visList.GetCount(); j++)
+        {
+            if (GetOverrideMaterial())
+            {
+                tempIce.fMaterialIdx = spans[visList[j]]->fMaterialIdx;
+            }
+
+            //plProfile_BeginTiming(MergeCheck);
+            if (!spans[visList[j]]->CanMergeInto(&tempIce))
+            {
+                //plProfile_EndTiming(MergeCheck);
+                break;
+            }
+            //plProfile_EndTiming(MergeCheck);
+            //plProfile_Inc(SpanMerge);
+
+            //plProfile_BeginTiming(MergeSpan);
+            spans[visList[j]]->MergeInto(&tempIce);
+            //plProfile_EndTiming(MergeSpan);
+        }
+
+        if (material != nullptr)
+        {
+            // What do we change?
+
+            //plProfile_BeginTiming(SpanTransforms);
+            ISetupTransforms(ice, tempIce, lastL2W);
+            //plProfile_EndTiming(SpanTransforms);
+
+            // Turn on this spans lights and turn off the rest.
+            //IEnableLights( &tempIce );
+
+            // Check that the underlying buffers are ready to go.
+            //plProfile_BeginTiming(CheckDyn);
+            //ICheckDynBuffers(drawable, drawable->GetBufferGroup(tempIce.fGroupIdx), &tempIce);
+            //plProfile_EndTiming(CheckDyn);
+
+            //plProfile_BeginTiming(CheckStat);
+            CheckVertexBufferRef(ice->GetBufferGroup(tempIce.fGroupIdx), tempIce.fVBufferIdx);
+            CheckIndexBufferRef(ice->GetBufferGroup(tempIce.fGroupIdx), tempIce.fIBufferIdx);
+            //plProfile_EndTiming(CheckStat);
+
+            // Draw this span now
+            IRenderBufferSpan( tempIce,
+                                ice->GetVertexRef( tempIce.fGroupIdx, tempIce.fVBufferIdx ),
+                                ice->GetIndexRef( tempIce.fGroupIdx, tempIce.fIBufferIdx ),
+                                material,
+                                tempIce.fVStartIdx, tempIce.fVLength,   // These are used as our accumulated range
+                                tempIce.fIPackedIdx, tempIce.fILength );
+        }
+
+        // Restart our search...
+        i = j;
+    }
+
+    //plProfile_EndTiming(RenderSpan);
+    /// All done!
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void plGLPipeline::ISetupTransforms(plDrawableSpans* drawable, const plSpan& span, hsMatrix44& lastL2W)
+{
+    if( span.fNumMatrices )
+    {
+        if( span.fNumMatrices <= 2 )
+        {
+            ISetLocalToWorld( span.fLocalToWorld, span.fWorldToLocal );
+            lastL2W = span.fLocalToWorld;
+        }
+        else
+        {
+            lastL2W.Reset();
+            ISetLocalToWorld( lastL2W, lastL2W );
+            fView.fLocalToWorldLeftHanded = span.fLocalToWorld.GetParity();
+        }
+    }
+    else
+    if( lastL2W != span.fLocalToWorld )
+    {
+        ISetLocalToWorld( span.fLocalToWorld, span.fWorldToLocal );
+        lastL2W = span.fLocalToWorld;
+    }
+    else
+    {
+        fView.fLocalToWorldLeftHanded = lastL2W.GetParity();
+    }
+
+#if 0
+    if( span.fNumMatrices == 2 )
+    {
+        D3DXMATRIX  mat;
+        IMatrix44ToD3DMatrix(mat, drawable->GetPaletteMatrix(span.fBaseMatrix+1));
+        fD3DDevice->SetTransform(D3DTS_WORLDMATRIX(1), &mat);
+        fD3DDevice->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_1WEIGHTS);
+    }
+    else
+    {
+        fD3DDevice->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_DISABLE);
+    }
+#endif
+}
+
+
+void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef *vb, hsGDeviceRef *ib, hsGMaterial *material, uint32_t vStart, uint32_t vLength, uint32_t iStart, uint32_t iLength)
+{
+    DeviceType::VertexBufferRef* vRef = (DeviceType::VertexBufferRef*)vb;
+    DeviceType::IndexBufferRef* iRef = (DeviceType::IndexBufferRef*)ib;
+
+    if (!vRef->fRef || !iRef->fRef)
+    {
+        hsAssert( false, "Trying to render a nil buffer pair!" );
+        return;
+    }
+
+    /* Vertex Buffer stuff */
+    glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
+
+    GLint posAttrib = glGetAttribLocation(fDevice.fProgram, "position");
+    GLint colAttrib = glGetAttribLocation(fDevice.fProgram, "color");
+    glEnableVertexAttribArray(posAttrib);
+    glEnableVertexAttribArray(colAttrib);
+
+    glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, 0);
+    glVertexAttribPointer(colAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, vRef->fVertexSize, (void*)(sizeof(float) * 3 * 2));
+
+
+    /* Index Buffer stuff and drawing */
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
+
+    glDrawElements(GL_TRIANGLES, iRef->fCount, GL_UNSIGNED_SHORT, 0);
+}

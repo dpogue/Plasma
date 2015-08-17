@@ -56,9 +56,10 @@ plProfile_CreateMemCounter("Textures", "Memory", MemTexture);
  ** Generic plGLDeviceRef Functions                                         **
  *****************************************************************************/
 plGLDeviceRef::plGLDeviceRef()
+:   fNext(nullptr),
+    fBack(nullptr),
+    fRef(0)
 {
-    fNext = nullptr;
-    fBack = nullptr;
 }
 
 plGLDeviceRef::~plGLDeviceRef()
