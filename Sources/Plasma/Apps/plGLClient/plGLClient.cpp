@@ -116,13 +116,13 @@ bool plClient::InitPipeline()
 
     float yon = 500.0f;
 
-    pipe->SetFOV( 60.f, int32_t( 60.f * pipe->Height() / pipe->Width() ) );
-    pipe->SetDepth( 0.3f, yon );
+    pipe->SetFOV(60.f, int32_t(60.f * pipe->Height() / pipe->Width()));
+    pipe->SetDepth(0.3f, yon);
 
     hsMatrix44 id;
     id.Reset();
 
-    pipe->SetWorldToCamera( cam, id );
+    pipe->SetWorldToCamera(cam, id);
     pipe->RefreshMatrices();
 
     // Do this so we're still black before we show progress bars, but the correct color coming out of 'em

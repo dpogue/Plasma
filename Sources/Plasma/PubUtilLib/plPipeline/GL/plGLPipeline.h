@@ -46,6 +46,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plPipeline/hsG3DDeviceSelector.h"
 #include "plGLDevice.h"
 
+class plIcicle;
+
 class plGLPipeline : public pl3DPipeline
 {
 protected:
@@ -95,6 +97,10 @@ public:
     virtual int GetMaxAntiAlias(int Width, int Height, int ColorDepth);
     virtual void ResetDisplayDevice(int Width, int Height, int ColorDepth, bool Windowed, int NumAASamples, int MaxAnisotropicSamples, bool vSync = false);
     virtual void RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& visList);
+
+protected:
+    void ISetupTransforms(plDrawableSpans* drawable, const plSpan& span, hsMatrix44& lastL2W);
+    void IRenderBufferSpan( const plIcicle& span, hsGDeviceRef *vb, hsGDeviceRef *ib, hsGMaterial *material, uint32_t vStart, uint32_t vLength, uint32_t iStart, uint32_t iLength );
 };
 
 #endif // _plGLPipeline_inc_

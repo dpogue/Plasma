@@ -45,12 +45,17 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <EGL/egl.h>
 
 #include "hsMatrix44.h"
+#include "plGLDeviceRef.h"
 
 class plGLPipeline;
 class plRenderTarget;
 
 class plGLDevice
 {
+public:
+    typedef plGLVertexBufferRef VertexBufferRef;
+    typedef plGLIndexBufferRef  IndexBufferRef;
+
 public:
     plGLPipeline*       fPipeline;
     hsWindowHndl        fDevice;
@@ -61,6 +66,8 @@ public:
     EGLDisplay          fDisplay;
     EGLSurface          fSurface;
     EGLContext          fContext;
+
+    GLuint              fProgram;
 
 public:
     plGLDevice();
@@ -78,20 +85,31 @@ public:
     /** Translate our viewport into a GL viewport. */
     void SetViewport();
 
+
+    bool BeginRender();
+
     /**
      * Tell GL we're through rendering for this frame, and flip the back buffer
      * to front.
      */
     bool EndRender();
 
+
+    /* Device Ref Functions **************************************************/
+    void SetupVertexBufferRef(plGBufferGroup* owner, uint32_t idx, VertexBufferRef* vRef);
+    void CheckStaticVertexBuffer(VertexBufferRef* vRef, plGBufferGroup* owner, uint32_t idx);
+    void FillStaticVertexBufferRef(VertexBufferRef* ref, plGBufferGroup* group, uint32_t idx);
+    void FillVolatileVertexBufferRef(VertexBufferRef* ref, plGBufferGroup* group, uint32_t idx);
+    void SetupIndexBufferRef(plGBufferGroup* owner, uint32_t idx, IndexBufferRef* iRef);
+    void CheckIndexBuffer(IndexBufferRef* iRef);
+    void FillIndexBufferRef(IndexBufferRef* iRef, plGBufferGroup* owner, uint32_t idx);
+
+
     const char* GetErrorString() const { return fErrorMsg; }
 
     void SetProjectionMatrix(const hsMatrix44& src);
     void SetWorldToCameraMatrix(const hsMatrix44& src);
     void SetLocalToWorldMatrix(const hsMatrix44& src);
-
-    struct VertexBufferRef;
-    struct IndexBufferRef;
 };
 
 #endif
