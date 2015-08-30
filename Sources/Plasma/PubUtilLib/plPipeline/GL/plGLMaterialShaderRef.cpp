@@ -361,12 +361,12 @@ void plGLMaterialShaderRef::ISetupShaderContexts()
     // Helper function to invert colour
     auto invColor = std::make_shared<plShaderFunction>("invColor", "vec3");
     auto argColor = std::make_shared<plArgumentNode>("color", "vec3", 0);
-    invColor->PushOp(RETURN(SUB(CONST("1.0"), argColor)));
+    invColor->PushOp(RETURN(SUB(CONSTANT("1.0"), argColor)));
 
     // Helper function to invert alpha
     auto invAlpha = std::make_shared<plShaderFunction>("invAlpha", "float");
     auto argAlpha = std::make_shared<plArgumentNode>("alpha", "float", 0);
-    invAlpha->PushOp(RETURN(SUB(CONST("1.0"), argAlpha)));
+    invAlpha->PushOp(RETURN(SUB(CONSTANT("1.0"), argAlpha)));
 
     fFragmentShader->PushFunction(invColor);
     fFragmentShader->PushFunction(invAlpha);
@@ -444,7 +444,7 @@ void plGLMaterialShaderRef::ILoopOverLayers()
         fFragmentShader->PushFunction(fragPass);
 
         // if (uPassNumber == curpass) { curpass(); }
-        fragMain->PushOp(COND(IS_EQ(uPass, CONST(ST::format("{}", pass))), CALL(fragPass->name)));
+        fragMain->PushOp(COND(IS_EQ(uPass, CONSTANT(ST::format("{}", pass))), CALL(fragPass->name)));
 
         pass++;
         fPassIndices.push_back(iCurrMat);
@@ -482,7 +482,7 @@ void plGLMaterialShaderRef::ILoopOverLayers()
     std::shared_ptr<plUniformNode> mW2C = IFindVariable<plUniformNode>("uMatrixW2C", "mat4");
     std::shared_ptr<plUniformNode> mProj = IFindVariable<plUniformNode>("uMatrixProj", "mat4");
 
-    vertMain->PushOp(ASSIGN(pos, MUL(mL2W, CALL("vec4", apos, CONST("1.0")))));
+    vertMain->PushOp(ASSIGN(pos, MUL(mL2W, CALL("vec4", apos, CONSTANT("1.0")))));
     vertMain->PushOp(ASSIGN(pos, MUL(mW2C, pos)));
     vertMain->PushOp(ASSIGN(pos, MUL(mProj, pos)));
     vertMain->PushOp(ASSIGN(OUTPUT("gl_Position"), pos));
@@ -710,8 +710,8 @@ void plGLMaterialShaderRef::IBuildBaseAlpha(plLayerInterface* layer, ShaderBuild
 
     std::shared_ptr<plTempVariableNode> matValues = std::make_shared<plTempVariableNode>("material", "vec4");
 
-    //sb->fFunction->PushOp(ASSIGN(matValues, CALL("clamp", ADD(emissive, ADD(ambient, diffuse)), CONST("0.0"), CONST("1.0"))));
-    sb->fFunction->PushOp(ASSIGN(matValues, CALL("clamp", ADD(emissive, ambient), CONST("0.0"), CONST("1.0"))));
+    //sb->fFunction->PushOp(ASSIGN(matValues, CALL("clamp", ADD(emissive, ADD(ambient, diffuse)), CONSTANT("0.0"), CONSTANT("1.0"))));
+    sb->fFunction->PushOp(ASSIGN(matValues, CALL("clamp", ADD(emissive, ambient), CONSTANT("0.0"), CONSTANT("1.0"))));
 
     sb->fMatValues = matValues;
 
@@ -758,7 +758,7 @@ void plGLMaterialShaderRef::IBuildLayerTransform(uint32_t idx, plLayerInterface*
     ST::string coordName = ST::format("coords{}", idx);
     std::shared_ptr<plTempVariableNode> coords = std::make_shared<plTempVariableNode>(coordName, "vec4");
 
-    sb->fFunction->PushOp(ASSIGN(coords, MUL(matrix, CALL("vec4", layUVW, CONST("1.0")))));
+    sb->fFunction->PushOp(ASSIGN(coords, MUL(matrix, CALL("vec4", layUVW, CONSTANT("1.0")))));
 
     sb->fCurrCoord = coords;
 }
