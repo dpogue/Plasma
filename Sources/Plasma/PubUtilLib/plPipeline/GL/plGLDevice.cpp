@@ -47,8 +47,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #    include <OpenGL/gl3.h>
 #    include <OpenGL/gl3ext.h>
 #else
-#    include <GLES2/gl2.h>
-#    include <GLES2/gl2ext.h>
+#    include <GLES3/gl3.h>
+#    include <GLES3/gl3ext.h>
 #endif
 
 #include "plDrawable/plGBufferGroup.h"
@@ -116,10 +116,12 @@ bool plGLDevice::InitDevice()
     EGLint config_attrs[] = {
         EGL_BUFFER_SIZE, 16,
         EGL_DEPTH_SIZE, 16,
+#ifndef HS_BUILD_FOR_WIN32
+        // These don't work with ANGLE :(
         EGL_SAMPLE_BUFFERS, 1,
         EGL_SAMPLES, 4,
-        EGL_RENDERABLE_TYPE,
-        EGL_OPENGL_ES_BIT,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
+#endif
         EGL_NONE
     };
 
@@ -132,7 +134,7 @@ bool plGLDevice::InitDevice()
 
     /* Set up the GL context */
     EGLint ctx_attrs[] = {
-        EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL_CONTEXT_CLIENT_VERSION, 3,
         EGL_NONE
     };
 
@@ -154,7 +156,10 @@ bool plGLDevice::InitDevice()
 
 
     /* Associate everything */
-    eglMakeCurrent(fDisplay, fSurface, fSurface, fContext);
+    if (eglMakeCurrent(fDisplay, fSurface, fSurface, fContext) == EGL_FALSE) {
+        fErrorMsg = "Failed to attach EGL context to surface";
+        return false;
+    }
 
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
@@ -185,7 +190,10 @@ bool plGLDevice::EndRender()
 {
     if (fPipeline->fCurrRenderTarget == nullptr)
     {
-        eglSwapBuffers(fDisplay, fSurface);
+        if (eglSwapBuffers(fDisplay, fSurface) == EGL_FALSE) {
+            hsStatusMessage("Failed to swap buffers");
+            return false;
+        }
     }
     return true;
 }
