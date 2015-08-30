@@ -83,7 +83,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     wndClass.cbClsExtra         = 0;
     wndClass.cbWndExtra         = 0;
     wndClass.hInstance          = hInst;
-    //wndClass.hIcon              = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON_DIRT));
+    wndClass.hIcon              = LoadIcon(NULL, IDI_APPLICATION);
 
     wndClass.hCursor            = LoadCursor(NULL, IDC_ARROW);
     wndClass.hbrBackground      = (struct HBRUSH__*) (GetStockObject(BLACK_BRUSH));
