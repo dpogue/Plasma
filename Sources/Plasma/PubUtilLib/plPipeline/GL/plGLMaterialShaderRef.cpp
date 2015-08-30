@@ -59,8 +59,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #    include <OpenGL/gl3.h>
 #    include <OpenGL/gl3ext.h>
 #else
-#    include <GLES2/gl2.h>
-#    include <GLES2/gl2ext.h>
+#    include <GLES3/gl3.h>
+#    include <GLES3/gl3ext.h>
 #endif
 
 // From plGLDevice.cpp
@@ -220,7 +220,7 @@ void plGLMaterialShaderRef::ICompile()
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, std::max(0, img->GetNumLevels() - 3));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, std::max(0, img->GetNumLevels() - 3));
 
         if (img->IsCompressed()) {
             GLuint dxCompression = 0;
@@ -257,6 +257,12 @@ void plGLMaterialShaderRef::ICompile()
                 img->SetCurrLevel(i);
 
                 glTexImage2D(GL_TEXTURE_2D, i, internal_format, img->GetCurrWidth(), img->GetCurrHeight(), 0, data_format, data_type, img->GetCurrLevelPtr());
+
+#ifdef HS_DEBUGGING
+                if ((e = glGetError()) != GL_NO_ERROR) {
+                    hsStatusMessage(ST::format("NonDXT Texture Image failed {} at level {}", uint32_t(e), i).c_str());
+                }
+#endif
             }
         }
     }
@@ -280,7 +286,7 @@ void plGLMaterialShaderRef::ICompile()
         GLint compiled = 0;
         glGetShaderiv(fVertShaderRef, GL_COMPILE_STATUS, &compiled);
         if (compiled == 0) {
-            hsStatusMessage("Not compiled");
+            hsStatusMessage("Not compiled Vtx");
             GLint length = 0;
             glGetShaderiv(fVertShaderRef, GL_INFO_LOG_LENGTH, &length);
             if (length) {
@@ -301,7 +307,7 @@ void plGLMaterialShaderRef::ICompile()
         GLint compiled = 0;
         glGetShaderiv(fFragShaderRef, GL_COMPILE_STATUS, &compiled);
         if (compiled == 0) {
-            hsStatusMessage("Not compiled");
+            hsStatusMessage("Not compiled Frg");
             GLint length = 0;
             glGetShaderiv(fFragShaderRef, GL_INFO_LOG_LENGTH, &length);
             if (length) {

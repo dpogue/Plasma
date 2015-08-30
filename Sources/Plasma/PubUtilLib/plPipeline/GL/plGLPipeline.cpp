@@ -58,8 +58,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #    define glClearDepthf glClearDepth
 #else
-#    include <GLES2/gl2.h>
-#    include <GLES2/gl2ext.h>
+#    include <GLES3/gl3.h>
+#    include <GLES3/gl3ext.h>
 #endif
 
 #include "hsTimer.h"
@@ -118,11 +118,11 @@ plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3
     fDevice.fWindow = window;
     fDevice.fPipeline = this;
 
-    fDevice.InitDevice();
-
-    glClearColor(0.f, 0.f, 0.f, 0.f);
-    glClearDepthf(1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (fDevice.InitDevice()) {
+        glClearColor(0.f, 0.f, 0.f, 0.f);
+        glClearDepthf(1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 }
 
 plGLPipeline::~plGLPipeline()
@@ -632,7 +632,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 
     plProfile_EndTiming(RenderBuff);
 
-#if 0
+#if 1
     // Enable this for LayerAnimations, but the timing/speed seems wrong
     for (size_t i = 0; i < material->GetNumLayers(); i++) {
         plLayerInterface* lay = material->GetLayer(i);

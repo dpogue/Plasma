@@ -4,7 +4,7 @@ endif()
 
 
 #It would be a good idea to eventually use pkgconfig here.
-find_path(OpenGLES2_INCLUDE_DIR GLES2/gl2.h
+find_path(OpenGLES2_INCLUDE_DIR GLES3/gl3.h
           /usr/local/include
           /usr/include
 )
