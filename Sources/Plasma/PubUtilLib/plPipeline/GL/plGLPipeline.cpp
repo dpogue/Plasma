@@ -53,13 +53,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLMaterialShaderRef.h"
 
 #if HS_BUILD_FOR_OSX
-    #include <OpenGL/gl3.h>
-    #include <OpenGL/gl3ext.h>
+#    include <OpenGL/gl3.h>
+#    include <OpenGL/gl3ext.h>
 
-    #define glClearDepthf glClearDepth
+#    define glClearDepthf glClearDepth
 #else
-    #include <GL/gl.h>
-    #include <GL/glext.h>
+#    include <GLES2/gl2.h>
+#    include <GLES2/gl2ext.h>
 #endif
 
 #include "hsTimer.h"
@@ -72,7 +72,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plSurface/hsGMaterial.h"
 
 #ifdef HS_SIMD_INCLUDE
-#   include HS_SIMD_INCLUDE
+#    include HS_SIMD_INCLUDE
 #endif
 
 
@@ -458,12 +458,14 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
             }
 #endif
 
+#if HS_BUILD_FOR_OSX
             // BEGIN VertexAttribObject hack for OSX
             // TODO: Figure out how to use VAOs properly :(
             GLuint vao;
             glGenVertexArrays(1, &vao);
             glBindVertexArray(vao);
             // END VertexAttribObject hack for OSX
+#endif
 
             // What do we change?
 

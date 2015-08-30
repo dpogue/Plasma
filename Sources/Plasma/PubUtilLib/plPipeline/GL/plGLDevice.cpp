@@ -44,11 +44,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLPipeline.h"
 
 #if HS_BUILD_FOR_OSX
-    #include <OpenGL/gl3.h>
-    #include <OpenGL/gl3ext.h>
+#    include <OpenGL/gl3.h>
+#    include <OpenGL/gl3ext.h>
 #else
-    #include <GL/gl.h>
-    #include <GL/glext.h>
+#    include <GLES2/gl2.h>
+#    include <GLES2/gl2ext.h>
 #endif
 
 #include "plDrawable/plGBufferGroup.h"
@@ -156,8 +156,6 @@ bool plGLDevice::InitDevice()
     /* Associate everything */
     eglMakeCurrent(fDisplay, fSurface, fSurface, fContext);
 
-
-    glEnable(GL_MULTISAMPLE);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 

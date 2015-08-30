@@ -42,6 +42,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #ifndef _plGLDevice_h_
 #define _plGLDevice_h_
 
+#include "HeadSpin.h"
+
+#ifdef HS_BUILD_FOR_WIN32
+#    include "hsWindows.h"
+#endif // HS_BUILD_FOR_WIN32
+
 #include <EGL/egl.h>
 
 #include "hsMatrix44.h"
