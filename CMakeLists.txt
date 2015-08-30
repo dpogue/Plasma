@@ -245,7 +245,17 @@ if(PLASMA_PIPELINE STREQUAL "DirectX")
 endif(PLASMA_PIPELINE STREQUAL "DirectX")
 
 if(PLASMA_PIPELINE STREQUAL "OpenGL")
-    find_package(OpenGL REQUIRED)
+    # OSX uses a bundled wrapper lib for emulating EGL support, but uses
+    # OpenGL3 natively.
+    # Linux uses EGL and OpenGLES2 natively (Hoping for GL3 at some point).
+    # Windows uses EGL and OpenGLES2 emulated by ANGLE.
+    if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        find_package(OpenGL REQUIRED)
+    else(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        find_package(OpenGLES2 REQUIRED)
+        find_package(EGL REQUIRED)
+    endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
     add_definitions(-DPLASMA_PIPELINE_GL)
     add_definitions(-DMINIMAL_GL_BUILD)
 endif(PLASMA_PIPELINE STREQUAL "OpenGL")

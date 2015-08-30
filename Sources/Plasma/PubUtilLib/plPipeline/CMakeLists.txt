@@ -8,9 +8,13 @@ if(PLASMA_PIPELINE STREQUAL "DirectX")
     include_directories(${DirectX_INCLUDE_DIR})
 endif(PLASMA_PIPELINE STREQUAL "DirectX")
 
-if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    include_directories("GL/OSX")
-endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(PLASMA_PIPELINE STREQUAL "OpenGL")
+    if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        include_directories("GL/OSX")
+    else(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        include_directories(${EGL_INCLUDE_DIRS} ${OpenGLES2_INCLUDE_DIRS})
+    endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+endif(PLASMA_PIPELINE STREQUAL "OpenGL")
 
 
 set(plPipeline_SOURCES
@@ -124,10 +128,10 @@ if(PLASMA_PIPELINE STREQUAL "OpenGL")
 
     if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         target_link_libraries(plPipeline "-framework OpenGL")
-    else()
-        target_link_libraries(plPipeline EGL)
-        target_link_libraries(plPipeline GLESv2)
-    endif()
+    else(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        target_link_libraries(plPipeline ${OpenGLES2_LIBRARIES})
+        target_link_libraries(plPipeline ${EGL_LIBRARIES})
+    endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif(PLASMA_PIPELINE STREQUAL "OpenGL")
 
 target_link_libraries(plPipeline CoreLib)

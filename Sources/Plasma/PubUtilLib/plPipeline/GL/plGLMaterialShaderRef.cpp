@@ -56,11 +56,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLDevice.h"
 
 #if HS_BUILD_FOR_OSX
-    #include <OpenGL/gl3.h>
-    #include <OpenGL/gl3ext.h>
+#    include <OpenGL/gl3.h>
+#    include <OpenGL/gl3ext.h>
 #else
-    #include <GL/gl.h>
-    #include <GL/glext.h>
+#    include <GLES2/gl2.h>
+#    include <GLES2/gl2ext.h>
 #endif
 
 // From plGLDevice.cpp
@@ -220,7 +220,7 @@ void plGLMaterialShaderRef::ICompile()
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, std::max(0, img->GetNumLevels() - 3));
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, std::max(0, img->GetNumLevels() - 3));
 
         if (img->IsCompressed()) {
             GLuint dxCompression = 0;
@@ -250,7 +250,7 @@ void plGLMaterialShaderRef::ICompile()
             }
         } else {
             GLenum data_type = GL_UNSIGNED_BYTE;
-            GLenum data_format = GL_BGRA;
+            GLenum data_format = GL_RGBA;
             GLenum internal_format = GL_RGBA;
 
             for (uint8_t i = 0; i < img->GetNumLevels(); i++) {
