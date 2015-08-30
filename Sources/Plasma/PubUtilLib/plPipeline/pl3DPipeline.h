@@ -246,8 +246,19 @@ public:
 
 
     //virtual plTextFont* MakeTextFont(char* face, uint16_t size) = 0;
-    //virtual void CheckVertexBufferRef(plGBufferGroup* owner, uint32_t idx) = 0;
-    //virtual void CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx) = 0;
+
+    /**
+     * Make sure the buffer group has a vertex buffer ref and that its data is
+     * current.
+     */
+    virtual void CheckVertexBufferRef(plGBufferGroup* owner, uint32_t idx);
+
+    /**
+     * Make sure the buffer group has an index buffer ref and that its data is
+     * current.
+     */
+    virtual void CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx);
+
     //virtual bool OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly) = 0;
     //virtual bool CloseAccess(plAccessSpan& acc) = 0;
     //virtual void CheckTextureRef(plLayerInterface* lay) = 0;

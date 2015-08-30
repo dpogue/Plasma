@@ -73,8 +73,6 @@ public:
     virtual bool PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr=nullptr);
     virtual bool PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr=nullptr);
     virtual plTextFont* MakeTextFont(char* face, uint16_t size);
-    virtual void CheckVertexBufferRef(plGBufferGroup* owner, uint32_t idx);
-    virtual void CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx);
     virtual bool OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly);
     virtual bool CloseAccess(plAccessSpan& acc);
     virtual void CheckTextureRef(plLayerInterface* lay);
