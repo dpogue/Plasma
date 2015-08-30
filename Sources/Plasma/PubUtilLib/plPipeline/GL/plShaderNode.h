@@ -219,7 +219,7 @@ public:
 
 
 
-auto Sorter = [](std::shared_ptr<plArgumentNode> a, std::shared_ptr<plArgumentNode> b)->bool { return a->pos < b->pos; };
+const auto Sorter = [](std::shared_ptr<plArgumentNode> a, std::shared_ptr<plArgumentNode> b)->bool { return a->pos < b->pos; };
 
 class plShaderFunction : public std::enable_shared_from_this<plShaderFunction>
 {
@@ -280,14 +280,14 @@ private:
 
 
 // Helper Macros
-#define CONST(v)        std::make_shared<plConstantNode>(v)
+#define CONSTANT(v)     std::make_shared<plConstantNode>(v)
 #define OUTPUT(n)       std::make_shared<plOutputNode>(n)
 #define ASSIGN(l, r)    std::make_shared<plAssignmentNode>(l, r)
 #define ADD(...)        std::make_shared<plOperatorNode>("+", __VA_ARGS__)
 #define SUB(...)        std::make_shared<plOperatorNode>("-", __VA_ARGS__)
 #define MUL(...)        std::make_shared<plOperatorNode>("*", __VA_ARGS__)
 #define DIV(...)        std::make_shared<plOperatorNode>("/", __VA_ARGS__)
-#define PROP(n, p)      std::make_shared<plOperatorNode>(".", n, CONST(p))
+#define PROP(n, p)      std::make_shared<plOperatorNode>(".", n, CONSTANT(p))
 #define IS_EQ(...)      std::make_shared<plOperatorNode>("==", __VA_ARGS__)
 #define RETURN(n)       std::make_shared<plReturnNode>(n)
 #define COND(...)       std::make_shared<plConditionNode>(__VA_ARGS__)
