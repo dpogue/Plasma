@@ -51,12 +51,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #    include <OpenGL/gl3ext.h>
 #else
 #    define GL_GLEXT_PROTOTYPES
-#    include <GLES2/gl2.h>
-#    include <GLES2/gl2ext.h>
+#    include <GL/gl.h>
+#    include <GL/glext.h>
 #endif
 
 class plGBufferGroup;
-class plMipmap;
+class plBitmap;
 
 
 class plGLDeviceRef : public hsGDeviceRef
@@ -191,14 +191,25 @@ public:
 class plGLTextureRef : public plGLDeviceRef
 {
 public:
-    plMipmap*       fOwner;
+    plBitmap*       fOwner;
+
+    uint32_t        fLevels;
+    GLuint          fMapping;
+    GLuint          fFormat;
+    GLuint          fDataType;
+    GLuint          fDataFormat;
 
     void             Link(plGLTextureRef** back) { plGLDeviceRef::Link((plGLDeviceRef**)back); }
     plGLTextureRef*  GetNext() { return (plGLTextureRef*)fNext; }
 
     plGLTextureRef() :
         plGLDeviceRef(),
-        fOwner(nullptr)
+        fOwner(nullptr),
+        fLevels(1),
+        fMapping(0),
+        fFormat(0),
+        fDataType(0),
+        fDataFormat(0)
     {
     }
 

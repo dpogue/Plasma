@@ -157,6 +157,7 @@ protected:
 
     DeviceType::VertexBufferRef*        fVtxBuffRefList;
     DeviceType::IndexBufferRef*         fIdxBuffRefList;
+    DeviceType::TextureRef*             fTextureRefList;
 
     hsGDeviceRef*                       fLayerRef[8];
 
@@ -261,7 +262,9 @@ public:
 
     //virtual bool OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly) = 0;
     //virtual bool CloseAccess(plAccessSpan& acc) = 0;
-    //virtual void CheckTextureRef(plLayerInterface* lay) = 0;
+
+    /** Make sure the given layer's texture has resources allocated. */
+    virtual void CheckTextureRef(plLayerInterface* lay);
 
     virtual void SetDefaultFogEnviron(plFogEnvironment* fog) {
         fView.SetDefaultFog(*fog);

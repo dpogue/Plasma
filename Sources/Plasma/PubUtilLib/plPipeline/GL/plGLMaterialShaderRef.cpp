@@ -59,9 +59,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #    include <OpenGL/gl3.h>
 #    include <OpenGL/gl3ext.h>
 #else
-#    include <GLES3/gl3.h>
-#    include <GLES3/gl3ext.h>
+#    include <GL/gl.h>
+#    include <GL/glext.h>
 #endif
+
+#define HS_DEBUGGING 1
 
 // From plGLDevice.cpp
 extern GLfloat* hsMatrix2GL(const hsMatrix44& src, GLfloat* dst);
@@ -114,10 +116,7 @@ void plGLMaterialShaderRef::SetupTextureRefs()
         }
 
         // Load the image
-        plMipmap* img = plMipmap::ConvertNoRef(layer->GetTexture());
-        if (!img) {
-            continue;
-        }
+        plBitmap* img = plBitmap::ConvertNoRef(layer->GetTexture());
 
         GLenum e;
         plGLTextureRef* texRef = (plGLTextureRef*)img->GetDeviceRef();
@@ -140,7 +139,7 @@ void plGLMaterialShaderRef::SetupTextureRefs()
         }
 #endif
 
-        glBindTexture(GL_TEXTURE_2D, texRef->fRef);
+        glBindTexture(texRef->fMapping, texRef->fRef);
 
 #ifdef HS_DEBUGGING
         if ((e = glGetError()) != GL_NO_ERROR) {
@@ -171,8 +170,12 @@ void plGLMaterialShaderRef::SetupTextureRefs()
 
 void plGLMaterialShaderRef::ICompile()
 {
-    int32_t numTextures = 0;
-    hsBitVector usedUVWs;
+#ifdef HS_DEBUGGING
+    GLenum e_pre;
+    if ((e_pre = glGetError()) != GL_NO_ERROR) {
+        hsStatusMessage(ST::format("Begin Compile failed {}", uint32_t(e_pre)).c_str());
+    }
+#endif
 
     for (size_t i = 0; i < fMaterial->GetNumLayers(); i++) {
         plLayerInterface* layer = fMaterial->GetLayer(i);
@@ -180,91 +183,14 @@ void plGLMaterialShaderRef::ICompile()
             continue;
         }
 
-        // Load the image
-        plMipmap* img = plMipmap::ConvertNoRef(layer->GetTexture());
-        if (!img) {
-            continue;
-        }
-
-        uint32_t uv = layer->GetUVWSrc() & plGBufferGroup::kUVCountMask;
-        usedUVWs.SetBit(uv);
-
-        numTextures++;
-
-        plGLTextureRef* texRef = new plGLTextureRef();
-        texRef->fOwner = img;
-        img->SetDeviceRef(texRef);
-
-        GLenum e;
-
-        glGenTextures(1, &texRef->fRef);
+        fPipeline->CheckTextureRef(layer);
 
 #ifdef HS_DEBUGGING
-        if ((e = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(ST::format("Gen Textures failed {}", uint32_t(e)).c_str());
+        GLenum e_tex;
+        if ((e_tex = glGetError()) != GL_NO_ERROR) {
+            hsStatusMessage(ST::format("Check Texture Ref failed {} (Layer {})", uint32_t(e_tex), layer->GetKeyName()).c_str());
         }
 #endif
-
-        glBindTexture(GL_TEXTURE_2D, texRef->fRef);
-
-#ifdef HS_DEBUGGING
-        if ((e = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(ST::format("Bind Texture failed {}", uint32_t(e)).c_str());
-        }
-#endif
-
-        if (!(layer->GetClampFlags() & hsGMatState::kClampTexture)) {
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        }
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, std::max(0, img->GetNumLevels() - 3));
-
-        if (img->IsCompressed()) {
-            GLuint dxCompression = 0;
-            uint8_t compType = img->fDirectXInfo.fCompressionType;
-
-            if (compType == plBitmap::DirectXInfo::kDXT1)
-                dxCompression = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-            else if (compType == plBitmap::DirectXInfo::kDXT5)
-                dxCompression = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-
-            for (uint8_t i = 0; i < img->GetNumLevels(); i++) {
-                img->SetCurrLevel(i);
-
-                if (img->GetCurrWidth() < 4 || img->GetCurrHeight() < 4) {
-                    continue;
-                }
-
-                glCompressedTexImage2D(GL_TEXTURE_2D, i, dxCompression,
-                                        img->GetCurrWidth(), img->GetCurrHeight(),
-                                        0, img->GetCurrLevelSize(), img->GetCurrLevelPtr());
-
-#ifdef HS_DEBUGGING
-                if ((e = glGetError()) != GL_NO_ERROR) {
-                    hsStatusMessage(ST::format("Texture Image failed {} at level {}", uint32_t(e), i).c_str());
-                }
-#endif
-            }
-        } else {
-            GLenum data_type = GL_UNSIGNED_BYTE;
-            GLenum data_format = GL_RGBA;
-            GLenum internal_format = GL_RGBA;
-
-            for (uint8_t i = 0; i < img->GetNumLevels(); i++) {
-                img->SetCurrLevel(i);
-
-                glTexImage2D(GL_TEXTURE_2D, i, internal_format, img->GetCurrWidth(), img->GetCurrHeight(), 0, data_format, data_type, img->GetCurrLevelPtr());
-
-#ifdef HS_DEBUGGING
-                if ((e = glGetError()) != GL_NO_ERROR) {
-                    hsStatusMessage(ST::format("NonDXT Texture Image failed {} at level {}", uint32_t(e), i).c_str());
-                }
-#endif
-            }
-        }
     }
 
     ST::string vtx = fVertexShader->Render();
@@ -295,6 +221,10 @@ void plGLMaterialShaderRef::ICompile()
                 hsStatusMessage(log);
             }
         }
+
+        if ((compiled = glGetError()) != GL_NO_ERROR) {
+            hsStatusMessage(ST::format("Compile Vtx failed {}", uint32_t(compiled)).c_str());
+        }
     }
 #endif
 
@@ -315,6 +245,10 @@ void plGLMaterialShaderRef::ICompile()
                 glGetShaderInfoLog(fFragShaderRef, length, &length, log);
                 hsStatusMessage(log);
             }
+        }
+
+        if ((compiled = glGetError()) != GL_NO_ERROR) {
+            hsStatusMessage(ST::format("Compile Frg failed {}", uint32_t(compiled)).c_str());
         }
     }
 #endif
@@ -792,15 +726,13 @@ void plGLMaterialShaderRef::IBuildLayerTexture(uint32_t idx, plLayerInterface* l
             sb->fFunction->PushOp(ASSIGN(img, CALL("texture2D", sampler, PROP(sb->fCurrCoord, "xy"))));
         }
 
-#if 0
         if ((cube = plCubicEnvironmap::ConvertNoRef(texture)) != nullptr) {
             ST::string samplerName = ST::format("uTexture{}", idx);
-            std::shared_ptr<plUniformNode> sampler = IFindVariable<plUniformNode>(samplerName, "sampler3D");
+            std::shared_ptr<plUniformNode> sampler = IFindVariable<plUniformNode>(samplerName, "samplerCube");
 
             // image = texture3D(sampler, coords.xyz)
             sb->fFunction->PushOp(ASSIGN(img, CALL("textureCube", sampler, PROP(sb->fCurrCoord, "xyz"))));
         }
-#endif
     }
 }
 

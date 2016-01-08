@@ -58,8 +58,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #    define glClearDepthf glClearDepth
 #else
-#    include <GLES3/gl3.h>
-#    include <GLES3/gl3ext.h>
+#    include <GL/gl.h>
+#    include <GL/glext.h>
 #endif
 
 #include "hsTimer.h"
@@ -212,8 +212,6 @@ plTextFont* plGLPipeline::MakeTextFont(char* face, uint16_t size) { return nullp
 bool plGLPipeline::OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly) { return false; }
 
 bool plGLPipeline::CloseAccess(plAccessSpan& acc) { return false; }
-
-void plGLPipeline::CheckTextureRef(plLayerInterface* lay) {}
 
 void plGLPipeline::PushRenderRequest(plRenderRequest* req)
 {
@@ -432,6 +430,13 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
             plProfile_EndTiming(MergeSpan);
         }
 
+#ifdef HS_DEBUGGING
+            GLenum e_pre;
+            if ((e_pre = glGetError()) != GL_NO_ERROR) {
+                hsStatusMessage(ST::format("RenderSpans pre-material failed {}", uint32_t(e_pre)).c_str());
+            }
+#endif
+
         if (material != nullptr) {
             // First, do we have a device ref at this index?
             plGLMaterialShaderRef* mRef = (plGLMaterialShaderRef*)material->GetDeviceRef();
@@ -439,9 +444,6 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
             if (mRef == nullptr) {
                 mRef = new plGLMaterialShaderRef(material, this);
                 material->SetDeviceRef(mRef);
-
-                //glUseProgram(mRef->fRef);
-                //fDevice.fCurrentProgram = mRef->fRef;
             }
 
             if (!mRef->IsLinked()) {
@@ -454,18 +456,14 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 #ifdef HS_DEBUGGING
             GLenum e;
             if ((e = glGetError()) != GL_NO_ERROR) {
-                hsStatusMessage(ST::format("Use Program failed {}", uint32_t(e)).c_str());
+                hsStatusMessage(ST::format("Use Program failed {} (Material {})", uint32_t(e), material->GetKeyName()).c_str());
             }
 #endif
 
-#if HS_BUILD_FOR_OSX
-            // BEGIN VertexAttribObject hack for OSX
             // TODO: Figure out how to use VAOs properly :(
             GLuint vao;
             glGenVertexArrays(1, &vao);
             glBindVertexArray(vao);
-            // END VertexAttribObject hack for OSX
-#endif
 
             // What do we change?
 

@@ -58,6 +58,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plDrawable/plGBufferGroup.h"
 #include "plDrawable/plSpaceTree.h"
 #include "plDrawable/plSpanTypes.h"
+#include "plGImage/plMipmap.h"
+#include "plGImage/plCubicEnvironmap.h"
 #include "plGLight/plLightInfo.h"
 #include "plGLight/plShadowSlave.h"
 #include "plGLight/plShadowCaster.h"
@@ -106,6 +108,7 @@ pl3DPipeline::pl3DPipeline(const hsG3DDeviceModeRecord* devModeRec)
     fActivePiggyBacks(0),
     fVtxBuffRefList(nullptr),
     fIdxBuffRefList(nullptr),
+    fTextureRefList(nullptr),
     fCurrMaterial(nullptr),
     fCurrLay(nullptr),
     fCurrNumLayers(0),
@@ -272,6 +275,44 @@ void pl3DPipeline::CheckIndexBufferRef(plGBufferGroup* owner, uint32_t idx)
     // If it's dirty, refill it.
     if (iRef->IsDirty()) {
         fDevice.FillIndexBufferRef(iRef, owner, idx);
+    }
+}
+
+
+void pl3DPipeline::CheckTextureRef(plLayerInterface* layer)
+{
+    plBitmap* bitmap = layer->GetTexture();
+
+    if (bitmap) {
+        DeviceType::TextureRef* tRef = static_cast<DeviceType::TextureRef*>(bitmap->GetDeviceRef());
+
+        if (!tRef) {
+            tRef = new DeviceType::TextureRef();
+
+            fDevice.SetupTextureRef(layer, bitmap, tRef);
+        }
+
+        if (!tRef->IsLinked()) {
+            tRef->Link(&fTextureRefList);
+        }
+
+        // Make sure it has all resources created.
+        fDevice.CheckTexture(tRef);
+
+        // If it's dirty, refill it.
+        if (tRef->IsDirty()) {
+            plMipmap* mip = plMipmap::ConvertNoRef(bitmap);
+            if (mip) {
+                fDevice.MakeTextureRef(tRef, layer, mip);
+                return;
+            }
+
+            plCubicEnvironmap* cubic = plCubicEnvironmap::ConvertNoRef(bitmap);
+            if (cubic) {
+                fDevice.MakeCubicTextureRef(tRef, layer, cubic);
+                return;
+            }
+        }
     }
 }
 
