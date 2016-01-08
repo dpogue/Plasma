@@ -252,7 +252,7 @@ if(PLASMA_PIPELINE STREQUAL "OpenGL")
     if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         find_package(OpenGL REQUIRED)
     else(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        find_package(OpenGLES2 REQUIRED)
+        find_package(OpenGL4 REQUIRED)
         find_package(EGL REQUIRED)
     endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 

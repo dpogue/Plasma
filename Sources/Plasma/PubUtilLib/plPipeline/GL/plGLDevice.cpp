@@ -47,11 +47,15 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #    include <OpenGL/gl3.h>
 #    include <OpenGL/gl3ext.h>
 #else
-#    include <GLES3/gl3.h>
-#    include <GLES3/gl3ext.h>
+#    include <GL/gl.h>
+#    include <GL/glext.h>
 #endif
 
 #include "plDrawable/plGBufferGroup.h"
+#include "plGImage/plMipmap.h"
+#include "plGImage/plCubicEnvironmap.h"
+
+#define HS_DEBUGGING 1
 
 static float kIdentityMatrix[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -89,7 +93,7 @@ plGLDevice::plGLDevice()
 
 bool plGLDevice::InitDevice()
 {
-    if (!eglBindAPI(EGL_OPENGL_ES_API))
+    if (!eglBindAPI(EGL_OPENGL_API))
     {
         fErrorMsg = "Could not bind to correct API";
         return false;
@@ -120,7 +124,7 @@ bool plGLDevice::InitDevice()
         // These don't work with ANGLE :(
         EGL_SAMPLE_BUFFERS, 1,
         EGL_SAMPLES, 4,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
 #endif
         EGL_NONE
     };
@@ -134,7 +138,7 @@ bool plGLDevice::InitDevice()
 
     /* Set up the GL context */
     EGLint ctx_attrs[] = {
-        EGL_CONTEXT_CLIENT_VERSION, 3,
+        EGL_CONTEXT_CLIENT_VERSION, 4,
         EGL_NONE
     };
 
@@ -388,6 +392,192 @@ void plGLDevice::FillIndexBufferRef(IndexBufferRef* iRef, plGBufferGroup* owner,
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, owner->GetIndexBufferData(idx) + startIdx, GL_STATIC_DRAW);
 
     iRef->SetDirty(false);
+}
+
+
+
+void plGLDevice::SetupTextureRef(plLayerInterface* layer, plBitmap* img, TextureRef* tRef)
+{
+    tRef->fOwner = img;
+
+    if (img->IsCompressed()) {
+        switch (img->fDirectXInfo.fCompressionType) {
+        case plBitmap::DirectXInfo::kDXT1:
+            tRef->fFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+            break;
+        case plBitmap::DirectXInfo::kDXT5:
+            tRef->fFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            break;
+        }
+    } else {
+        switch (img->fUncompressedInfo.fType) {
+        case plBitmap::UncompressedInfo::kRGB8888:
+            tRef->fFormat = GL_RGBA;
+            tRef->fDataType = GL_UNSIGNED_SHORT;
+            tRef->fDataFormat = GL_BGRA;
+            break;
+        case plBitmap::UncompressedInfo::kRGB4444:
+            tRef->fFormat = GL_RGBA;
+            tRef->fDataType = GL_UNSIGNED_SHORT_4_4_4_4;
+            tRef->fDataFormat = GL_BGRA;
+            break;
+        case plBitmap::UncompressedInfo::kRGB1555:
+            tRef->fFormat = GL_RGBA;
+            tRef->fDataType = GL_UNSIGNED_SHORT_5_5_5_1;
+            tRef->fDataFormat = GL_BGRA;
+            break;
+        case plBitmap::UncompressedInfo::kInten8:
+            tRef->fFormat = GL_LUMINANCE;
+            tRef->fDataType = GL_UNSIGNED_SHORT;
+            tRef->fDataFormat = GL_LUMINANCE;
+            break;
+        case plBitmap::UncompressedInfo::kAInten88:
+            tRef->fFormat = GL_LUMINANCE_ALPHA;
+            tRef->fDataType = GL_UNSIGNED_SHORT;
+            tRef->fDataFormat = GL_LUMINANCE_ALPHA;
+            break;
+        }
+    }
+
+    tRef->SetDirty(true);
+
+    img->SetDeviceRef(tRef);
+    hsRefCnt_SafeUnRef(tRef);
+}
+
+void plGLDevice::CheckTexture(TextureRef* tRef)
+{
+    if (!tRef->fRef)
+    {
+        glGenTextures(1, &tRef->fRef);
+
+        tRef->SetDirty(true);
+    }
+}
+
+
+void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
+{
+    GLuint e = GL_NO_ERROR;
+
+    glBindTexture(tRef->fMapping, tRef->fRef);
+
+#ifdef HS_DEBUGGING
+    if ((e = glGetError()) != GL_NO_ERROR) {
+        hsStatusMessage(plFormat("Bind Texture failed {}", uint32_t(e)).c_str());
+    }
+#endif
+
+    tRef->fLevels = img->GetNumLevels() - 1;
+
+    if (img->IsCompressed()) {
+        // Hack around the smallest levels being unusable
+        img->SetCurrLevel(tRef->fLevels);
+        while ((img->GetCurrWidth() | img->GetCurrHeight()) & 0x03) {
+            tRef->fLevels--;
+            hsAssert(tRef->fLevels >= 0, "How was this ever compressed?" );
+            img->SetCurrLevel(tRef->fLevels);
+        }
+
+        for (GLuint lvl = 0; lvl <= tRef->fLevels; lvl++) {
+            img->SetCurrLevel(lvl);
+
+            glCompressedTexImage2D(mapping, lvl, tRef->fFormat, img->GetCurrWidth(), img->GetCurrHeight(), 0, img->GetCurrLevelSize(), img->GetCurrLevelPtr());
+
+#ifdef HS_DEBUGGING
+            if ((e = glGetError()) != GL_NO_ERROR) {
+                hsStatusMessage(plFormat("Texture Image failed {} at level {}", uint32_t(e), lvl).c_str());
+            }
+#endif
+        }
+    } else {
+        for (GLuint lvl = 0; lvl <= tRef->fLevels; lvl++) {
+            img->SetCurrLevel(lvl);
+
+            glTexImage2D(mapping, lvl, tRef->fFormat, img->GetCurrWidth(), img->GetCurrHeight(), 0, tRef->fDataFormat, tRef->fDataType, img->GetCurrLevelPtr());
+
+#ifdef HS_DEBUGGING
+            if ((e = glGetError()) != GL_NO_ERROR) {
+                hsStatusMessage(plFormat("NonDXT Texture Image failed {} at level {}", uint32_t(e), lvl).c_str());
+            }
+#endif
+        }
+    }
+}
+
+void plGLDevice::MakeTextureRef(TextureRef* tRef, plLayerInterface* layer, plMipmap* img)
+{
+    tRef->fMapping = GL_TEXTURE_2D;
+    BindTexture(tRef, img, tRef->fMapping);
+
+    switch(layer->GetClampFlags()) {
+    case hsGMatState::kClampTextureU:
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        break;
+    case hsGMatState::kClampTextureV:
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        break;
+    case hsGMatState::kClampTexture:
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        break;
+    default:
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+
+    glTexParameteri(tRef->fMapping, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    if (tRef->fLevels) {
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_MAX_LEVEL, tRef->fLevels);
+    } else {
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    }
+
+#ifdef HS_DEBUGGING
+    GLuint e;
+    if ((e = glGetError()) != GL_NO_ERROR) {
+        hsStatusMessage(plFormat("Mipmap Texture failed {} (Texture {})", uint32_t(e), img->GetKeyName()).c_str());
+    }
+#endif
+}
+
+
+void plGLDevice::MakeCubicTextureRef(TextureRef* tRef, plLayerInterface* layer, plCubicEnvironmap* img)
+{
+    static const GLenum kFaceMapping[] = {
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_X, // kLeftFace
+        GL_TEXTURE_CUBE_MAP_POSITIVE_X, // kRightFace
+        GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // kFrontFace
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, // kBackFace
+        GL_TEXTURE_CUBE_MAP_POSITIVE_Y, // kTopFace
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y  // kBottomFace
+    };
+
+    tRef->fMapping = GL_TEXTURE_CUBE_MAP;
+
+    for (size_t i = 0; i < 6; i++) {
+        BindTexture(tRef, img->GetFace(i), kFaceMapping[i]);
+    }
+
+    glTexParameteri(tRef->fMapping, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    if (tRef->fLevels) {
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_MAX_LEVEL, tRef->fLevels);
+    } else {
+        glTexParameteri(tRef->fMapping, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    }
+
+#ifdef HS_DEBUGGING
+    GLuint e;
+    if ((e = glGetError()) != GL_NO_ERROR) {
+        hsStatusMessage(plFormat("Cubic Texture failed {} (Texture {})", uint32_t(e), img->GetKeyName()).c_str());
+    }
+#endif
 }
 
 

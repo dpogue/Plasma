@@ -75,7 +75,6 @@ public:
     virtual plTextFont* MakeTextFont(char* face, uint16_t size);
     virtual bool OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly);
     virtual bool CloseAccess(plAccessSpan& acc);
-    virtual void CheckTextureRef(plLayerInterface* lay);
     virtual void PushRenderRequest(plRenderRequest* req);
     virtual void PopRenderRequest(plRenderRequest* req);
     virtual void ClearRenderTarget(plDrawable* d);
