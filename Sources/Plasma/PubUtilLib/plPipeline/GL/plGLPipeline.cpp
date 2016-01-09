@@ -456,7 +456,7 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 #ifdef HS_DEBUGGING
             GLenum e;
             if ((e = glGetError()) != GL_NO_ERROR) {
-                hsStatusMessage(plFormat("Use Program failed {} (Material {})", uint32_t(e), material->GetName()).c_str());
+                hsStatusMessage(plFormat("Use Program failed {} (Material {})", uint32_t(e), material->GetKeyName()).c_str());
             }
 #endif
 

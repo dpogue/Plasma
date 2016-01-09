@@ -118,6 +118,10 @@ void plGLMaterialShaderRef::SetupTextureRefs()
         // Load the image
         plBitmap* img = plBitmap::ConvertNoRef(layer->GetTexture());
 
+        if (!img) {
+            continue;
+        }
+
         GLenum e;
         plGLTextureRef* texRef = (plGLTextureRef*)img->GetDeviceRef();
 
