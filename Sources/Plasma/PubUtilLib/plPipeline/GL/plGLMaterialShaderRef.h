@@ -110,6 +110,7 @@ public:
     GLuint                      uMatSpecularCol;
     GLuint                      uMatSpecularSrc;
     GLuint                      uPassNumber;
+    GLuint                      uAlphaThreshold;
 
 
     void                    Link(plGLMaterialShaderRef** back) { plGLDeviceRef::Link((plGLDeviceRef**)back); }
