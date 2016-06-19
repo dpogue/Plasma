@@ -121,7 +121,7 @@ public:
     static plClient*      GetInstance() { return fInstance; }
     static void           SetInstance(plClient* v) { fInstance = v; }
 
-    virtual bool MsgReceive(plMessage* msg);
+    bool MsgReceive(plMessage* msg) HS_OVERRIDE;
 
     bool InitPipeline(hsWindowHndl display);
 
