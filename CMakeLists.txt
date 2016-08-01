@@ -251,14 +251,30 @@ if(PLASMA_PIPELINE STREQUAL "OpenGL")
     # Windows uses EGL and OpenGLES2 emulated by ANGLE.
     if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         find_package(OpenGL REQUIRED)
+        set_package_properties(OpenGL PROPERTIES
+            DESCRIPTION "Framework for hardware-accelerated 3D graphics"
+            TYPE REQUIRED
+        )
     else(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         find_package(OpenGL4 REQUIRED)
+        set_package_properties(OpenGL4 PROPERTIES
+            DESCRIPTION "Framework for hardware-accelerated 3D graphics"
+            URL "http://www.opengl.org"
+            TYPE REQUIRED
+        )
+
         find_package(EGL REQUIRED)
+        set_package_properties(EGL PROPERTIES
+            DESCRIPTION "Library for native rendering surface management"
+            URL "https://www.khronos.org/egl"
+            TYPE REQUIRED
+        )
     endif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
     add_definitions(-DPLASMA_PIPELINE_GL)
     add_definitions(-DMINIMAL_GL_BUILD)
 endif(PLASMA_PIPELINE STREQUAL "OpenGL")
+
 
 #Allow us to disable certain parts of the build
 option(PLASMA_BUILD_RESOURCE_DAT "Do we want to build resource.dat?" ON)
