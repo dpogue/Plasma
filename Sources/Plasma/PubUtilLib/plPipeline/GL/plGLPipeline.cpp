@@ -127,6 +127,7 @@ plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3
 
 plGLPipeline::~plGLPipeline()
 {
+    fDevice.Shutdown();
 }
 
 

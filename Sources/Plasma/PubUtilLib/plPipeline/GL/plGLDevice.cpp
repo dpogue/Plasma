@@ -171,6 +171,25 @@ bool plGLDevice::InitDevice()
     return true;
 }
 
+
+void plGLDevice::Shutdown()
+{
+    if (fSurface != EGL_NO_SURFACE) {
+        eglDestroySurface(fDisplay, fSurface);
+        fSurface = EGL_NO_SURFACE;
+    }
+
+    if (fContext != EGL_NO_CONTEXT) {
+        eglDestroySurface(fDisplay, fContext);
+        fContext = EGL_NO_CONTEXT;
+    }
+
+    if (fDisplay != EGL_NO_DISPLAY) {
+        eglTerminate(fDisplay);
+        fDisplay = EGL_NO_DISPLAY;
+    }
+}
+
 void plGLDevice::SetRenderTarget(plRenderTarget* target)
 {
     SetViewport();

@@ -89,6 +89,8 @@ public:
 
     bool InitDevice();
 
+    void Shutdown();
+
     /**
      * Set rendering to the specified render target.
      *
