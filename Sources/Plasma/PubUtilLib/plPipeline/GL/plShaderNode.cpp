@@ -175,7 +175,22 @@ ST::string plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::
         {
             std::shared_ptr<plConditionNode> cond = static_pointer_cast<plConditionNode>(node);
 
-            return ST::format("if ({}) {{ {}; }", this->RenderNode(cond->condition, fn), this->RenderNode(cond->body, fn));
+            ST::string_stream out;
+            out << ST::format("if ({}) {{", this->RenderNode(cond->condition, fn));
+
+            if (cond->nodes.size() == 1) {
+                out << ST::format(" {}; }", this->RenderNode(cond->nodes[0], fn));
+            } else {
+                out << "\n";
+
+                for (size_t i = 0; i < cond->nodes.size(); i++) {
+                    out << "\t" << this->RenderNode(cond->nodes[i], fn) << ";\n";
+                }
+
+                out << "}";
+            }
+
+            return out.to_string();
         }
         break;
 
@@ -203,16 +218,42 @@ ST::string plShaderContext::Render()
         out << "precision mediump float;\n";
     }
 
+    for (std::shared_ptr<plShaderStruct> st : this->structs) {
+        out << ST::format("struct {} {{\n", st->name);
+
+        for (std::shared_ptr<plVariableNode> var : st->fields) {
+            if (var->count > 1) {
+                out << "\t" << ST::format("{} {}[{}];\n", var->type, var->name, var->count);
+            } else {
+                out << "\t" << ST::format("{} {};\n", var->type, var->name);
+            }
+        }
+
+        out << "};\n";
+    }
+
     for (std::shared_ptr<plAttributeNode> node : this->attributes) {
-        out << ST::format("attribute {} {};\n", node->type, node->name);
+        if (node->count > 1) {
+            out << ST::format("attribute {} {}[{}];\n", node->type, node->name, node->count);
+        } else {
+            out << ST::format("attribute {} {};\n", node->type, node->name);
+        }
     }
 
     for (std::shared_ptr<plUniformNode> node : this->uniforms) {
-        out << ST::format("uniform {} {};\n", node->type, node->name);
+        if (node->count > 1) {
+            out << ST::format("uniform {} {}[{}];\n", node->type, node->name, node->count);
+        } else {
+            out << ST::format("uniform {} {};\n", node->type, node->name);
+        }
     }
 
     for (std::shared_ptr<plVaryingNode> node : this->varyings) {
-        out << ST::format("varying {} {};\n", node->type, node->name);
+        if (node->count > 1) {
+            out << ST::format("varying {} {}[{}];\n", node->type, node->name, node->count);
+        } else {
+            out << ST::format("varying {} {};\n", node->type, node->name);
+        }
     }
 
 
@@ -232,7 +273,11 @@ ST::string plShaderContext::Render()
 
 
         for (std::shared_ptr<plTempVariableNode> node : fn->temps) {
-            out << "\t" << ST::format("{} {};\n", node->type, node->name);
+            if (node->count > 1) {
+                out << "\t" << ST::format("{} {}[{}];\n", node->type, node->name, node->count);
+            } else {
+                out << "\t" << ST::format("{} {};\n", node->type, node->name);
+            }
         }
 
         if (fn->temps.size()) {
