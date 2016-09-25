@@ -167,6 +167,7 @@ bool plGLDevice::InitDevice()
 
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_POLYGON_OFFSET_FILL);
 
     return true;
 }
