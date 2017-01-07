@@ -40,8 +40,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#include "plShaderNode.h"
+#include <string_theory/string_stream>
 #include <string_theory/format>
+#include "plShaderNode.h"
 
 using namespace std;
 

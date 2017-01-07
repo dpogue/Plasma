@@ -136,7 +136,7 @@ protected:
     void ICleanupShaderContexts();
 
     template <typename T>
-    std::shared_ptr<T> IFindVariable(ST::string name, ST::string type, size_t n = 1)
+    std::shared_ptr<T> IFindVariable(const ST::string& name, const ST::string& type, size_t n = 1)
     {
         auto it = fVariables.find(name);
         if (it == fVariables.end()) {
