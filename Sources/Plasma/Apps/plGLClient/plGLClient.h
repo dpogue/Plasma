@@ -138,7 +138,7 @@ public:
 
 protected:
     // Hackery to avoid all of plAgeLoader and the netclient stuff
-    bool ILoadAge(const plString& ageName);
+    bool ILoadAge(const ST::string& ageName);
     bool IUpdate();
     bool IDraw();
 

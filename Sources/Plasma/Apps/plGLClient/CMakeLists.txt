@@ -38,6 +38,7 @@ endif(WIN32)
 
 add_executable(plGLClient ${plGLClient_SOURCES} ${plGLClient_HEADERS})
 
+target_link_libraries(plGLClient string_theory)
 # Plasma Libs
 target_link_libraries(plGLClient CoreLib)
 target_link_libraries(plGLClient plAgeDescription)

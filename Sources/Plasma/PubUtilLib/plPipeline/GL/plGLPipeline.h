@@ -70,33 +70,33 @@ public:
      */
 
     /*** VIRTUAL METHODS ***/
-    virtual bool PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr=nullptr);
-    virtual bool PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr=nullptr);
-    virtual plTextFont* MakeTextFont(char* face, uint16_t size);
-    virtual bool OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly);
-    virtual bool CloseAccess(plAccessSpan& acc);
-    virtual void PushRenderRequest(plRenderRequest* req);
-    virtual void PopRenderRequest(plRenderRequest* req);
-    virtual void ClearRenderTarget(plDrawable* d);
-    virtual void ClearRenderTarget(const hsColorRGBA* col = nullptr, const float* depth = nullptr);
-    virtual hsGDeviceRef* MakeRenderTargetRef(plRenderTarget* owner);
-    virtual bool BeginRender();
-    virtual bool EndRender();
-    virtual void RenderScreenElements();
-    virtual bool IsFullScreen() const;
-    virtual void Resize(uint32_t width, uint32_t height);
-    virtual bool CheckResources();
-    virtual void LoadResources();
-    virtual void SubmitClothingOutfit(plClothingOutfit* co);
-    virtual bool SetGamma(float eR, float eG, float eB);
-    virtual bool SetGamma(const uint16_t* const tabR, const uint16_t* const tabG, const uint16_t* const tabB);
-    virtual bool CaptureScreen(plMipmap* dest, bool flipVertical = false, uint16_t desiredWidth = 0, uint16_t desiredHeight = 0);
-    virtual plMipmap* ExtractMipMap(plRenderTarget* targ);
-    virtual void GetSupportedDisplayModes(std::vector<plDisplayMode> *res, int ColorDepth = 32 );
-    virtual int GetMaxAnisotropicSamples();
-    virtual int GetMaxAntiAlias(int Width, int Height, int ColorDepth);
-    virtual void ResetDisplayDevice(int Width, int Height, int ColorDepth, bool Windowed, int NumAASamples, int MaxAnisotropicSamples, bool vSync = false);
-    virtual void RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& visList);
+    bool PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr=nullptr) HS_OVERRIDE;
+    bool PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr=nullptr) HS_OVERRIDE;
+    plTextFont* MakeTextFont(char* face, uint16_t size) HS_OVERRIDE;
+    bool OpenAccess(plAccessSpan& dst, plDrawableSpans* d, const plVertexSpan* span, bool readOnly) HS_OVERRIDE;
+    bool CloseAccess(plAccessSpan& acc) HS_OVERRIDE;
+    void PushRenderRequest(plRenderRequest* req) HS_OVERRIDE;
+    void PopRenderRequest(plRenderRequest* req) HS_OVERRIDE;
+    void ClearRenderTarget(plDrawable* d) HS_OVERRIDE;
+    void ClearRenderTarget(const hsColorRGBA* col = nullptr, const float* depth = nullptr) HS_OVERRIDE;
+    hsGDeviceRef* MakeRenderTargetRef(plRenderTarget* owner) HS_OVERRIDE;
+    bool BeginRender() HS_OVERRIDE;
+    bool EndRender() HS_OVERRIDE;
+    void RenderScreenElements() HS_OVERRIDE;
+    bool IsFullScreen() const HS_OVERRIDE;
+    void Resize(uint32_t width, uint32_t height) HS_OVERRIDE;
+    bool CheckResources() HS_OVERRIDE;
+    void LoadResources() HS_OVERRIDE;
+    void SubmitClothingOutfit(plClothingOutfit* co) HS_OVERRIDE;
+    bool SetGamma(float eR, float eG, float eB) HS_OVERRIDE;
+    bool SetGamma(const uint16_t* const tabR, const uint16_t* const tabG, const uint16_t* const tabB) HS_OVERRIDE;
+    bool CaptureScreen(plMipmap* dest, bool flipVertical = false, uint16_t desiredWidth = 0, uint16_t desiredHeight = 0) HS_OVERRIDE;
+    plMipmap* ExtractMipMap(plRenderTarget* targ) HS_OVERRIDE;
+    void GetSupportedDisplayModes(std::vector<plDisplayMode> *res, int ColorDepth = 32 ) HS_OVERRIDE;
+    int GetMaxAnisotropicSamples() HS_OVERRIDE;
+    int GetMaxAntiAlias(int Width, int Height, int ColorDepth) HS_OVERRIDE;
+    void ResetDisplayDevice(int Width, int Height, int ColorDepth, bool Windowed, int NumAASamples, int MaxAnisotropicSamples, bool vSync = false) HS_OVERRIDE;
+    void RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& visList) HS_OVERRIDE;
 
 protected:
     void ISetupTransforms(plDrawableSpans* drawable, const plSpan& span, hsMatrix44& lastL2W);

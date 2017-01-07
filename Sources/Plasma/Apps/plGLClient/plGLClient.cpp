@@ -312,9 +312,9 @@ bool plClient::MsgReceive(plMessage* msg)
 
 
 
-bool plClient::ILoadAge(const plString& ageName)
+bool plClient::ILoadAge(const ST::string& ageName)
 {
-    plFileName filename = plFileName::Join("dat", plFormat("{}.age", ageName));
+    plFileName filename = plFileName::Join("dat", ST::format("{}.age", ageName));
     hsStream* stream = plEncryptedStream::OpenEncryptedFile(filename);
 
     plAgeDescription ad;
@@ -378,7 +378,7 @@ bool plClient::IIsRoomLoading(const plLocation& loc)
 void plClient::IQueueRoomLoad(const std::vector<plLocation>& locs, bool hold)
 {
     bool allSameAge = true;
-    plString lastAgeName;
+    ST::string lastAgeName;
 
     uint32_t numRooms = 0;
     for (int i = 0; i < locs.size(); i++)
@@ -405,7 +405,7 @@ void plClient::IQueueRoomLoad(const std::vector<plLocation>& locs, bool hold)
 
         fLoadRooms.push_back(new LoadRequest(loc, hold));
 
-        if (lastAgeName.IsNull() || info->GetAge() == lastAgeName)
+        if (lastAgeName.is_empty() || info->GetAge() == lastAgeName)
             lastAgeName = info->GetAge();
         else
             allSameAge = false;

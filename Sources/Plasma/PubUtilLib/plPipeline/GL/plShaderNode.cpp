@@ -40,12 +40,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
+#include <string_theory/string_stream>
+#include <string_theory/format>
 #include "plShaderNode.h"
-#include "plFormat.h"
 
 using namespace std;
 
-plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::shared_ptr<plShaderFunction> fn) {
+ST::string plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::shared_ptr<plShaderFunction> fn) {
     switch (node->klass)
     {
         case kConstant:
@@ -119,13 +120,13 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
             std::shared_ptr<plOperatorNode> op = static_pointer_cast<plOperatorNode>(node);
 
             if (op->op == ".") {
-              return plFormat("{}{}{}", this->RenderNode(op->lhs, fn), op->op, this->RenderNode(op->rhs, fn));
+              return ST::format("{}{}{}", this->RenderNode(op->lhs, fn), op->op, this->RenderNode(op->rhs, fn));
             } else if (op->op == "[") {
-              return plFormat("{}{}{}]", this->RenderNode(op->lhs, fn), op->op, this->RenderNode(op->rhs, fn));
+              return ST::format("{}{}{}]", this->RenderNode(op->lhs, fn), op->op, this->RenderNode(op->rhs, fn));
             } else if (op->parens) {
-              return plFormat("({} {} {})", this->RenderNode(op->lhs, fn), op->op, this->RenderNode(op->rhs, fn));
+              return ST::format("({} {} {})", this->RenderNode(op->lhs, fn), op->op, this->RenderNode(op->rhs, fn));
             } else {
-              return plFormat("{} {} {}", this->RenderNode(op->lhs, fn), op->op, this->RenderNode(op->rhs, fn));
+              return ST::format("{} {} {}", this->RenderNode(op->lhs, fn), op->op, this->RenderNode(op->rhs, fn));
             }
         }
         break;
@@ -134,7 +135,7 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
         {
             std::shared_ptr<plAssignmentNode> asn = static_pointer_cast<plAssignmentNode>(node);
 
-            return plFormat("{} = {}", this->RenderNode(asn->lhs, fn), this->RenderNode(asn->rhs, fn));
+            return ST::format("{} = {}", this->RenderNode(asn->lhs, fn), this->RenderNode(asn->rhs, fn));
         }
         break;
 
@@ -142,7 +143,7 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
         {
             std::shared_ptr<plReturnNode> ret = static_pointer_cast<plReturnNode>(node);
 
-            return plFormat("return {}", this->RenderNode(ret->var, fn));
+            return ST::format("return {}", this->RenderNode(ret->var, fn));
         }
         break;
 
@@ -150,13 +151,13 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
         {
             std::shared_ptr<plCallNode> call = static_pointer_cast<plCallNode>(node);
 
-            std::vector<plString> params;
+            std::vector<ST::string> params;
 
             for (std::shared_ptr<plShaderNode> arg : call->args) {
                 params.push_back(this->RenderNode(arg, fn));
             }
 
-            plStringStream out;
+            ST::string_stream out;
             out << call->function << "(";
 
             for (size_t i = 0; i < call->args.size(); i++) {
@@ -167,7 +168,7 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
             }
             out << ")";
 
-            return out.GetString();
+            return out.to_string();
         }
         break;
 
@@ -175,11 +176,11 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
         {
             std::shared_ptr<plConditionNode> cond = static_pointer_cast<plConditionNode>(node);
 
-            plStringStream out;
-            out << plFormat("if ({}) {{", this->RenderNode(cond->condition, fn));
+            ST::string_stream out;
+            out << ST::format("if ({}) {{", this->RenderNode(cond->condition, fn));
 
             if (cond->nodes.size() == 1) {
-                out << plFormat(" {}; }", this->RenderNode(cond->nodes[0], fn));
+                out << ST::format(" {}; }", this->RenderNode(cond->nodes[0], fn));
             } else {
                 out << "\n";
 
@@ -190,7 +191,7 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
                 out << "}";
             }
 
-            return out.GetString();
+            return out.to_string();
         }
         break;
 
@@ -199,9 +200,9 @@ plString plShaderContext::RenderNode(std::shared_ptr<plShaderNode> node, std::sh
     }
 }
 
-plString plShaderContext::Render()
+ST::string plShaderContext::Render()
 {
-    std::vector<plString> lines;
+    std::vector<ST::string> lines;
 
     for (std::shared_ptr<plShaderFunction> fn : this->funcs) {
         for (std::shared_ptr<plShaderNode> node : fn->nodes) {
@@ -210,22 +211,22 @@ plString plShaderContext::Render()
     }
 
 
-    plStringStream out;
+    ST::string_stream out;
 
-    out << plFormat("#version {}\n", this->version);
+    out << ST::format("#version {}\n", this->version);
 
     if (this->type == kFragment) {
         out << "precision mediump float;\n";
     }
 
     for (std::shared_ptr<plShaderStruct> st : this->structs) {
-        out << plFormat("struct {} {{\n", st->name);
+        out << ST::format("struct {} {{\n", st->name);
 
         for (std::shared_ptr<plVariableNode> var : st->fields) {
             if (var->count > 1) {
-                out << "\t" << plFormat("{} {}[{}];\n", var->type, var->name, var->count);
+                out << "\t" << ST::format("{} {}[{}];\n", var->type, var->name, var->count);
             } else {
-                out << "\t" << plFormat("{} {};\n", var->type, var->name);
+                out << "\t" << ST::format("{} {};\n", var->type, var->name);
             }
         }
 
@@ -234,38 +235,38 @@ plString plShaderContext::Render()
 
     for (std::shared_ptr<plAttributeNode> node : this->attributes) {
         if (node->count > 1) {
-            out << plFormat("attribute {} {}[{}];\n", node->type, node->name, node->count);
+            out << ST::format("attribute {} {}[{}];\n", node->type, node->name, node->count);
         } else {
-            out << plFormat("attribute {} {};\n", node->type, node->name);
+            out << ST::format("attribute {} {};\n", node->type, node->name);
         }
     }
 
     for (std::shared_ptr<plUniformNode> node : this->uniforms) {
         if (node->count > 1) {
-            out << plFormat("uniform {} {}[{}];\n", node->type, node->name, node->count);
+            out << ST::format("uniform {} {}[{}];\n", node->type, node->name, node->count);
         } else {
-            out << plFormat("uniform {} {};\n", node->type, node->name);
+            out << ST::format("uniform {} {};\n", node->type, node->name);
         }
     }
 
     for (std::shared_ptr<plVaryingNode> node : this->varyings) {
         if (node->count > 1) {
-            out << plFormat("varying {} {}[{}];\n", node->type, node->name, node->count);
+            out << ST::format("varying {} {}[{}];\n", node->type, node->name, node->count);
         } else {
-            out << plFormat("varying {} {};\n", node->type, node->name);
+            out << ST::format("varying {} {};\n", node->type, node->name);
         }
     }
 
 
     for (std::shared_ptr<plShaderFunction> fn : this->funcs) {
-        out << plFormat("\n{} {}(", fn->type, fn->name);
+        out << ST::format("\n{} {}(", fn->type, fn->name);
 
         size_t i = 0;
         for (std::shared_ptr<plArgumentNode> arg : fn->args) {
             if (i > 0) {
                 out << ", ";
             }
-            out << plFormat("{} {}", arg->type, arg->name);
+            out << ST::format("{} {}", arg->type, arg->name);
             i++;
         }
 
@@ -274,9 +275,9 @@ plString plShaderContext::Render()
 
         for (std::shared_ptr<plTempVariableNode> node : fn->temps) {
             if (node->count > 1) {
-                out << "\t" << plFormat("{} {}[{}];\n", node->type, node->name, node->count);
+                out << "\t" << ST::format("{} {}[{}];\n", node->type, node->name, node->count);
             } else {
-                out << "\t" << plFormat("{} {};\n", node->type, node->name);
+                out << "\t" << ST::format("{} {};\n", node->type, node->name);
             }
         }
 
@@ -284,12 +285,12 @@ plString plShaderContext::Render()
             out << "\n";
         }
 
-        for (plString ln : fn->output) {
+        for (ST::string ln : fn->output) {
             out << "\t" << ln << ";\n";
         }
 
         out << "}\n";
     }
 
-    return out.GetString();
+    return out.to_string();
 }

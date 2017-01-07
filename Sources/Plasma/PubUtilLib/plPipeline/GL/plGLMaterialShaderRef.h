@@ -57,7 +57,7 @@ class plLayerInterface;
 
 class plGLMaterialShaderRef : public plGLDeviceRef
 {
-    typedef std::map<plString, std::shared_ptr<plGlobalVariableNode>> plShaderVarLookup;
+    typedef std::map<ST::string, std::shared_ptr<plGlobalVariableNode>> plShaderVarLookup;
 
     enum {
         kShaderVersion = 100
@@ -136,7 +136,7 @@ protected:
     void ICleanupShaderContexts();
 
     template <typename T>
-    std::shared_ptr<T> IFindVariable(plString name, plString type, size_t n = 1)
+    std::shared_ptr<T> IFindVariable(const ST::string& name, const ST::string& type, size_t n = 1)
     {
         auto it = fVariables.find(name);
         if (it == fVariables.end()) {

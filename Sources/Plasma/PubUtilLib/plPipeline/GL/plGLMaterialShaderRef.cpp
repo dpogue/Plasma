@@ -40,6 +40,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
+#include <string_theory/format>
 #include "plGLMaterialShaderRef.h"
 
 #include "HeadSpin.h"
@@ -131,7 +132,7 @@ void plGLMaterialShaderRef::SetupTextureRefs()
 
 #ifdef HS_DEBUGGING
         if ((e = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(plFormat("PRE-Active Texture failed {}", uint32_t(e)).c_str());
+            hsStatusMessage(ST::format("PRE-Active Texture failed {}", uint32_t(e)).c_str());
         }
 #endif
 
@@ -139,7 +140,7 @@ void plGLMaterialShaderRef::SetupTextureRefs()
 
 #ifdef HS_DEBUGGING
         if ((e = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(plFormat("Active Texture failed {}", uint32_t(e)).c_str());
+            hsStatusMessage(ST::format("Active Texture failed {}", uint32_t(e)).c_str());
         }
 #endif
 
@@ -147,7 +148,7 @@ void plGLMaterialShaderRef::SetupTextureRefs()
 
 #ifdef HS_DEBUGGING
         if ((e = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(plFormat("Bind Texture failed {}", uint32_t(e)).c_str());
+            hsStatusMessage(ST::format("Bind Texture failed {}", uint32_t(e)).c_str());
         }
 #endif
 
@@ -184,7 +185,7 @@ void plGLMaterialShaderRef::SetupTextureRefs()
 
 #ifdef HS_DEBUGGING
         if ((e = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(plFormat("Uniform Texture failed {}", uint32_t(e)).c_str());
+            hsStatusMessage(ST::format("Uniform Texture failed {}", uint32_t(e)).c_str());
         }
 #endif
 
@@ -198,7 +199,7 @@ void plGLMaterialShaderRef::ICompile()
 #ifdef HS_DEBUGGING
     GLenum e_pre;
     if ((e_pre = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Begin Compile failed {}", uint32_t(e_pre)).c_str());
+        hsStatusMessage(ST::format("Begin Compile failed {}", uint32_t(e_pre)).c_str());
     }
 #endif
 
@@ -213,13 +214,13 @@ void plGLMaterialShaderRef::ICompile()
 #ifdef HS_DEBUGGING
         GLenum e_tex;
         if ((e_tex = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(plFormat("Check Texture Ref failed {} (Layer {})", uint32_t(e_tex), layer->GetKeyName()).c_str());
+            hsStatusMessage(ST::format("Check Texture Ref failed {} (Layer {})", uint32_t(e_tex), layer->GetKeyName()).c_str());
         }
 #endif
     }
 
-    plString vtx = fVertexShader->Render();
-    plString frg = fFragmentShader->Render();
+    ST::string vtx = fVertexShader->Render();
+    ST::string frg = fFragmentShader->Render();
 
     const char* vs_code = vtx.c_str();
     const char* fs_code = frg.c_str();
@@ -252,7 +253,7 @@ void plGLMaterialShaderRef::ICompile()
         }
 
         if ((compiled = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(plFormat("Compile Vtx failed {}", uint32_t(compiled)).c_str());
+            hsStatusMessage(ST::format("Compile Vtx failed {}", uint32_t(compiled)).c_str());
         }
     }
 #endif
@@ -277,7 +278,7 @@ void plGLMaterialShaderRef::ICompile()
         }
 
         if ((compiled = glGetError()) != GL_NO_ERROR) {
-            hsStatusMessage(plFormat("Compile Frg failed {}", uint32_t(compiled)).c_str());
+            hsStatusMessage(ST::format("Compile Frg failed {}", uint32_t(compiled)).c_str());
         }
     }
 #endif
@@ -287,7 +288,7 @@ void plGLMaterialShaderRef::ICompile()
 #ifdef HS_DEBUGGING
     GLenum e_cp;
     if ((e_cp = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Create Program failed {}", uint32_t(e_cp)).c_str());
+        hsStatusMessage(ST::format("Create Program failed {}", uint32_t(e_cp)).c_str());
     }
 #endif
 
@@ -296,7 +297,7 @@ void plGLMaterialShaderRef::ICompile()
 #ifdef HS_DEBUGGING
     GLenum e_vs;
     if ((e_vs = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Vertex Attach failed {}", uint32_t(e_vs)).c_str());
+        hsStatusMessage(ST::format("Vertex Attach failed {}", uint32_t(e_vs)).c_str());
     }
 #endif
 
@@ -305,7 +306,7 @@ void plGLMaterialShaderRef::ICompile()
 #ifdef HS_DEBUGGING
     GLenum e_fs;
     if ((e_fs = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Fragment Attach failed {}", uint32_t(e_fs)).c_str());
+        hsStatusMessage(ST::format("Fragment Attach failed {}", uint32_t(e_fs)).c_str());
     }
 #endif
 
@@ -314,7 +315,7 @@ void plGLMaterialShaderRef::ICompile()
 #ifdef HS_DEBUGGING
     GLenum e;
     if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Prg Link failed {}", uint32_t(e)).c_str());
+        hsStatusMessage(ST::format("Prg Link failed {}", uint32_t(e)).c_str());
     }
 #endif
 }
@@ -381,7 +382,7 @@ void plGLMaterialShaderRef::ISetShaderVariableLocs()
 
     this->aVtxUVWSrc.assign(16, -1);
     for (size_t i = 0; i < 16; i++) {
-        plString name = plFormat("aVtxUVWSrc{}", i);
+        ST::string name = ST::format("aVtxUVWSrc{}", i);
         this->aVtxUVWSrc[i] = glGetAttribLocation(fRef, name.c_str());
     }
 
@@ -389,13 +390,13 @@ void plGLMaterialShaderRef::ISetShaderVariableLocs()
 
     this->uLayerMat.assign(layerCount, -1);
     for (size_t i = 0; i < layerCount; i++) {
-        plString name = plFormat("uLayerMat{}", i);
+        ST::string name = ST::format("uLayerMat{}", i);
         this->uLayerMat[i] = glGetUniformLocation(fRef, name.c_str());
     }
 
     this->uTexture.assign(layerCount, -1);
     for (size_t i = 0; i < layerCount; i++) {
-        plString name = plFormat("uTexture{}", i);
+        ST::string name = ST::format("uTexture{}", i);
         this->uTexture[i] = glGetUniformLocation(fRef, name.c_str());
     }
 }
@@ -448,8 +449,8 @@ void plGLMaterialShaderRef::ILoopOverLayers()
     for (j = 0; j < fMaterial->GetNumLayers(); )
     {
         size_t iCurrMat = j;
-        std::shared_ptr<plShaderFunction> fragPass = std::make_shared<plShaderFunction>(plFormat("pass{}", pass), "void");
-        std::shared_ptr<plShaderFunction> vertPass = std::make_shared<plShaderFunction>(plFormat("pass{}", pass), "void");
+        std::shared_ptr<plShaderFunction> fragPass = std::make_shared<plShaderFunction>(ST::format("pass{}", pass), "void");
+        std::shared_ptr<plShaderFunction> vertPass = std::make_shared<plShaderFunction>(ST::format("pass{}", pass), "void");
 
         j = IHandleMaterial(iCurrMat, vertPass, fragPass);
 
@@ -459,7 +460,7 @@ void plGLMaterialShaderRef::ILoopOverLayers()
         fVertexShader->PushFunction(vertPass);
         fFragmentShader->PushFunction(fragPass);
 
-        std::shared_ptr<plConditionNode> passCond = COND(IS_EQ(uPass, CONSTANT(plFormat("{}", pass))));
+        std::shared_ptr<plConditionNode> passCond = COND(IS_EQ(uPass, CONSTANT(ST::format("{}", pass))));
         passCond->PushOp(CALL(fragPass->name));
 
         // if (uPassNumber == curpass) { curpass(); }
@@ -485,7 +486,7 @@ void plGLMaterialShaderRef::ILoopOverLayers()
                 continue;
             }
 
-            plString name = plFormat("a{}", vary->name.Substr(1));
+            ST::string name = ST::format("a{}", vary->name.substr(1));
             std::shared_ptr<plAttributeNode> attr = std::make_shared<plAttributeNode>(name, vary->type);
 
             vertMain->PushOp(ASSIGN(vary, attr));
@@ -763,7 +764,7 @@ std::shared_ptr<plTempVariableNode> plGLMaterialShaderRef::ICalcLighting(std::sh
     fn->PushOp(ASSIGN(Ndirection, CALL("normalize", CALL("vec3", MUL(mW2L, CALL("vec4", anor, CONSTANT("1.0")))))));
 
     for (size_t i = 0; i < 8; i++) {
-        auto lamp = SUBVAL(uLampSources, plFormat("{}", i));
+        auto lamp = SUBVAL(uLampSources, ST::format("{}", i));
 
         fn->PushOp(ASSIGN(v2l, CALL("vec3", SUB(PROP(lamp, "position"), MUL(mL2W, MUL(CALL("vec4", apos, CONSTANT("1.0")), PROP(PROP(lamp, "position"), "w")))))));
         fn->PushOp(ASSIGN(distance, CALL("length", v2l)));
@@ -821,10 +822,10 @@ void plGLMaterialShaderRef::IBuildLayerTransform(uint32_t idx, plLayerInterface*
     if (layer->GetMiscFlags() & (hsGMatState::kMiscUseReflectionXform | hsGMatState::kMiscUseRefractionXform)) {
         std::shared_ptr<plUniformNode> mC2W = IFindVariable<plUniformNode>("uMatrixC2W", "mat4");
 
-        plString matName = plFormat("LayerMat{}", idx);
+        ST::string matName = ST::format("LayerMat{}", idx);
         matrix = std::make_shared<plTempVariableNode>(matName, "mat4");
 
-        plString tempName = plFormat("t{}", idx);
+        ST::string tempName = ST::format("t{}", idx);
         std::shared_ptr<plTempVariableNode> temp = std::make_shared<plTempVariableNode>(tempName, "float");
 
         sb->fFunction->PushOp(ASSIGN(matrix, mC2W));
@@ -869,20 +870,20 @@ void plGLMaterialShaderRef::IBuildLayerTransform(uint32_t idx, plLayerInterface*
 #if 0
     } else if (layer->GetMiscFlags() & hsGMatState::kMiscCam2Screen) {
     } else if (layer->GetMiscFlags() & hsGMatState::kMiscProjection) {
-        plString matName = plFormat("uLayerMat{}", idx);
+        ST::string matName = ST::format("uLayerMat{}", idx);
         std::shared_ptr<plUniformNode> layMat = IFindVariable<plUniformNode>(matName, "mat4");
     } else if (layer->GetMiscFlags() & hsGMatState::kMiscBumpChans) {
 #endif
     } else
     {
-        plString matName = plFormat("uLayerMat{}", idx);
+        ST::string matName = ST::format("uLayerMat{}", idx);
         matrix = IFindVariable<plUniformNode>(matName, "mat4");
     }
 
     uint32_t uvwSrc = layer->GetUVWSrc();
 
     // Local variable to store the mesh uvw * layer matrix
-    plString coordName = plFormat("coords{}", idx);
+    ST::string coordName = ST::format("coords{}", idx);
     std::shared_ptr<plTempVariableNode> coords = std::make_shared<plTempVariableNode>(coordName, "vec4");
 
     switch (uvwSrc) {
@@ -911,7 +912,7 @@ void plGLMaterialShaderRef::IBuildLayerTransform(uint32_t idx, plLayerInterface*
         {
             uvwSrc &= plGBufferGroup::kUVCountMask;
 
-            plString uvwName = plFormat("vVtxUVWSrc{}", uvwSrc);
+            ST::string uvwName = ST::format("vVtxUVWSrc{}", uvwSrc);
             std::shared_ptr<plVaryingNode> layUVW = IFindVariable<plVaryingNode>(uvwName, "vec3");
 
             sb->fFunction->PushOp(ASSIGN(coords, MUL(matrix, CALL("vec4", layUVW, CONSTANT("1.0")))));
@@ -932,13 +933,13 @@ void plGLMaterialShaderRef::IBuildLayerTexture(uint32_t idx, plLayerInterface* l
         plCubicEnvironmap* cube;
 
         // Local variable to store the mesh uvw * layer matrix
-        plString imgName = plFormat("image{}", idx);
+        ST::string imgName = ST::format("image{}", idx);
         std::shared_ptr<plTempVariableNode> img = std::make_shared<plTempVariableNode>(imgName, "vec4");
 
         sb->fCurrImage = img;
 
         if ((mip = plMipmap::ConvertNoRef(texture)) != nullptr) {
-            plString samplerName = plFormat("uTexture{}", idx);
+            ST::string samplerName = ST::format("uTexture{}", idx);
             std::shared_ptr<plUniformNode> sampler = IFindVariable<plUniformNode>(samplerName, "sampler2D");
 
             // image = texture2D(sampler, coords.xy)
@@ -946,7 +947,7 @@ void plGLMaterialShaderRef::IBuildLayerTexture(uint32_t idx, plLayerInterface* l
         }
 
         if ((cube = plCubicEnvironmap::ConvertNoRef(texture)) != nullptr) {
-            plString samplerName = plFormat("uTexture{}", idx);
+            ST::string samplerName = ST::format("uTexture{}", idx);
             std::shared_ptr<plUniformNode> sampler = IFindVariable<plUniformNode>(samplerName, "samplerCube");
 
             // image = texture3D(sampler, coords.xyz)
@@ -965,11 +966,11 @@ void plGLMaterialShaderRef::IBuildLayerBlend(plLayerInterface* layer, ShaderBuil
     }
 
     // Local variable to store the color value
-    plString colName = plFormat("color{}", sb->fIteration);
+    ST::string colName = ST::format("color{}", sb->fIteration);
     std::shared_ptr<plTempVariableNode> col = std::make_shared<plTempVariableNode>(colName, "vec3");
 
     // Local variable to store the alpha value
-    plString alphaName = plFormat("alpha{}", sb->fIteration);
+    ST::string alphaName = ST::format("alpha{}", sb->fIteration);
     std::shared_ptr<plTempVariableNode> alpha = std::make_shared<plTempVariableNode>(alphaName, "float");
 
     std::shared_ptr<plShaderNode> texCol;

@@ -43,7 +43,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #ifndef _plShaderNode_h_
 #define _plShaderNode_h_
 
-#include "plString.h"
+#include <string_theory/string>
 #include <memory>
 #include <vector>
 #include <set>
@@ -80,9 +80,9 @@ public:
 
 class plConstantNode : public plShaderNode {
 public:
-    plString value;
+    ST::string value;
 
-    plConstantNode(plString value)
+    plConstantNode(ST::string value)
       : plShaderNode(kConstant),
         value(value) { }
 };
@@ -90,9 +90,9 @@ public:
 
 class plOutputNode : public plShaderNode {
 public:
-    plString name;
+    ST::string name;
 
-    plOutputNode(plString name)
+    plOutputNode(ST::string name)
       : plShaderNode(kOutput),
         name(name) { }
 };
@@ -101,11 +101,11 @@ public:
 // ABSTRACT
 class plVariableNode : public plShaderNode {
 public:
-    plString name;
-    plString type;
+    ST::string name;
+    ST::string type;
     size_t count;
 
-    plVariableNode(NodeType klass, plString name, plString type, size_t n = 1)
+    plVariableNode(NodeType klass, ST::string name, ST::string type, size_t n = 1)
       : plShaderNode(klass),
         name(name),
         type(type),
@@ -116,33 +116,33 @@ public:
 // ABSTRACT
 class plGlobalVariableNode : public plVariableNode {
 public:
-    plGlobalVariableNode(NodeType klass, plString name, plString type, size_t n = 1)
+    plGlobalVariableNode(NodeType klass, ST::string name, ST::string type, size_t n = 1)
       : plVariableNode(klass, name, type, n) { }
 };
 
 
 class plAttributeNode : public plGlobalVariableNode {
 public:
-    plAttributeNode(plString name, plString type, size_t n = 1)
+    plAttributeNode(ST::string name, ST::string type, size_t n = 1)
       : plGlobalVariableNode(kAttribute, name, type, n) { }
 };
 
 class plUniformNode : public plGlobalVariableNode {
 public:
-    plUniformNode(plString name, plString type, size_t n = 1)
+    plUniformNode(ST::string name, ST::string type, size_t n = 1)
       : plGlobalVariableNode(kUniform, name, type, n) { }
 };
 
 class plVaryingNode : public plGlobalVariableNode {
 public:
-    plVaryingNode(plString name, plString type, size_t n = 1)
+    plVaryingNode(ST::string name, ST::string type, size_t n = 1)
       : plGlobalVariableNode(kVarying, name, type, n) { }
 };
 
 
 class plTempVariableNode : public plVariableNode {
 public:
-    plTempVariableNode(plString name, plString type, size_t n = 1)
+    plTempVariableNode(ST::string name, ST::string type, size_t n = 1)
       : plVariableNode(kTempVar, name, type, n) { }
 };
 
@@ -150,7 +150,7 @@ class plArgumentNode : public plVariableNode {
 public:
     int pos;
 
-    plArgumentNode(plString name, plString type, int pos)
+    plArgumentNode(ST::string name, ST::string type, int pos)
       : plVariableNode(kArgument, name, type),
         pos(pos) { }
 };
@@ -171,10 +171,10 @@ public:
 
 class plOperatorNode : public plOperationNode {
 public:
-    plString op;
+    ST::string op;
     bool parens;
 
-    plOperatorNode(plString op, std::shared_ptr<plShaderNode> lhs, std::shared_ptr<plShaderNode> rhs, bool parens=false)
+    plOperatorNode(ST::string op, std::shared_ptr<plShaderNode> lhs, std::shared_ptr<plShaderNode> rhs, bool parens=false)
       : plOperationNode(kOperator, lhs, rhs),
         op(op),
         parens(parens) { }
@@ -200,10 +200,10 @@ public:
 
 class plCallNode : public plShaderNode {
 public:
-    plString function;
+    ST::string function;
     std::vector<std::shared_ptr<plShaderNode>> args;
 
-    plCallNode(plString function, std::initializer_list<std::shared_ptr<plShaderNode>> args)
+    plCallNode(ST::string function, std::initializer_list<std::shared_ptr<plShaderNode>> args)
       : plShaderNode(kFnCall),
         function(function),
         args(args) { }
@@ -243,14 +243,14 @@ class plShaderFunction : public std::enable_shared_from_this<plShaderFunction>
     std::set<std::shared_ptr<plTempVariableNode>> temps;
     std::set<std::shared_ptr<plArgumentNode>, decltype(Sorter)> args;
 
-    std::vector<plString> output;
+    std::vector<ST::string> output;
 
 public:
-    plString type;
-    plString name;
+    ST::string type;
+    ST::string name;
 
 
-    plShaderFunction(plString name, plString type)
+    plShaderFunction(ST::string name, ST::string type)
       : name(name),
         type(type),
         args(Sorter) { }
@@ -268,9 +268,9 @@ class plShaderStruct : public std::enable_shared_from_this<plShaderStruct>
     std::vector<std::shared_ptr<plVariableNode>> fields;
 
 public:
-    plString name;
+    ST::string name;
 
-    plShaderStruct(plString name)
+    plShaderStruct(ST::string name)
       : name(name) { }
 
     void AddField(std::shared_ptr<plVariableNode> var) {
@@ -308,10 +308,10 @@ public:
         structs.push_back(st);
     }
 
-    plString Render();
+    ST::string Render();
 
 private:
-    plString RenderNode(std::shared_ptr<plShaderNode> node, std::shared_ptr<plShaderFunction> fn);
+    ST::string RenderNode(std::shared_ptr<plShaderNode> node, std::shared_ptr<plShaderFunction> fn);
 };
 
 

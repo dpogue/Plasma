@@ -47,6 +47,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "HeadSpin.h"
+#include <string_theory/format>
 
 #include "hsTemplates.h"
 #include "plGLPipeline.h"
@@ -435,7 +436,7 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 #ifdef HS_DEBUGGING
             GLenum e_pre;
             if ((e_pre = glGetError()) != GL_NO_ERROR) {
-                hsStatusMessage(plFormat("RenderSpans pre-material failed {}", uint32_t(e_pre)).c_str());
+                hsStatusMessage(ST::format("RenderSpans pre-material failed {}", uint32_t(e_pre)).c_str());
             }
 #endif
 
@@ -458,7 +459,7 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const hsTArray<int16_t>& vi
 #ifdef HS_DEBUGGING
             GLenum e;
             if ((e = glGetError()) != GL_NO_ERROR) {
-                hsStatusMessage(plFormat("Use Program failed {} (Material {})", uint32_t(e), material->GetKeyName()).c_str());
+                hsStatusMessage(ST::format("Use Program failed {} (Material {})", uint32_t(e), material->GetKeyName()).c_str());
             }
 #endif
 
@@ -594,7 +595,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 #ifdef HS_DEBUGGING
     GLenum e;
     if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("PRE Render failed {}", uint32_t(e)).c_str());
+        hsStatusMessage(ST::format("PRE Render failed {}", uint32_t(e)).c_str());
     }
 #endif
 
@@ -628,7 +629,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 
 #ifdef HS_DEBUGGING
     if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Vertex Attributes failed {}", uint32_t(e)).c_str());
+        hsStatusMessage(ST::format("Vertex Attributes failed {}", uint32_t(e)).c_str());
     }
 #endif
 
@@ -698,7 +699,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 
 #ifdef HS_DEBUGGING
     if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Render failed {}", uint32_t(e)).c_str());
+        hsStatusMessage(ST::format("Render failed {}", uint32_t(e)).c_str());
     }
 #endif
 }
@@ -1017,14 +1018,14 @@ void plGLPipeline::ISelectLights(const plSpan* span, bool proj)
 
 void plGLPipeline::IEnableLight(size_t i, plLightInfo* light)
 {
-    GLuint position     = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].position", i).c_str());
-    GLuint ambient      = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].ambient", i).c_str());
-    GLuint diffuse      = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].diffuse", i).c_str());
-    GLuint specular     = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].specular", i).c_str());
-    GLuint constAtten   = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].constAtten", i).c_str());
-    GLuint linAtten     = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].linAtten", i).c_str());
-    GLuint quadAtten    = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].quadAtten", i).c_str());
-    GLuint scale        = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].scale", i).c_str());
+    GLuint position     = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].position", i).c_str());
+    GLuint ambient      = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].ambient", i).c_str());
+    GLuint diffuse      = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].diffuse", i).c_str());
+    GLuint specular     = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].specular", i).c_str());
+    GLuint constAtten   = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].constAtten", i).c_str());
+    GLuint linAtten     = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].linAtten", i).c_str());
+    GLuint quadAtten    = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].quadAtten", i).c_str());
+    GLuint scale        = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].scale", i).c_str());
 
     hsColorRGBA amb = light->GetAmbient();
     glUniform4f(ambient, amb.r, amb.g, amb.b, amb.a);
@@ -1065,14 +1066,14 @@ void plGLPipeline::IEnableLight(size_t i, plLightInfo* light)
 
 void plGLPipeline::IDisableLight(size_t i)
 {
-    GLuint position     = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].position", i).c_str());
-    GLuint ambient      = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].ambient", i).c_str());
-    GLuint diffuse      = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].diffuse", i).c_str());
-    GLuint specular     = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].specular", i).c_str());
-    GLuint constAtten   = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].constAtten", i).c_str());
-    GLuint linAtten     = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].linAtten", i).c_str());
-    GLuint quadAtten    = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].quadAtten", i).c_str());
-    GLuint scale        = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].scale", i).c_str());
+    GLuint position     = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].position", i).c_str());
+    GLuint ambient      = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].ambient", i).c_str());
+    GLuint diffuse      = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].diffuse", i).c_str());
+    GLuint specular     = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].specular", i).c_str());
+    GLuint constAtten   = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].constAtten", i).c_str());
+    GLuint linAtten     = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].linAtten", i).c_str());
+    GLuint quadAtten    = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].quadAtten", i).c_str());
+    GLuint scale        = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].scale", i).c_str());
 
     if (position != -1)     glUniform4f(position, 0.0f, 0.0f, 0.0f, 0.0f);
     if (ambient != -1)      glUniform4f(ambient, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -1086,7 +1087,7 @@ void plGLPipeline::IDisableLight(size_t i)
 
 void plGLPipeline::IScaleLight(size_t i, float scale)
 {
-    GLuint uniform = glGetUniformLocation(fDevice.fCurrentProgram, plFormat("uLampSources[{}].scale", i).c_str());
+    GLuint uniform = glGetUniformLocation(fDevice.fCurrentProgram, ST::format("uLampSources[{}].scale", i).c_str());
     if (uniform != -1) glUniform1f(uniform, scale);
 }
 

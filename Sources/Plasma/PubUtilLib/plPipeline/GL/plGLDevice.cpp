@@ -40,6 +40,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
+#include <string_theory/format>
 #include "plGLDevice.h"
 #include "plGLPipeline.h"
 
@@ -481,7 +482,7 @@ void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
 #ifdef HS_DEBUGGING
     GLuint e = GL_NO_ERROR;
     if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Bind Texture failed {}", uint32_t(e)).c_str());
+        hsStatusMessage(ST::format("Bind Texture failed {}", uint32_t(e)).c_str());
     }
 #endif
 
@@ -503,7 +504,7 @@ void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
 
 #ifdef HS_DEBUGGING
             if ((e = glGetError()) != GL_NO_ERROR) {
-                hsStatusMessage(plFormat("Texture Image failed {} at level {}", uint32_t(e), lvl).c_str());
+                hsStatusMessage(ST::format("Texture Image failed {} at level {}", uint32_t(e), lvl).c_str());
             }
 #endif
         }
@@ -515,10 +516,10 @@ void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
 
 #ifdef HS_DEBUGGING
             if ((e = glGetError()) != GL_NO_ERROR) {
-                hsStatusMessage(plFormat("NonDXT Texture Image failed {} at level {}", uint32_t(e), lvl).c_str());
+                hsStatusMessage(ST::format("NonDXT Texture Image failed {} at level {}", uint32_t(e), lvl).c_str());
 
                 if (img->GetKey()) {
-                    hsStatusMessage(plFormat("\t{}", img->GetKeyName()).c_str());
+                    hsStatusMessage(ST::format("\t{}", img->GetKeyName()).c_str());
                 }
             }
 #endif
@@ -551,7 +552,7 @@ void plGLDevice::MakeTextureRef(TextureRef* tRef, plLayerInterface* layer, plMip
 #ifdef HS_DEBUGGING
     GLuint e;
     if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Mipmap Texture failed {} (Texture {})", uint32_t(e), img->GetKeyName()).c_str());
+        hsStatusMessage(ST::format("Mipmap Texture failed {} (Texture {})", uint32_t(e), img->GetKeyName()).c_str());
     }
 #endif
 }
@@ -591,7 +592,7 @@ void plGLDevice::MakeCubicTextureRef(TextureRef* tRef, plLayerInterface* layer, 
 #ifdef HS_DEBUGGING
     GLuint e;
     if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(plFormat("Cubic Texture failed {} (Texture {})", uint32_t(e), img->GetKeyName()).c_str());
+        hsStatusMessage(ST::format("Cubic Texture failed {} (Texture {})", uint32_t(e), img->GetKeyName()).c_str());
     }
 #endif
 }
