@@ -141,7 +141,9 @@ NORETURN void ErrorAssert(int line, const char* file, const char* fmt, ...)
                  file, line, msg);
         fflush(stderr);
 
+#ifndef MINIMAL_GL_BUILD
         DebugBreakAlways();
+#endif
     }
 #endif // HS_DEBUGGING
 #else
