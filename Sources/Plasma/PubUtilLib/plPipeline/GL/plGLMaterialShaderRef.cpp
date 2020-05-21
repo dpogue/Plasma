@@ -125,6 +125,8 @@ void plGLMaterialShaderRef::SetupTextureRefs()
             continue;
         }
 
+        fPipeline->CheckTextureRef(layer);
+
 #ifdef HS_DEBUGGING
         if ((e = glGetError()) != GL_NO_ERROR) {
             hsStatusMessage(ST::format("PRE-Active Texture failed {}", uint32_t(e)).c_str());
