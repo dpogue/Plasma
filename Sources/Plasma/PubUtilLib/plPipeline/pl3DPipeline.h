@@ -53,7 +53,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 
 class hsGMaterial;
+class plDebugTextManager;
 class plLightInfo;
+class plPlateManager;
 class plShadowSlave;
 class plSpan;
 
@@ -194,6 +196,9 @@ protected:
     uint32_t                            fRenderCnt; // inc'd every begin scene.
 
     bool                                fVSync;
+
+    plPlateManager*                     fPlateMgr;
+    plDebugTextManager*                 fDebugTextMgr;
 
 
 public:

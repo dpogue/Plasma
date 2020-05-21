@@ -43,6 +43,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLClient/plGLClient.h"
 
 #include "plResMgr/plResManager.h"
+#include "plClientResMgr/plClientResMgr.h"
 
 #include <xcb/xcb.h>
 #include <X11/Xlib-xcb.h>
@@ -98,6 +99,12 @@ int main()
     resMgr->SetDataPath("dat");
     hsgResMgr::Init(resMgr);
 
+    if (!plFileInfo("resource.dat").Exists()) {
+        hsStatusMessage("Required file 'resource.dat' not found.");
+        return 1;
+    }
+    plClientResMgr::Instance().ILoadResources("resource.dat");
+
     plClient* gClient = new plClient();
     if (gClient == nullptr)
     {
@@ -130,7 +137,11 @@ int main()
         xcb_generic_event_t* event = xcb_poll_for_event(connection);
         if (event && ((event->response_type & ~0x80) == XCB_KEY_PRESS))
         {
-            gClient->SetDone(true);
+            xcb_key_press_event_t* kbe = reinterpret_cast<xcb_key_press_event_t*>(event);
+
+            if (kbe->detail == 24) {
+                gClient->SetDone(true);
+            }
         }
     } while (true);
 

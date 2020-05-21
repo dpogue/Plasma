@@ -44,19 +44,20 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLDevice.h"
 #include "plGLPipeline.h"
 
-#if HS_BUILD_FOR_OSX
-#    include <OpenGL/gl3.h>
-#    include <OpenGL/gl3ext.h>
-#else
-#    include <GL/gl.h>
-#    include <GL/glext.h>
-#endif
-
 #include "plDrawable/plGBufferGroup.h"
 #include "plGImage/plMipmap.h"
 #include "plGImage/plCubicEnvironmap.h"
 
 #define HS_DEBUGGING 1
+
+void GLAPIENTRY GLDebugLog(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+    if (severity <= GL_DEBUG_SEVERITY_MEDIUM) { // Yes, higher is a lower enum value
+        fprintf( stderr, "[GL]: %s type = 0x%x, severity = 0x%x, message = %s\n",
+                ( type == GL_DEBUG_TYPE_ERROR ? "** ERROR **" : "" ),
+                type, severity, message );
+    }
+}
 
 static float kIdentityMatrix[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -165,6 +166,11 @@ bool plGLDevice::InitDevice()
         fErrorMsg = "Failed to attach EGL context to surface";
         return false;
     }
+
+#ifdef HS_DEBUGGING
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(GLDebugLog, 0);
+#endif
 
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);

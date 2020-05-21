@@ -109,6 +109,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     resMgr->SetDataPath("dat");
     hsgResMgr::Init(resMgr);
 
+    if (!plFileInfo("resource.dat").Exists()) {
+        hsStatusMessage("Required file 'resource.dat' not found.");
+        return;
+    }
+    plClientResMgr::Instance().ILoadResources("resource.dat");
+
     gClient = new plClient();
     if (gClient == nullptr)
     {

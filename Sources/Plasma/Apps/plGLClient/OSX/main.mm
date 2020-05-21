@@ -81,6 +81,12 @@ int main(int argc, const char* argv[])
     resMgr->SetDataPath("dat");
     hsgResMgr::Init(resMgr);
 
+    if (!plFileInfo("resource.dat").Exists()) {
+        hsStatusMessage("Required file 'resource.dat' not found.");
+        return;
+    }
+    plClientResMgr::Instance().ILoadResources("resource.dat");
+
     plClient* gClient = new plClient();
     if (gClient == NULL)
     {
