@@ -48,12 +48,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 class plIcicle;
 class plGLMaterialShaderRef;
+class plPlate;
 
 class plGLPipeline : public pl3DPipeline
 {
 protected:
 
     friend class plGLDevice;
+    friend class plGLPlateManager;
 
     plGLMaterialShaderRef* fMatRefList;
 
@@ -110,6 +112,8 @@ protected:
     void IEnableLight(size_t i, plLightInfo* light);
     void IDisableLight(size_t i);
     void IScaleLight(size_t i, float scale);
+
+    void IDrawPlate(plPlate* plate);
 };
 
 #endif // _plGLPipeline_inc_

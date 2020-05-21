@@ -9,6 +9,7 @@ set(plPipeline_SOURCES
     plDynamicEnvMap.cpp
     plFogEnvironment.cpp
     plPipelineViewSettings.cpp
+    plPlateProgressMgr.cpp
     plPlates.cpp
     plRenderTarget.cpp
     plStatusLogDrawer.cpp
@@ -34,6 +35,7 @@ set(plGLPipeline_SOURCES
     GL/plGLDeviceRefs.cpp
     GL/plGLMaterialShaderRef.cpp
     GL/plGLPipeline.cpp
+    GL/plGLPlateManager.cpp
     GL/plShaderNode.cpp
 )
 
@@ -55,6 +57,7 @@ set(plPipeline_HEADERS
     plPipelineCreatable.h
     plPipelineCreate.h
     plPipelineViewSettings.h
+    plPlateProgressMgr.h
     plPlates.h
     plRenderTarget.h
     plStatusLogDrawer.h
@@ -82,10 +85,12 @@ set(plDXPipeline_HEADERS
 )
 
 set(plGLPipeline_HEADERS
+    GL/plGLConstants.h
     GL/plGLDevice.h
     GL/plGLDeviceRef.h
     GL/plGLMaterialShaderRef.h
     GL/plGLPipeline.h
+    GL/plGLPlateManager.h
     GL/plShaderNode.h
 )
 
@@ -123,7 +128,7 @@ target_link_libraries(plPipeline
         pnKeyedObject
         #pnNucleusInc
         #pnSceneObject
-        #plClientResMgr
+        plClientResMgr
         plDrawable
         plGLight
         #plScene

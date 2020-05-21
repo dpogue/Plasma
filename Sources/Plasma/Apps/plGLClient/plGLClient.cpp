@@ -49,6 +49,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plPipeline.h"
 #include "plPipeline/plPipelineCreate.h"
+#include "plProgressMgr/plProgressMgr.h"
+#include "plPipeline/plPlateProgressMgr.h"
 
 #include "pnMessage/plClientMsg.h"
 #include "pnMessage/plTimeMsg.h"
@@ -76,8 +78,11 @@ plClient::plClient()
     fFontCache(nullptr),
     fWindowHndl(nullptr),
     fDone(false),
+    fProgressBar(nullptr),
     fHoldLoadRequests(false),
-    fNumLoadingRooms(0)
+    fNumLoadingRooms(0),
+    fNumPostLoadMsgs(0),
+    fPostLoadMsgInc(0.f)
 {
     hsStatusMessage("Constructing client\n");
     plClient::SetInstance(this);
@@ -113,6 +118,7 @@ static void IUnRegisterAs(T*& ko, plFixedKeyId id)
 bool plClient::Shutdown()
 {
     plSynchEnabler ps(false);   // disable dirty state tracking during shutdown 
+    delete fProgressBar;
 
     // Just in case, clear this out (trying to fix a crash bug where this is still active at shutdown)
     plDispatch::SetMsgRecieveCallback(nullptr);
@@ -203,6 +209,9 @@ bool plClient::InitPipeline(hsWindowHndl display)
     pipe->SetClear(&fClearColor);
     pipe->ClearRenderTarget();
 
+    if (fPipeline)
+        fPipeline->LoadResources();
+
     return false;
 }
 
@@ -210,6 +219,18 @@ bool plClient::InitPipeline(hsWindowHndl display)
 bool plClient::StartInit()
 {
     hsStatusMessage("Init client\n");
+
+    plPlateProgressMgr::DeclareThyself();
+
+    // Set our callback for the progress manager so everybody else can use it
+    fLastProgressUpdate = 0.f;
+    plProgressMgr::GetInstance()->SetCallbackProc(IProgressMgrCallbackProc);
+
+    // Check the registry, which deletes data files that are either corrupt or
+    // have old version numbers.  If the file still exists on the file server
+    // then it will be patched on-the-fly as needed (unless you're running with
+    // local data of course).
+    //((plResManager *)hsgResMgr::ResMgr())->VerifyPages();
 
     RegisterAs(kClient_KEY);
 
@@ -225,6 +246,24 @@ bool plClient::StartInit()
     // Load our custom fonts from our current dat directory
     fFontCache->LoadCustomFonts("dat");
 
+    // We'd like to do a SetHoldLoadRequests here, but the GUI stuff doesn't draw right
+    // if you try to delay the loading for it.  To work around that, we allocate a
+    // global loading bar in advance and set it to a big enough range that when the GUI's
+    // are done loading about the right amount of it is filled.
+    fNumLoadingRooms++;
+    IStartProgress("Loading...", 0);
+
+    SetHoldLoadRequests(true);
+    fProgressBar->SetLength(fProgressBar->GetProgress());
+
+    fNumLoadingRooms--;
+
+    //((plResManager*)hsgResMgr::ResMgr())->PageInAge("GlobalAnimations");
+    SetHoldLoadRequests(false);
+
+    // Tell the transition manager to start faded out. This is so we don't
+    // get a frame or two of non-faded drawing before we do our initial fade in
+    //(void)(new plTransitionMsg( plTransitionMsg::kFadeOut, 0.0f, true ))->Send();
 
     //ILoadAge("ParadoxTestAge");
     ILoadAge("GuildPub-Writers");
@@ -460,6 +499,16 @@ void plClient::ILoadNextRoom()
     }
 }
 
+void plClient::SetHoldLoadRequests(bool hold)
+{
+    fHoldLoadRequests = hold;
+
+    if (!fHoldLoadRequests)
+    {
+        ILoadNextRoom();
+    }
+}
+
 
 void plClient::IRoomLoaded(plSceneNode* node, bool hold)
 {
@@ -519,6 +568,9 @@ void plClient::IRoomLoaded(plSceneNode* node, bool hold)
             break;
         }
     }
+
+    if (!fNumLoadingRooms)
+        IStopProgress();
 }
 
 
@@ -578,6 +630,10 @@ bool plClient::IDraw()
         return true;
     }
 
+    if (plProgressMgr::GetInstance()->IsActive())
+    {
+        return IDrawProgress();
+    }
 
     plGlobalVisMgr::Instance()->Eval(fPipeline->GetViewPositionWorld());
 
@@ -593,6 +649,8 @@ bool plClient::IDraw()
 
     fPageMgr->Render(fPipeline);
 
+    plProgressMgr::GetInstance()->Draw(fPipeline);
+
     fLastProgressUpdate = hsTimer::GetSeconds();
 
     fPipeline->RenderScreenElements();
@@ -600,4 +658,140 @@ bool plClient::IDraw()
     fPipeline->EndRender();
 
     return false;
+}
+
+bool plClient::IDrawProgress() {
+    if (fPipeline->BeginRender())
+    {
+        return false;
+    }
+
+    // Override the clear color to black.
+    fPipeline->ClearRenderTarget(&hsColorRGBA().Set(0.f, 0.f, 0.f, 1.f));
+
+    plProgressMgr::GetInstance()->Draw(fPipeline);
+    fPipeline->RenderScreenElements();
+    fPipeline->EndRender();
+
+    return false;
+}
+
+
+
+void plClient::IDispatchMsgReceiveCallback()
+{
+    if (fInstance->fProgressBar)
+    {
+        fInstance->fProgressBar->Increment(1);
+    }
+
+    static char buf[30];
+    sprintf(buf, "Msg %d", fInstance->fNumPostLoadMsgs);
+    fInstance->IIncProgress(fInstance->fPostLoadMsgInc, buf);
+
+    fInstance->fNumPostLoadMsgs++;
+}
+
+void plClient::IReadKeyedObjCallback(plKey key)
+{
+    fInstance->IIncProgress(1, key->GetName().c_str());
+}
+
+void plClient::IProgressMgrCallbackProc(plOperationProgress* progress)
+{
+    if (!fInstance)
+        return;
+
+    // Increments the taskbar progress [Windows 7+]
+#ifdef HS_BUILD_FOR_WIN32
+    if (gTaskbarList && fInstance->GetWindowHandle())
+    {
+        static TBPFLAG lastState = TBPF_NOPROGRESS;
+        TBPFLAG myState;
+
+        // So, calling making these kernel calls is kind of SLOW. So, let's
+        // hide that behind a userland check--this helps linking go faster!
+        if (progress->IsAborting())
+            myState = TBPF_ERROR;
+        else if (progress->IsLastUpdate())
+            myState = TBPF_NOPROGRESS;
+        else if (progress->GetMax() == 0.f)
+            myState = TBPF_INDETERMINATE;
+        else
+            myState = TBPF_NORMAL;
+
+        if (myState == TBPF_NORMAL)
+            // This sets us to TBPF_NORMAL
+            gTaskbarList->SetProgressValue(fInstance->GetWindowHandle(), (ULONGLONG)progress->GetProgress(), (ULONGLONG)progress->GetMax());
+        else if (myState != lastState)
+            gTaskbarList->SetProgressState(fInstance->GetWindowHandle(), myState);
+        lastState = myState;
+    }
+#endif
+
+    //fInstance->fMessagePumpProc();
+
+    // HACK HACK HACK HACK!
+    // Yes, this is the ORIGINAL, EVIL famerate limit from plClient::IDraw (except I bumped it to 60fps)
+    // As it so happens, this callback is happening in the main resource loading thread
+    // Without this NASTY ASS HACK, we draw after loading every KO, which starves the loader.
+    // At some point, a better solution should be found... Like running the loader in a separate thread.
+    static float lastDrawTime;
+    static const float kMaxFrameRate = 1.f/60.f;
+    float currTime = (float) hsTimer::GetSeconds();
+    if ((currTime - lastDrawTime) > kMaxFrameRate)
+    {
+        fInstance->IDraw();
+        lastDrawTime = currTime;
+    }
+}
+
+
+
+void plClient::IIncProgress(float byHowMuch, const char * text)
+{
+    if (fProgressBar) {
+#ifndef PLASMA_EXTERNAL_RELEASE
+        fProgressBar->SetStatusText(text);
+#endif
+        fProgressBar->Increment(byHowMuch);
+    }
+}
+
+void plClient::IStartProgress(const char *title, float len)
+{
+    if (fProgressBar)
+    {
+        fProgressBar->SetLength(fProgressBar->GetMax()+len);
+    }
+    else
+    {
+        fProgressBar = plProgressMgr::GetInstance()->RegisterOperation(len, title, plProgressMgr::kNone, false, true);
+        ((plResManager*)hsgResMgr::ResMgr())->SetProgressBarProc(IReadKeyedObjCallback);
+        plDispatch::SetMsgRecieveCallback(IDispatchMsgReceiveCallback);
+
+        fLastProgressUpdate = 0.f;
+    }
+
+    if (fPipeline)
+    {
+        fPipeline->LoadResources();
+    }
+}
+
+void plClient::IStopProgress()
+{
+    if (/*false &&*/ fProgressBar)
+    {
+        plDispatch::SetMsgRecieveCallback(nullptr);
+        ((plResManager*)hsgResMgr::ResMgr())->SetProgressBarProc(IReadKeyedObjCallback);
+        delete fProgressBar;
+        fProgressBar = nullptr;
+
+        //plPipeResReq::Request();
+
+        //fFlags.SetBit(kFlagGlobalDataLoaded);
+        //if (fFlags.IsBitSet(kFlagAsyncInitComplete))
+        //    ICompleteInit();
+    }
 }

@@ -52,6 +52,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plScene/plRenderRequest.h"
 
 class plFontCache;
+class plOperationProgress;
 class plPageTreeMgr;
 class plPipeline;
 class plSceneNode;
@@ -98,16 +99,19 @@ protected:
     plPipeline*             fPipeline;
     hsColorRGBA             fClearColor;
 
-    plFontCache             *fFontCache;
+    plFontCache*            fFontCache;
 
     hsWindowHndl            fWindowHndl;
     bool                    fDone;
     double                  fLastProgressUpdate;
+    plOperationProgress*    fProgressBar;
 
     bool                    fHoldLoadRequests;
     std::list<LoadRequest*> fLoadRooms;
     int                     fNumLoadingRooms;
     std::vector<plLocation> fRoomsLoading;
+    int                     fNumPostLoadMsgs;
+    float                   fPostLoadMsgInc;
 
     static plClient*        fInstance;
 
@@ -133,6 +137,9 @@ public:
     plClient& SetDone(bool done) { fDone = done; return *this; }
     bool GetDone() { return fDone; }
 
+    // Set this to true to queue any room load requests that come in.  Set it to false to process them.
+    void SetHoldLoadRequests(bool hold);
+
     virtual plClient& SetWindowHandle(hsWindowHndl hndl) { fWindowHndl = hndl; return *this; }
     hsWindowHndl GetWindowHandle() { return fWindowHndl; }
 
@@ -141,6 +148,15 @@ protected:
     bool ILoadAge(const ST::string& ageName);
     bool IUpdate();
     bool IDraw();
+    bool IDrawProgress();
+
+    void IStartProgress(const char *title, float len);
+    void IIncProgress(float byHowMuch, const char *text);
+    void IStopProgress();
+
+    static void IDispatchMsgReceiveCallback();
+    static void IReadKeyedObjCallback(plKey key);
+    static void IProgressMgrCallbackProc(plOperationProgress* progress);
 
     int IFindRoomByLoc(const plLocation& loc);
     bool IIsRoomLoading(const plLocation& loc);

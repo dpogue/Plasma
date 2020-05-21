@@ -205,9 +205,6 @@ protected:
         kKTNT                   = 0x1
     };
 
-    plDebugTextManager*         fDebugTextMgr;
-    plDXPlateManager*           fPlateMgr;
-
     // The main D3D interfaces
     LPDIRECT3DDEVICE9       fD3DDevice;     // The D3D rendering device
 

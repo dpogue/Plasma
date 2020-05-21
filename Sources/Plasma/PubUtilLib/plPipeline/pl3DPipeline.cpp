@@ -121,7 +121,9 @@ pl3DPipeline::pl3DPipeline(const hsG3DDeviceModeRecord* devModeRec)
     fColorDepth(32),
     fInSceneDepth(0),
     fTime(0),
-    fFrame(0)
+    fFrame(0),
+    fPlateMgr(nullptr),
+    fDebugTextMgr(nullptr)
 {
 
     fOverLayerStack.Reset();
