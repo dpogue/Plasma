@@ -41,18 +41,70 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include "plGLClient/plGLClient.h"
+#include "plGLClient/plClientLoader.h"
 
 #include "plResMgr/plResManager.h"
 #include "plClientResMgr/plClientResMgr.h"
+
+#include "plCmdParser.h"
 
 #include <xcb/xcb.h>
 #include <X11/Xlib-xcb.h>
 #include <unistd.h>
 
-int main()
+enum
 {
+    kArgSkipLoginDialog,
+    kArgServerIni,
+    kArgLocalData,
+    kArgSkipPreload,
+    kArgPlayerId,
+    kArgStartUpAgeName,
+};
+
+static const plCmdArgDef s_cmdLineArgs[] = {
+    { kCmdArgFlagged  | kCmdTypeBool,       "SkipLoginDialog", kArgSkipLoginDialog },
+    { kCmdArgFlagged  | kCmdTypeString,     "ServerIni",       kArgServerIni },
+    { kCmdArgFlagged  | kCmdTypeBool,       "LocalData",       kArgLocalData   },
+    { kCmdArgFlagged  | kCmdTypeBool,       "SkipPreload",     kArgSkipPreload },
+    { kCmdArgFlagged  | kCmdTypeInt,        "PlayerId",        kArgPlayerId },
+    { kCmdArgFlagged  | kCmdTypeString,     "Age",             kArgStartUpAgeName },
+};
+
+plClientLoader gClient;
+xcb_connection_t* gXConn;
+
+
+void PumpMessageQueueProc()
+{
+    xcb_generic_event_t* event = xcb_poll_for_event(gXConn);
+    if (event && ((event->response_type & ~0x80) == XCB_KEY_PRESS))
+    {
+        xcb_key_press_event_t* kbe = reinterpret_cast<xcb_key_press_event_t*>(event);
+
+        if (kbe->detail == 24) {
+            gClient->SetDone(true);
+        }
+    }
+}
+
+
+int main(int argc, char** argv)
+{
+    std::vector<ST::string> args;
+    args.reserve(argc);
+    for (size_t i = 0; i < argc; i++)
+    {
+        args.push_back(ST::string::from_utf8(argv[i]));
+    }
+
+    plCmdParser cmdParser(s_cmdLineArgs, std::size(s_cmdLineArgs));
+    cmdParser.Parse(args);
+
+
     /* Open the connection to the X server */
     xcb_connection_t* connection = xcb_connect(nullptr, nullptr);
+    gXConn = connection;
 
 
     /* Get the first screen */
@@ -90,71 +142,52 @@ int main()
     /* Map the window on the screen */
     xcb_map_window(connection, window);
 
-
     /* Make sure commands are sent before we pause so that the window gets shown */
     xcb_flush(connection);
 
+    Display* display = XOpenDisplay(nullptr);
 
-    plResManager *resMgr = new plResManager();
-    resMgr->SetDataPath("dat");
-    hsgResMgr::Init(resMgr);
 
-    if (!plFileInfo("resource.dat").Exists()) {
-        hsStatusMessage("Required file 'resource.dat' not found.");
-        return 1;
-    }
-    plClientResMgr::Instance().ILoadResources("resource.dat");
+    gClient.SetClientWindow((hsWindowHndl)(uintptr_t)window);
+    gClient.SetClientDisplay((hsWindowHndl)nullptr);
+    gClient.Init();
 
-    plClient* gClient = new plClient();
-    if (gClient == nullptr)
+
+    // We should quite frankly be done initing the client by now. But, if not, spawn the good old
+    // "Starting URU, please wait..." dialog (not so yay)
+    if (!gClient.IsInited())
     {
-        return 1;
+        gClient.Wait();
     }
 
     gClient->SetWindowHandle((hsWindowHndl)(uintptr_t)window);
 
-    Display* display = XOpenDisplay(nullptr);
-
-    if (gClient->InitPipeline((hsWindowHndl)display))
+    if (gClient->InitPipeline((hsWindowHndl)display) || !gClient->StartInit())
     {
-        return 1;
+        gClient->SetDone(true);
     }
 
-    if (!gClient->StartInit())
+    // Main loop
+    if (gClient && !gClient->GetDone())
     {
-        return 1;
-    }
+        gClient->SetMessagePumpProc(PumpMessageQueueProc);
+        gClient.Start();
 
-
-    do
-    {
-        gClient->MainLoop();
-
-        if (gClient->GetDone()) {
-            break;
-        }
-
-        xcb_generic_event_t* event = xcb_poll_for_event(connection);
-        if (event && ((event->response_type & ~0x80) == XCB_KEY_PRESS))
+        do
         {
-            xcb_key_press_event_t* kbe = reinterpret_cast<xcb_key_press_event_t*>(event);
+            gClient->MainLoop();
 
-            if (kbe->detail == 24) {
-                gClient->SetDone(true);
+            if (gClient->GetDone()) {
+                break;
             }
-        }
-    } while (true);
 
+            PumpMessageQueueProc();
 
-    if (gClient)
-    {
-        gClient->Shutdown();
-        gClient = nullptr;
+        } while (true);
     }
 
-    hsAssert(hsgResMgr::ResMgr()->RefCnt()==1, "resMgr has too many refs, expect mem leaks");
-    hsgResMgr::Shutdown(); // deletes fResMgr
 
+    gClient.ShutdownEnd();
 
     xcb_disconnect(connection);
 

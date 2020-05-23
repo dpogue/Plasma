@@ -46,12 +46,17 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plResMgr/plResManager.h"
 #include "plResMgr/plKeyFinder.h"
 #include "pnDispatch/plDispatch.h"
+#include "pfAudio/plListener.h"
+#include "plTimerCallbackManager.h"
 
 #include "plPipeline.h"
 #include "plPipeline/plPipelineCreate.h"
 #include "plProgressMgr/plProgressMgr.h"
 #include "plPipeline/plPlateProgressMgr.h"
+#include "pfMoviePlayer/plMoviePlayer.h"
+#include "plMessage/plMovieMsg.h"
 
+#include "pnMessage/plAudioSysMsg.h"
 #include "pnMessage/plClientMsg.h"
 #include "pnMessage/plTimeMsg.h"
 #include "plMessage/plRenderMsg.h"
@@ -63,11 +68,49 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plScene/plPageTreeMgr.h"
 #include "plScene/plVisMgr.h"
 
+#include "plDrawable/plAccessGeometry.h"
+//#include "plDrawable/plVisLOSMgr.h"
+
+#include "plAudio/plAudioSystem.h"
 #include "plAgeDescription/plAgeDescription.h"
 #include "plFile/plEncryptedStream.h"
 #include "plGImage/plFontCache.h"
 
+#include "plStatGather/plProfileManagerFull.h"
+
 #include "plUnifiedTime/plClientUnifiedTime.h"
+
+#include "plProfile.h"
+
+plProfile_Extern(DrawTime);
+plProfile_Extern(UpdateTime);
+plProfile_CreateTimer("ResMgr", "Update", ResMgr);
+plProfile_CreateTimer("DispatchQueue", "Update", DispatchQueue);
+plProfile_CreateTimer("RenderSetup", "Update", RenderMsg);
+plProfile_CreateTimer("Simulation", "Update", Simulation);
+plProfile_CreateTimer("NetTime", "Update", UpdateNetTime);
+plProfile_Extern(TimeMsg);
+plProfile_Extern(EvalMsg);
+plProfile_Extern(TransformMsg);
+plProfile_Extern(CameraMsg);
+plProfile_Extern(AnimatingPhysicals);
+plProfile_Extern(StoppedAnimPhysicals);
+
+plProfile_CreateTimer("BeginRender", "Render", BeginRender);
+plProfile_CreateTimer("ClearRender", "Render", ClearRender);
+plProfile_CreateTimer("PreRender", "Render", PreRender);
+plProfile_CreateTimer("MainRender", "Render", MainRender);
+plProfile_CreateTimer("PostRender", "Render", PostRender);
+plProfile_CreateTimer("Movies", "Render", Movies);
+plProfile_CreateTimer("Console", "Render", Console);
+plProfile_CreateTimer("StatusLog", "Render", StatusLog);
+plProfile_CreateTimer("ProgressMgr", "Render", ProgressMgr);
+plProfile_CreateTimer("ScreenElem", "Render", ScreenElem);
+plProfile_CreateTimer("EndRender", "Render", EndRender);
+
+static plDispatchBase* gDisp = nil;
+static plTimerCallbackManager* gTimerMgr = nil;
+bool plClient::fDelayMS = false;
 
 plClient* plClient::fInstance = nullptr;
 
@@ -126,6 +169,11 @@ bool plClient::Shutdown()
     // Let the resmanager know we're going to be shutting down.
     hsgResMgr::ResMgr()->BeginShutdown();
 
+    // Must kill off all movies before shutting down audio.
+    IKillMovies();
+
+    plgAudioSys::Activate(false);
+
     hsStatusMessage("Shutting down client...\n");
 
     for (auto room : fRooms) {
@@ -135,6 +183,7 @@ bool plClient::Shutdown()
     fRooms.clear();
     fRoomsLoading.clear();
 
+    plAccessGeometry::DeInit();
 
     delete fPipeline;
     fPipeline = nullptr;
@@ -144,6 +193,8 @@ bool plClient::Shutdown()
     }
 
     IUnRegisterAs(fFontCache, kFontCache_KEY);
+
+    plgAudioSys::Shutdown();
 
     delete fPageMgr;
     fPageMgr = nullptr;
@@ -196,9 +247,10 @@ bool plClient::InitPipeline(hsWindowHndl display)
     float yon = 500.0f;
 
     pipe->SetFOV(60.f, int32_t(60.f * pipe->Height() / pipe->Width()));
-    pipe->SetDepth(1.f, yon);
+    pipe->SetDepth(0.3f, yon);
 
     hsMatrix44 id;
+    id.Reset();
     cam.GetInverse(&id);
 
     pipe->SetWorldToCamera(cam, id);
@@ -208,6 +260,8 @@ bool plClient::InitPipeline(hsWindowHndl display)
     fClearColor.Set( 0.f, 0.f, 0.0f, 1.f );
     pipe->SetClear(&fClearColor);
     pipe->ClearRenderTarget();
+
+    plAccessGeometry::Init(pipe);
 
     if (fPipeline)
         fPipeline->LoadResources();
@@ -232,14 +286,45 @@ bool plClient::StartInit()
     // local data of course).
     //((plResManager *)hsgResMgr::ResMgr())->VerifyPages();
 
+    plgAudioSys::Init();
+
     RegisterAs(kClient_KEY);
 
     plGlobalVisMgr::Init();
     fPageMgr = new plPageTreeMgr();
 
+    //plVisLOSMgr::Init(fPipeline, fPageMgr);
+
+    gDisp = plgDispatch::Dispatch();
+    gTimerMgr = plgTimerCallbackMgr::Mgr();
 
     /// Init the font cache
     fFontCache = new plFontCache();
+
+    plgAudioSys::Activate(true);
+
+    plgDispatch::Dispatch()->RegisterForExactType(plMovieMsg::Index(), GetKey());
+
+#if 0
+    // create the listener for the audio system:
+    plListener* pLMod = new plListener;
+    pLMod->RegisterAs(kListenerMod_KEY );
+
+    plgDispatch::Dispatch()->RegisterForExactType(plEvalMsg::Index(), pLMod->GetKey());
+    plgDispatch::Dispatch()->RegisterForExactType(plAudioSysMsg::Index(), pLMod->GetKey());
+#endif
+
+    plSynchedObject::PushSynchDisabled(false);      // enable dirty tracking
+    return true;
+}
+
+bool plClient::BeginGame()
+{
+    //plNetClientMgr::GetInstance()->Init();
+
+    IPlayIntroMovie("avi/CyanWorlds.webm", 0.f, 0.f, 0.f, 1.f, 1.f, 0.75);
+
+    if (GetDone()) return false;
 
 
     // Pulled from plClient::IOnAsyncInitComplete
@@ -268,11 +353,28 @@ bool plClient::StartInit()
     //ILoadAge("ParadoxTestAge");
     ILoadAge("GuildPub-Writers");
 
+    /*
+    if (NetCommGetStartupAge()->ageDatasetName.compare_i("StartUp") == 0) {
+        // This is needed because there is no auth step in this case
+        plNetCommAuthMsg* msg = new plNetCommAuthMsg();
+        msg->result = kNetSuccess;
+        msg->param = nullptr;
+        msg->Send();
+    }
+    */
     return true;
 }
 
 bool plClient::MainLoop()
 {
+    if (plClient::fDelayMS)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+
+    // Reset our stats
+    plProfileManager::Instance().BeginFrame();
+
     if (IUpdate())
     {
         return true;
@@ -282,6 +384,12 @@ bool plClient::MainLoop()
     {
         return true;
     }
+
+    plProfileManagerFull::Instance().EndFrame();
+    plProfileManager::Instance().EndFrame();
+
+    // Draw the stats
+    plProfileManagerFull::Instance().Update();
 
     return false;
 }
@@ -339,8 +447,18 @@ bool plClient::MsgReceive(plMessage* msg)
             case plClientMsg::kLoadAgeKeys:
                 ((plResManager*)hsgResMgr::ResMgr())->LoadAgeKeys(pMsg->GetAgeName());
                 break;
+
+            case plClientMsg::kReleaseAgeKeys:
+                ((plResManager *)hsgResMgr::ResMgr())->DropAgeKeys(pMsg->GetAgeName());
+                break;
         }
         return true;
+    }
+
+    plMovieMsg* mov = plMovieMsg::ConvertNoRef(msg);
+    if (mov)
+    {
+        return IHandleMovieMsg(mov);
     }
 
     return hsKeyedObject::MsgReceive(msg);
@@ -576,13 +694,17 @@ void plClient::IRoomLoaded(plSceneNode* node, bool hold)
 
 bool plClient::IUpdate()
 {
+    plProfile_BeginTiming(UpdateTime);
+
     // reset timer on first frame if realtime and not clamping, to avoid initial large delta
     if (hsTimer::GetSysSeconds()==0 && hsTimer::IsRealTime() && hsTimer::GetTimeClamp()==0)
     {
         hsTimer::SetRealTime(true);
     }
 
+    plProfile_BeginTiming(DispatchQueue);
     plgDispatch::Dispatch()->MsgQueueProcess();
+    plProfile_EndTiming(DispatchQueue);
 
     hsTimer::IncSysSeconds();
     plClientUnifiedTime::SetSysTime(); // keep a unified time, based on sysSeconds
@@ -591,27 +713,45 @@ bool plClient::IUpdate()
     double currTime = hsTimer::GetSysSeconds();
     float delSecs = hsTimer::GetDelSysSeconds();
 
+    // This TimeMsg doesn't really do much, except somehow it flushes the dispatch
+    // after the NetClientMgr updates, delivering any SelfDestruct messages in the
+    // queue. This is important to prevent objects that are about to go away from
+    // starting trouble during their update. So to get rid of this message, some
+    // other way of flushing the dispatch after NegClientMgr's update is needed. mf 
+    plProfile_BeginTiming(TimeMsg);
     plTimeMsg* msg = new plTimeMsg(nullptr, nullptr, nullptr, nullptr);
     plgDispatch::MsgSend(msg);
+    plProfile_EndTiming(TimeMsg);
 
+    plProfile_BeginTiming(EvalMsg);
     plEvalMsg* eval = new plEvalMsg(nullptr, nullptr, nullptr, nullptr);
     plgDispatch::MsgSend(eval);
+    plProfile_EndTiming(EvalMsg);
 
+    const char* xFormLap1 = "Main";
+    plProfile_BeginLap(TransformMsg, xFormLap1);
     plTransformMsg* xform = new plTransformMsg(nullptr, nullptr, nullptr, nullptr);
     plgDispatch::MsgSend(xform);
+    plProfile_EndLap(TransformMsg, xFormLap1);
 
     plCoordinateInterface::SetTransformPhase(plCoordinateInterface::kTransformPhaseDelayed);
 
     // At this point, we just register for a plDelayedTransformMsg when dirtied.
     if (!plCoordinateInterface::GetDelayedTransformsEnabled())
     {
+        const char* xFormLap2 = "Simulation";
+        plProfile_BeginLap(TransformMsg, xFormLap2);
         xform = new plTransformMsg(nullptr, nullptr, nullptr, nullptr);
         plgDispatch::MsgSend(xform);
+        plProfile_EndLap(TransformMsg, xFormLap2);
     }
     else
     {
+        const char* xFormLap3 = "Delayed";
+        plProfile_BeginLap(TransformMsg, xFormLap3);
         xform = new plDelayedTransformMsg(nullptr, nullptr, nullptr, nullptr);
         plgDispatch::MsgSend(xform);
+        plProfile_EndLap(TransformMsg, xFormLap3);
     }
 
     plCoordinateInterface::SetTransformPhase(plCoordinateInterface::kTransformPhaseNormal);
@@ -635,34 +775,68 @@ bool plClient::IDraw()
         return IDrawProgress();
     }
 
+    plProfile_Extern(VisEval);
+    plProfile_BeginTiming(VisEval);
     plGlobalVisMgr::Instance()->Eval(fPipeline->GetViewPositionWorld());
+    plProfile_EndTiming(VisEval);
 
+    plProfile_BeginTiming(RenderMsg);
     plRenderMsg* rendMsg = new plRenderMsg(fPipeline);
     plgDispatch::MsgSend(rendMsg);
+    plProfile_EndTiming(RenderMsg);
 
+
+    plProfile_BeginTiming(DrawTime);
+
+    plProfile_BeginTiming(BeginRender);
     if (fPipeline->BeginRender())
     {
+        plProfile_EndTiming(BeginRender);
+        //return IFlushRenderRequests();
         return false;
     }
+    plProfile_EndTiming(BeginRender);
 
+    plProfile_BeginTiming(ClearRender);
     fPipeline->ClearRenderTarget();
+    plProfile_EndTiming(ClearRender);
 
+    plProfile_BeginTiming(MainRender);
     fPageMgr->Render(fPipeline);
+    plProfile_EndTiming(MainRender);
 
+    plProfile_BeginTiming(Movies);
+    IServiceMovies();
+    plProfile_EndTiming(Movies);
+
+    plProfile_BeginTiming(ProgressMgr);
     plProgressMgr::GetInstance()->Draw(fPipeline);
+    plProfile_EndTiming(ProgressMgr);
 
     fLastProgressUpdate = hsTimer::GetSeconds();
 
+    plProfile_BeginTiming(ScreenElem);
     fPipeline->RenderScreenElements();
+    plProfile_EndTiming(ScreenElem);
 
+    plProfile_BeginTiming(EndRender);
     fPipeline->EndRender();
+    plProfile_EndTiming(EndRender);
+
+    plProfile_EndTiming(DrawTime); 
 
     return false;
 }
 
-bool plClient::IDrawProgress() {
+bool plClient::IDrawProgress()
+{
+    // Reset our stats
+    plProfileManager::Instance().BeginFrame();
+
+    plProfile_BeginTiming(DrawTime);
     if (fPipeline->BeginRender())
     {
+        //return IFlushRenderRequests();
         return false;
     }
 
@@ -672,6 +846,9 @@ bool plClient::IDrawProgress() {
     plProgressMgr::GetInstance()->Draw(fPipeline);
     fPipeline->RenderScreenElements();
     fPipeline->EndRender();
+    plProfile_EndTiming(DrawTime);
+
+    plProfileManager::Instance().EndFrame();
 
     return false;
 }
@@ -729,7 +906,7 @@ void plClient::IProgressMgrCallbackProc(plOperationProgress* progress)
     }
 #endif
 
-    //fInstance->fMessagePumpProc();
+    fInstance->fMessagePumpProc();
 
     // HACK HACK HACK HACK!
     // Yes, this is the ORIGINAL, EVIL famerate limit from plClient::IDraw (except I bumped it to 60fps)
@@ -794,4 +971,162 @@ void plClient::IStopProgress()
         //if (fFlags.IsBitSet(kFlagAsyncInitComplete))
         //    ICompleteInit();
     }
+}
+
+bool plClient::IPlayIntroMovie(const char* movieName, float endDelay, float posX, float posY, float scaleX, float scaleY, float volume /* = 1.0 */)
+{
+    fQuitIntro = false;
+
+    plMoviePlayer player;
+    player.SetPosition(posX, posY);
+    player.SetScale(scaleX, scaleY);
+    player.SetFileName(movieName);
+    player.SetFadeToTime(endDelay);
+    player.SetFadeToColor(hsColorRGBA().Set(0, 0, 0, 1.f));
+    player.SetVolume(volume);
+
+    bool firstTry = true;  // flag to make sure that we don't quit before we even start
+
+    if (player.Start())
+    {
+        while (true)
+        {
+            if (fInstance)
+            {
+                fInstance->fMessagePumpProc();
+            }
+
+            if (GetDone())
+            {
+                return true;
+            }
+
+            if (firstTry)
+            {
+                firstTry = false;
+                fQuitIntro = false;
+            }
+            else
+            {
+                if (fQuitIntro)
+                {
+                    return true;
+                }
+            }
+
+            bool done = false;
+            if (!fPipeline->BeginRender())
+            {
+                fPipeline->ClearRenderTarget();
+                done = !player.NextFrame();
+
+                fPipeline->RenderScreenElements();
+                fPipeline->EndRender();
+            }
+
+            if (done)
+                return true;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool plClient::IHandleMovieMsg(plMovieMsg* mov)
+{
+    if (mov->GetFileName().empty())
+        return true;
+
+    size_t i = fMovies.size();
+    if (!(mov->GetCmd() & plMovieMsg::kMake))
+    {
+        for (i = 0; i < fMovies.size(); i++)
+        {
+            if (mov->GetFileName().compare_i(fMovies[i]->GetFileName().AsString()) == 0)
+                break;
+        }
+    }
+    if (i == fMovies.size())
+    {
+        fMovies.push_back(new plMoviePlayer());
+        fMovies[i]->SetFileName(mov->GetFileName());
+    }
+
+    if (mov->GetCmd() & plMovieMsg::kAddCallbacks)
+    {
+        int j;
+        for (j = 0; j < mov->GetNumCallbacks(); j++)
+            fMovies[i]->AddCallback(mov->GetCallback(j));
+    }
+    if (mov->GetCmd() & plMovieMsg::kMove)
+        fMovies[i]->SetPosition(mov->GetCenter());
+    if (mov->GetCmd() & plMovieMsg::kScale)
+        fMovies[i]->SetScale(mov->GetScale());
+    if (mov->GetCmd() & plMovieMsg::kColorAndOpacity)
+        fMovies[i]->SetColor(mov->GetColor());
+    if (mov->GetCmd() & plMovieMsg::kColor)
+    {
+        hsColorRGBA c = fMovies[i]->GetColor();
+        c.Set(mov->GetColor().r, mov->GetColor().g, mov->GetColor().b, c.a);
+        fMovies[i]->SetColor(c);
+    }
+    if (mov->GetCmd() & plMovieMsg::kOpacity)
+    {
+        hsColorRGBA c = fMovies[i]->GetColor();
+        c.a = mov->GetColor().a;
+        fMovies[i]->SetColor(c);
+    }
+    if (mov->GetCmd() & plMovieMsg::kFadeIn)
+    {
+        fMovies[i]->SetFadeFromColor(mov->GetFadeInColor());
+        fMovies[i]->SetFadeFromTime(mov->GetFadeInSecs());
+    }
+    if (mov->GetCmd() & plMovieMsg::kFadeOut)
+    {
+        fMovies[i]->SetFadeToColor(mov->GetFadeOutColor());
+        fMovies[i]->SetFadeToTime(mov->GetFadeOutSecs());
+    }
+    if (mov->GetCmd() & plMovieMsg::kVolume)
+        fMovies[i]->SetVolume(mov->GetVolume());
+
+    if (mov->GetCmd() & plMovieMsg::kStart)
+        fMovies[i]->Start();
+    if (mov->GetCmd() & plMovieMsg::kPause)
+        fMovies[i]->Pause(true);
+    if (mov->GetCmd() & plMovieMsg::kResume)
+        fMovies[i]->Pause(false);
+    if (mov->GetCmd() & plMovieMsg::kStop)
+        fMovies[i]->Stop();
+
+    // If a movie has lost its filename, it means something went horribly wrong
+    // with playing it and it has shutdown. Or we just stopped it. Either way,
+    // we need to clear it out of our list.
+    if (!fMovies[i]->GetFileName().IsValid())
+    {
+        delete fMovies[i];
+        fMovies[i] = fMovies.back();
+        fMovies.pop_back();
+    }
+    return true;
+}
+
+void plClient::IServiceMovies()
+{
+    for (size_t i = 0; i < fMovies.size(); i++)
+    {
+        if (!fMovies[i]->NextFrame())
+        {
+            delete fMovies[i];
+            fMovies[i] = fMovies.back();
+            fMovies.pop_back();
+            i--;
+        }
+    }
+}
+
+void plClient::IKillMovies()
+{
+    for (size_t i = 0; i < fMovies.size(); i++)
+        delete fMovies[i];
+    fMovies.clear();
 }

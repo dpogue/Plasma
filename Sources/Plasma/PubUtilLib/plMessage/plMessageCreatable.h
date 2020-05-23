@@ -55,10 +55,12 @@ REGISTER_CREATABLE(plAccountUpdateMsg);
 REGISTER_CREATABLE(plActivatorMsg);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plAgeLoadedMsg.h"
+#ifndef MINIMAL_GL_BUILD
 REGISTER_CREATABLE(plAgeBeginLoadingMsg);
+#endif
 REGISTER_CREATABLE(plAgeLoadedMsg);
+#ifndef MINIMAL_GL_BUILD
 REGISTER_CREATABLE(plAgeLoaded2Msg);
 REGISTER_CREATABLE(plInitialAgeStateLoadedMsg);
 #endif
@@ -250,10 +252,8 @@ REGISTER_CREATABLE(plMemberUpdateMsg);
 #include "plMeshRefMsg.h"
 REGISTER_CREATABLE(plMeshRefMsg);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plMovieMsg.h"
 REGISTER_CREATABLE(plMovieMsg);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plMultistageMsg.h"

@@ -1473,6 +1473,7 @@ bool plSound::DirtySynchState(const ST::string& sdlName /* kSDLSound */, uint32_
 }
 
 
+#ifndef MINIMAL_GL_BUILD
 //////////////////////////////////////////////////////////////////////////////
 //// plSoundVolumeApplicator /////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -1522,3 +1523,4 @@ void plSoundVolumeApplicator::Read( hsStream *s, hsResMgr *mgr )
     plAGApplicator::Read( s, mgr );
     fIndex = s->ReadLE32();
 }
+#endif

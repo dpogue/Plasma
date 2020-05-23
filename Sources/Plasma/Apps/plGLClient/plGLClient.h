@@ -52,10 +52,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plScene/plRenderRequest.h"
 
 class plFontCache;
+class plMovieMsg;
+class plMoviePlayer;
 class plOperationProgress;
 class plPageTreeMgr;
 class plPipeline;
 class plSceneNode;
+
+typedef void (*plMessagePumpProc)();
 
 /**
  * Our OpenGL-based plClient.
@@ -92,28 +96,34 @@ protected:
     };
 
 
-    plPageTreeMgr*          fPageMgr;
-    std::list<plRoomRec>    fRooms;
-    plSceneNode*            fCurrentNode;
+    plPageTreeMgr*              fPageMgr;
+    std::list<plRoomRec>        fRooms;
+    plSceneNode*                fCurrentNode;
 
-    plPipeline*             fPipeline;
-    hsColorRGBA             fClearColor;
+    plPipeline*                 fPipeline;
+    hsColorRGBA                 fClearColor;
 
-    plFontCache*            fFontCache;
+    plFontCache*                fFontCache;
 
-    hsWindowHndl            fWindowHndl;
-    bool                    fDone;
-    double                  fLastProgressUpdate;
-    plOperationProgress*    fProgressBar;
+    hsWindowHndl                fWindowHndl;
+    bool                        fDone;
+    double                      fLastProgressUpdate;
+    plOperationProgress*        fProgressBar;
 
-    bool                    fHoldLoadRequests;
-    std::list<LoadRequest*> fLoadRooms;
-    int                     fNumLoadingRooms;
-    std::vector<plLocation> fRoomsLoading;
-    int                     fNumPostLoadMsgs;
-    float                   fPostLoadMsgInc;
+    bool                        fHoldLoadRequests;
+    std::list<LoadRequest*>     fLoadRooms;
+    int                         fNumLoadingRooms;
+    std::vector<plLocation>     fRoomsLoading;
+    int                         fNumPostLoadMsgs;
+    float                       fPostLoadMsgInc;
 
-    static plClient*        fInstance;
+    static plClient*            fInstance;
+    static bool                 fDelayMS;
+
+    bool                        fQuitIntro;
+    std::vector<plMoviePlayer*> fMovies;
+
+    plMessagePumpProc           fMessagePumpProc;
 
 public:
     plClient();
@@ -143,6 +153,12 @@ public:
     virtual plClient& SetWindowHandle(hsWindowHndl hndl) { fWindowHndl = hndl; return *this; }
     hsWindowHndl GetWindowHandle() { return fWindowHndl; }
 
+    plPipeline*     GetPipeline() { return fPipeline; }
+
+    bool BeginGame();
+
+    void SetMessagePumpProc(plMessagePumpProc proc) { fMessagePumpProc = proc; }
+
 protected:
     // Hackery to avoid all of plAgeLoader and the netclient stuff
     bool ILoadAge(const ST::string& ageName);
@@ -157,6 +173,11 @@ protected:
     static void IDispatchMsgReceiveCallback();
     static void IReadKeyedObjCallback(plKey key);
     static void IProgressMgrCallbackProc(plOperationProgress* progress);
+
+    bool IPlayIntroMovie(const char* movieName, float endDelay, float posX, float posY, float scaleX, float scaleY, float volume = 1.0);
+    bool IHandleMovieMsg(plMovieMsg* mov);
+    void IKillMovies();
+    void IServiceMovies();
 
     int IFindRoomByLoc(const plLocation& loc);
     bool IIsRoomLoading(const plLocation& loc);

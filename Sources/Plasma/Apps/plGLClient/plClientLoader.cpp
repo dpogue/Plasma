@@ -40,41 +40,68 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#ifndef plAudioCreatable_inc
-#define plAudioCreatable_inc
+#include "plClientLoader.h"
+#include "plGLClient.h"
+#include "plFileSystem.h"
+#include "plPipeline.h"
 
-#include "pnFactory/plCreator.h"
+#include "plClientResMgr/plClientResMgr.h"
+//#include "plNetClient/plNetClientMgr.h"
+#include "plResMgr/plResManager.h"
 
-// Well, so much for "Private"
-#include "plAudioSystem_Private.h"
-REGISTER_CREATABLE(plAudioSystem);
+void plClientLoader::Run()
+{
+    plResManager* resMgr = new plResManager();
+    resMgr->SetDataPath("dat");
+    hsgResMgr::Init(resMgr);
 
-#include "plEAXListenerMod.h"
-REGISTER_CREATABLE(plEAXListenerMod);
+    if (!plFileInfo("resource.dat").Exists())
+    {
+        hsMessageBox("Required file 'resource.dat' not found.", "Error", hsMessageBoxNormal);
+        return;
+    }
+    plClientResMgr::Instance().ILoadResources("resource.dat");
 
-#include "plSound.h"
-REGISTER_NONCREATABLE(plSound);
-#ifndef MINIMAL_GL_BUILD
-REGISTER_CREATABLE(plSoundVolumeApplicator);
-#endif
+    fClient = new plClient();
+}
 
-#include "plWin32Sound.h"
-REGISTER_NONCREATABLE(plWin32Sound);
+void plClientLoader::Start()
+{
+    //fClient->ResizeDisplayDevice(fClient->GetPipeline()->Width(), fClient->GetPipeline()->Height(), !fClient->GetPipeline()->IsFullScreen());
 
-#ifndef MINIMAL_GL_BUILD
-#include "plWin32GroupedSound.h"
-REGISTER_CREATABLE(plWin32GroupedSound);
-#endif
+    /*
+    // Show the client window
+    ShowWindow(fWindow, SW_SHOW);
+    BringWindowToTop(fWindow);
+    */
 
-#ifndef MINIMAL_GL_BUILD
-#include "plWin32StaticSound.h"
-REGISTER_CREATABLE(plWin32StaticSound);
-REGISTER_CREATABLE(plWin32LinkSound);
-#endif
+    // Now, show the intro video, patch the global ages, etc...
+    fClient->BeginGame();
+}
 
-#ifndef MINIMAL_GL_BUILD
-#include "plWin32StreamingSound.h"
-REGISTER_CREATABLE(plWin32StreamingSound);
-#endif
+// ===================================================
+void plClientLoader::ShutdownStart()
+{
+    // Ensure that the client actually inited
+    hsThread::Stop();
 
-#endif // plAudioCreatable_inc
+    // Now request the sane exit
+    fClient->SetDone(true);
+
+    /*
+    if (plNetClientMgr* mgr = plNetClientMgr::GetInstance())
+        mgr->QueueDisableNet(false, nullptr);
+    */
+}
+
+void plClientLoader::ShutdownEnd()
+{
+    if (fClient)
+    {
+        fClient->Shutdown();
+    }
+
+    hsAssert(hsgResMgr::ResMgr()->RefCnt() == 1, "resMgr has too many refs, expect mem leaks");
+    hsgResMgr::Shutdown();
+}
+

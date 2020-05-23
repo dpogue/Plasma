@@ -1,5 +1,7 @@
 #include "pnNucleusCreatables.h"
 #include "pnMessage/pnMessageCreatable.h"
+#include "plAudioCore/plAudioCoreCreatable.h"
+#include "plAudio/plAudioCreatable.h"
 #include "plDrawable/plDrawableCreatable.h"
 #include "plGImage/plGImageCreatable.h"
 #include "plGLight/plGLightCreatable.h"

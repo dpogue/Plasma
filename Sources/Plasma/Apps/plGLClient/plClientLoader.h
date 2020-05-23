@@ -40,41 +40,77 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#ifndef plAudioCreatable_inc
-#define plAudioCreatable_inc
+#include "HeadSpin.h"
+#include "hsThread.h"
 
-#include "pnFactory/plCreator.h"
+class plClientLoader : private hsThread
+{
+    class plClient* fClient;
+    hsWindowHndl fWindow;
+    hsWindowHndl fDisplay;
 
-// Well, so much for "Private"
-#include "plAudioSystem_Private.h"
-REGISTER_CREATABLE(plAudioSystem);
+    virtual void OnQuit() override
+    {
+        SetQuit(true);
+    }
 
-#include "plEAXListenerMod.h"
-REGISTER_CREATABLE(plEAXListenerMod);
+    /** Does the heavy lifting of client init */
+    virtual void Run() override;
 
-#include "plSound.h"
-REGISTER_NONCREATABLE(plSound);
-#ifndef MINIMAL_GL_BUILD
-REGISTER_CREATABLE(plSoundVolumeApplicator);
-#endif
+public:
+    plClientLoader() : fClient(nullptr) { }
 
-#include "plWin32Sound.h"
-REGISTER_NONCREATABLE(plWin32Sound);
+    /**
+     * Initializes the client asynchronously including: loading the localization,
+     * registry, dispatcher, etc.
+     */
+    void Init()
+    {
+        hsAssert(fClient == nullptr, "trying to init the client more than once?");
+        hsThread::Start();
+    }
 
-#ifndef MINIMAL_GL_BUILD
-#include "plWin32GroupedSound.h"
-REGISTER_CREATABLE(plWin32GroupedSound);
-#endif
+    /**
+     * Returns whether or not the client init is done
+     */
+    bool IsInited() const { return hsThread::GetQuit(); }
 
-#ifndef MINIMAL_GL_BUILD
-#include "plWin32StaticSound.h"
-REGISTER_CREATABLE(plWin32StaticSound);
-REGISTER_CREATABLE(plWin32LinkSound);
-#endif
+    /**
+     * Sets the client window handle.
+     */
+    void SetClientWindow(hsWindowHndl hWnd) { fWindow = hWnd; }
 
-#ifndef MINIMAL_GL_BUILD
-#include "plWin32StreamingSound.h"
-REGISTER_CREATABLE(plWin32StreamingSound);
-#endif
+    /**
+     * Sets the client display handle.
+     */
+    void SetClientDisplay(hsWindowHndl hDC) { fDisplay = hDC; }
 
-#endif // plAudioCreatable_inc
+    /**
+     * Initial shutdown request received from Windows (or something)... start tear down
+     */
+    void ShutdownStart();
+
+    /**
+     * Window mess cleaned up, time to commit hara-kiri
+     */
+    void ShutdownEnd();
+
+    /**
+     * Launches the client window and starts the game.
+     * This will block if the client is not initialized.
+     */
+    void Start();
+
+    /**
+     * Waits for the client to finish initing
+     */
+    void Wait() { hsThread::Stop(); }
+
+    /** Returns the current plClient instance */
+    plClient* operator ->() const { return fClient; }
+
+    /** Returns whether or not the client is non-null */
+    operator bool() const { return fClient != nullptr; }
+};
+
+
