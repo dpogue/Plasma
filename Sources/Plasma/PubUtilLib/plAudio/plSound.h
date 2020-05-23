@@ -388,6 +388,7 @@ protected:
 };
 
 
+#ifndef MINIMAL_GL_BUILD
 //// plSoundVolumeApplicator /////////////////////////////////////////////////
 //  Tiny helper for handling animated volumes
 
@@ -408,5 +409,6 @@ protected:
     uint32_t      fIndex;
     virtual void IApply( const plAGModifier *mod, double time );
 };
+#endif
 
 #endif //plWin32Sound_h

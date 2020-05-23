@@ -12,11 +12,39 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 include_directories(${PYTHON_INCLUDE_DIR})
 include_directories(${CURL_INCLUDE_DIR})
 
+if(MOVIE_AVAILABLE)
+    include_directories(${VPX_INCLUDE_DIR})
+    include_directories(${Opus_INCLUDE_DIR})
+endif()
+
+# Test for Python Interpreter, which will be used for extra build scripts if available
+find_package(PythonInterp)
+set_package_properties(PythonInterp PROPERTIES
+    URL "http://www.python.org"
+    DESCRIPTION "Python Scripting language interpreter"
+    TYPE OPTIONAL
+    PURPOSE "Used to (re-)build some client resource files"
+)
+
+if(PYTHONINTERP_FOUND)
+    include(FindPythonModule)
+
+    # Test for Python modules needed to build resource.dat
+    find_python_module(cairosvg)
+    find_python_module(PIL)
+
+    if((DEFINED PY_CAIROSVG) AND (DEFINED PY_PIL))
+        set(CAN_BUILD_RESOURCE_DAT ON)
+    endif((DEFINED PY_CAIROSVG) AND (DEFINED PY_PIL))
+endif(PYTHONINTERP_FOUND)
+
 set(plGLClient_HEADERS
+    plClientLoader.h
     plGLClient.h
 )
 
 set(plGLClient_SOURCES
+    plClientLoader.cpp
     plCreatables.cpp
     plGLClient.cpp
 )
@@ -38,15 +66,25 @@ endif(WIN32)
 
 add_executable(plGLClient ${plGLClient_SOURCES} ${plGLClient_HEADERS})
 
+if(CAN_BUILD_RESOURCE_DAT AND PLASMA_BUILD_RESOURCE_DAT)
+    add_subdirectory(external)
+    add_dependencies(plGLClient externalResources)
+endif()
+
 target_link_libraries(plGLClient string_theory)
 # Plasma Libs
 target_link_libraries(plGLClient CoreLib)
 target_link_libraries(plGLClient plAgeDescription)
+target_link_libraries(plGLClient plAudio)
+target_link_libraries(plGLClient plAudioCore)
 target_link_libraries(plGLClient plPipeline)
 target_link_libraries(plGLClient plProgressMgr)
 target_link_libraries(plGLClient plResMgr)
 target_link_libraries(plGLClient plScene)
+target_link_libraries(plGLClient plStatGather)
 target_link_libraries(plGLClient pfAnimation)
+target_link_libraries(plGLClient pfMessage)
+target_link_libraries(plGLClient pfMoviePlayer)
 
 # System Libs
 if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -54,6 +92,16 @@ if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 elseif(UNIX)
     target_link_libraries(plGLClient xcb)
     target_link_libraries(plGLClient X11)
+endif()
+
+if(PLASMA_USE_OPUS)
+    target_link_libraries(plGLClient ${Opus_LIBRARIES})
+endif()
+if(PLASMA_USE_SPEEX)
+    target_link_libraries(plGLClient ${Speex_LIBRARY})
+endif()
+if(PLASMA_USE_VPX)
+    target_link_libraries(plGLClient ${VPX_LIBRARY})
 endif()
 
 source_group("Source Files" FILES ${plGLClient_SOURCES})
