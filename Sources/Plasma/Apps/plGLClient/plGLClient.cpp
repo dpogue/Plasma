@@ -42,45 +42,74 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plGLClient.h"
 
+#include "plPipeResReq.h"
+#include "plProfile.h"
 #include "hsTimer.h"
-#include "plResMgr/plResManager.h"
-#include "plResMgr/plKeyFinder.h"
-#include "pnDispatch/plDispatch.h"
-#include "pfAudio/plListener.h"
 #include "plTimerCallbackManager.h"
 
-#include "plPipeline.h"
-#include "plPipeline/plPipelineCreate.h"
-#include "plProgressMgr/plProgressMgr.h"
-#include "plPipeline/plPlateProgressMgr.h"
-#include "pfMoviePlayer/plMoviePlayer.h"
-#include "plMessage/plMovieMsg.h"
+#include "pnDispatch/plDispatch.h"
+#include "pnDispatch/plDispatchLogBase.h"
 
 #include "pnMessage/plAudioSysMsg.h"
 #include "pnMessage/plClientMsg.h"
+#include "pnMessage/plProxyDrawMsg.h"
 #include "pnMessage/plTimeMsg.h"
-#include "plMessage/plRenderMsg.h"
-#include "plMessage/plTransitionMsg.h"
 
 #include "pnSceneObject/plCoordinateInterface.h"
+
+#include "plAgeDescription/plAgeDescription.h"
+#include "plAgeLoader/plAgeLoader.h"
+#include "plAgeLoader/plResPatcher.h"
+
+#include "plAudio/plAudioSystem.h"
+
+#include "plDrawable/plAccessGeometry.h"
+//#include "plDrawable/plVisLOSMgr.h"
+
+#include "plFile/plEncryptedStream.h"
+
+#include "plGImage/plFontCache.h"
+
+#include "plMessage/plMovieMsg.h"
+#include "plMessage/plRenderMsg.h"
+#include "plMessage/plResPatcherMsg.h"
+#include "plMessage/plRoomLoadNotifyMsg.h"
+#include "plMessage/plTransitionMsg.h"
+
+#include "plPipeline.h"
+#include "plPipeline/plPipelineCreate.h"
+#include "plPipeline/plPlateProgressMgr.h"
+#include "plPipeline/plTransitionMgr.h"
+
+#include "plProgressMgr/plProgressMgr.h"
+
+#include "plResMgr/plResManager.h"
+#include "plResMgr/plKeyFinder.h"
 
 #include "plScene/plSceneNode.h"
 #include "plScene/plPageTreeMgr.h"
 #include "plScene/plVisMgr.h"
 
-#include "plDrawable/plAccessGeometry.h"
-//#include "plDrawable/plVisLOSMgr.h"
-
-#include "plAudio/plAudioSystem.h"
-#include "plAgeDescription/plAgeDescription.h"
-#include "plFile/plEncryptedStream.h"
-#include "plGImage/plFontCache.h"
-
 #include "plStatGather/plProfileManagerFull.h"
+
+#include "plStatusLog/plStatusLog.h"
 
 #include "plUnifiedTime/plClientUnifiedTime.h"
 
-#include "plProfile.h"
+#include "pfAudio/plListener.h"
+
+#include "pfConsoleCore/pfConsoleEngine.h"
+#include "pfConsole/pfConsole.h"
+#include "pfConsole/pfConsoleDirSrc.h"
+
+#include "pfLocalizationMgr/pfLocalizationMgr.h"
+
+#include "pfMoviePlayer/plMoviePlayer.h"
+
+#include "pfPatcher/plManifests.h"
+
+
+PF_CONSOLE_LINK_ALL()
 
 plProfile_Extern(DrawTime);
 plProfile_Extern(UpdateTime);
@@ -117,15 +146,18 @@ plClient* plClient::fInstance = nullptr;
 plClient::plClient()
 :   fPipeline(nullptr),
     fCurrentNode(nullptr),
+    fTransitionMgr(nullptr),
     fPageMgr(nullptr),
     fFontCache(nullptr),
+    fConsole(nullptr),
     fWindowHndl(nullptr),
     fDone(false),
     fProgressBar(nullptr),
     fHoldLoadRequests(false),
     fNumLoadingRooms(0),
     fNumPostLoadMsgs(0),
-    fPostLoadMsgInc(0.f)
+    fPostLoadMsgInc(0.f),
+    fQuitIntro(false)
 {
     hsStatusMessage("Constructing client\n");
     plClient::SetInstance(this);
@@ -137,6 +169,28 @@ plClient::plClient()
 #else // HS_DEBUGGING
     hsTimer::SetTimeClamp(0);
 #endif // HS_DEBUGGING
+
+    // need to do this before the console is created
+    IDetectAudioVideoSettings();
+
+    /// allow console commands to start working early
+    // Create the console engine
+    fConsoleEngine = new pfConsoleEngine();
+
+    // create network mgr before console runs
+#ifndef MINIMAL_GL_BUILD
+    plNetClientMgr::SetInstance(new plNetClientMgr);
+#endif
+    plAgeLoader::SetInstance(new plAgeLoader);
+
+    // Use it to parse the init directory
+    plFileName initFolder = plFileSystem::GetInitPath();
+    pfConsoleDirSrc dirSrc(fConsoleEngine, initFolder, "*.ini");
+
+#ifndef PLASMA_EXTERNAL_RELEASE
+    // internal builds also parse the local init folder
+    dirSrc.ParseDirectory("init", "*.ini");
+#endif
 }
 
 plClient::~plClient()
@@ -174,13 +228,29 @@ bool plClient::Shutdown()
 
     plgAudioSys::Activate(false);
 
+    // Get any proxies to commit suicide.
+    plProxyDrawMsg* nuke = new plProxyDrawMsg(plProxyDrawMsg::kAllTypes | plProxyDrawMsg::kDestroy);
+    plgDispatch::MsgSend(nuke);
+
     hsStatusMessage("Shutting down client...\n");
 
-    for (auto room : fRooms) {
-        plSceneNode* sn = room.fNode;
+#ifndef MINIMAL_GL_BUILD
+    if (plNetClientMgr* nc = plNetClientMgr::GetInstance())
+    {
+        nc->Shutdown();
+    }
+#endif
+    if (plAgeLoader* al = plAgeLoader::GetInstance())
+    {
+        al->Shutdown();
+    }
+
+    for (int i = 0; i < fRooms.Count(); i++)
+    {
+        plSceneNode *sn = fRooms[i].fNode;
         GetKey()->Release(sn->GetKey());
     }
-    fRooms.clear();
+    fRooms.Reset();
     fRoomsLoading.clear();
 
     plAccessGeometry::DeInit();
@@ -192,9 +262,21 @@ bool plClient::Shutdown()
         fPageMgr->Reset();
     }
 
+    IUnRegisterAs(fTransitionMgr, kTransitionMgr_KEY);
+
+    delete fConsoleEngine;
+    fConsoleEngine = nullptr;
+
     IUnRegisterAs(fFontCache, kFontCache_KEY);
 
+    IUnRegisterAs(fConsole, kConsoleObject_KEY);
+
     plgAudioSys::Shutdown();
+
+    if (pfLocalizationMgr::InstanceValid())
+    {
+        pfLocalizationMgr::Shutdown();
+    }
 
     delete fPageMgr;
     fPageMgr = nullptr;
@@ -236,10 +318,11 @@ bool plClient::InitPipeline(hsWindowHndl display)
 
     hsVector3 up;
     hsPoint3 from, at;
-    //from.Set(0.f, -20.f, 5.f);
+    //from.Set(0.f, 0.f, 10.f);
     from.Set(-24.5391f, -22.1473f, 10.f);
-    //at.Set(0.f, 5.f, 0.f);
+    //at.Set(0.f, 20.f, 0.f);
     at.Set(-23.6462f, 2.2479f, 10.f);
+    //up.Set(0.f, 0.f, -1.f);
     up.Set(0,0.f,1.f);
     hsMatrix44 cam;
     cam.MakeCamera(&from,&at,&up);
@@ -251,6 +334,8 @@ bool plClient::InitPipeline(hsWindowHndl display)
 
     hsMatrix44 id;
     id.Reset();
+
+    // MINIMAL_GL_BUILD: Make plViewFaceModifiers work, until we have the real camera
     cam.GetInverse(&id);
 
     pipe->SetWorldToCamera(cam, id);
@@ -273,6 +358,9 @@ bool plClient::InitPipeline(hsWindowHndl display)
 bool plClient::StartInit()
 {
     hsStatusMessage("Init client\n");
+    fFlags.SetBit(kFlagIniting);
+
+    pfLocalizationMgr::Initialize("dat");
 
     plPlateProgressMgr::DeclareThyself();
 
@@ -284,7 +372,9 @@ bool plClient::StartInit()
     // have old version numbers.  If the file still exists on the file server
     // then it will be patched on-the-fly as needed (unless you're running with
     // local data of course).
-    //((plResManager *)hsgResMgr::ResMgr())->VerifyPages();
+#ifdef PLASMA_EXTERNAL_RELEASE
+    ((plResManager *)hsgResMgr::ResMgr())->VerifyPages();
+#endif
 
     plgAudioSys::Init();
 
@@ -298,17 +388,38 @@ bool plClient::StartInit()
     gDisp = plgDispatch::Dispatch();
     gTimerMgr = plgTimerCallbackMgr::Mgr();
 
+    /// Init the console object
+    /// Note: this can be done last because the console engine was inited first, and
+    /// everything in code that works with the console does so through the console engine
+    fConsole = new pfConsole();
+    pfConsole::SetPipeline(fPipeline);
+    fConsole->RegisterAs(kConsoleObject_KEY);     // fixedKey from plFixedKey.h
+    fConsole->Init(fConsoleEngine);
+
     /// Init the font cache
     fFontCache = new plFontCache();
 
+    /// Init the transition manager
+    fTransitionMgr = new plTransitionMgr();
+    fTransitionMgr->RegisterAs(kTransitionMgr_KEY);       // fixedKey from plFixedKey.h
+    fTransitionMgr->Init();
+
+    plgAudioSys::SetActive(true); // MINIMAL_GL_BUILD: Remove once the console is working
     plgAudioSys::Activate(true);
+
+    /// Init Net before loading things
+#ifndef MINIMAL_GL_BUILD
+    plgDispatch::Dispatch()->RegisterForExactType(plNetCommAuthMsg::Index(), GetKey());
+    plNetClientMgr::GetInstance()->RegisterAs(kNetClientMgr_KEY);
+#endif
+    plAgeLoader::GetInstance()->Init();
 
     plgDispatch::Dispatch()->RegisterForExactType(plMovieMsg::Index(), GetKey());
 
-#if 0
+#ifndef MINIMAL_GL_BUILD
     // create the listener for the audio system:
     plListener* pLMod = new plListener;
-    pLMod->RegisterAs(kListenerMod_KEY );
+    pLMod->RegisterAs(kListenerMod_KEY);
 
     plgDispatch::Dispatch()->RegisterForExactType(plEvalMsg::Index(), pLMod->GetKey());
     plgDispatch::Dispatch()->RegisterForExactType(plAudioSysMsg::Index(), pLMod->GetKey());
@@ -322,36 +433,12 @@ bool plClient::BeginGame()
 {
     //plNetClientMgr::GetInstance()->Init();
 
-    IPlayIntroMovie("avi/CyanWorlds.webm", 0.f, 0.f, 0.f, 1.f, 1.f, 0.75);
+    if (!fQuitIntro)
+    {
+        IPlayIntroMovie("avi/CyanWorlds.webm", 0.f, 0.f, 0.f, 1.f, 1.f, 0.75);
+    }
 
     if (GetDone()) return false;
-
-
-    // Pulled from plClient::IOnAsyncInitComplete
-    // Load our custom fonts from our current dat directory
-    fFontCache->LoadCustomFonts("dat");
-
-    // We'd like to do a SetHoldLoadRequests here, but the GUI stuff doesn't draw right
-    // if you try to delay the loading for it.  To work around that, we allocate a
-    // global loading bar in advance and set it to a big enough range that when the GUI's
-    // are done loading about the right amount of it is filled.
-    fNumLoadingRooms++;
-    IStartProgress("Loading...", 0);
-
-    SetHoldLoadRequests(true);
-    fProgressBar->SetLength(fProgressBar->GetProgress());
-
-    fNumLoadingRooms--;
-
-    //((plResManager*)hsgResMgr::ResMgr())->PageInAge("GlobalAnimations");
-    SetHoldLoadRequests(false);
-
-    // Tell the transition manager to start faded out. This is so we don't
-    // get a frame or two of non-faded drawing before we do our initial fade in
-    //(void)(new plTransitionMsg( plTransitionMsg::kFadeOut, 0.0f, true ))->Send();
-
-    //ILoadAge("ParadoxTestAge");
-    ILoadAge("GuildPub-Writers");
 
     /*
     if (NetCommGetStartupAge()->ageDatasetName.compare_i("StartUp") == 0) {
@@ -362,6 +449,14 @@ bool plClient::BeginGame()
         msg->Send();
     }
     */
+#ifdef MINIMAL_GL_BUILD
+    // This came from plClient::IPatchGlobalAgeFiles
+    plgDispatch::Dispatch()->RegisterForExactType(plResPatcherMsg::Index(), GetKey());
+
+    plResPatcher* patcher = plResPatcher::GetInstance();
+    patcher->Update(plManifest::EssentialGameManifests());
+#endif
+
     return true;
 }
 
@@ -403,16 +498,31 @@ bool plClient::MsgReceive(plMessage* msg)
     }
 
 
-    plClientRefMsg* pRefMsg = plClientRefMsg::ConvertNoRef(msg);
-    if (pRefMsg)
+    if (plClientRefMsg* pRefMsg = plClientRefMsg::ConvertNoRef(msg))
     {
         switch (pRefMsg->fType)
         {
         case plClientRefMsg::kLoadRoom:
+            #ifndef PLASMA_EXTERNAL_RELEASE
+            plStatusLog::AddLineSF( "pageouts.log", ".. ClientRefMsg received for room {}", pRefMsg->GetRef() ? pRefMsg->GetRef()->GetKey()->GetUoid().GetObjectName() : ST_LITERAL("nilref") );
+            #endif
+
             if (hsCheckBits(pRefMsg->GetContext(), plRefMsg::kOnCreate))
             {
+                // was it that the room was loaded?
                 IRoomLoaded(plSceneNode::Convert(pRefMsg->GetRef()), false);
             }
+            else if (hsCheckBits(pRefMsg->GetContext(), plRefMsg::kOnDestroy))
+            {
+                // or was it that the room was unloaded?
+                IRoomUnloaded(plSceneNode::Convert(pRefMsg->GetRef()));
+            }
+            #ifndef PLASMA_EXTERNAL_RELEASE
+            else
+            {
+                plStatusLog::AddLineS("pageouts.log", "..    refMsg is UNHANDLED");
+            }
+            #endif
             break;
 
         case plClientRefMsg::kLoadRoomHold:
@@ -421,44 +531,115 @@ bool plClient::MsgReceive(plMessage* msg)
                 IRoomLoaded(plSceneNode::Convert(pRefMsg->GetRef()), true);
             }
             break;
+
+        // Manually add room.
+        // Add to pageMgr, but don't load the entire room.
+        case plClientRefMsg::kManualRoom:
+            {
+                if (pRefMsg->GetContext() & plRefMsg::kOnCreate || pRefMsg->GetContext() & plRefMsg::kOnRequest)
+                {
+                    bool found = false;
+                    plSceneNode* pNode = plSceneNode::ConvertNoRef(pRefMsg->GetRef());
+
+                    for (size_t i = 0; i < fRooms.Count(); i++)
+                    {
+                        if (fRooms[i].fNode->GetKey() == pRefMsg->GetSender())
+                        {
+                            found=true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        if (pNode)
+                        {
+                            fRooms.Append(plRoomRec(pNode, 0));
+                            fPageMgr->AddNode(pNode);
+                        }
+                    }
+                }
+                else
+                {
+                    plSceneNode* node = plSceneNode::ConvertNoRef(pRefMsg->GetRef());
+                    if (node)
+                    {
+                        for (size_t i = 0; i < fRooms.Count(); i++)
+                        {
+                            if (fRooms[i].fNode->GetKey() == node->GetKey())
+                            {
+                                fRooms.Remove(i);
+                                break;
+                            }
+                        }
+                        fPageMgr->RemoveNode(node);
+                    }
+                }
+            }
+            break;
         }
         return true;
     }
 
-
-    plClientMsg* pMsg = plClientMsg::ConvertNoRef(msg);
-    if (pMsg)
+    if (plClientMsg* pMsg = plClientMsg::ConvertNoRef(msg))
     {
         switch (pMsg->GetClientMsgFlag())
         {
-            case plClientMsg::kQuit:
-                SetDone(true);
-                break;
+        case plClientMsg::kQuit:
+            SetDone(true);
+            break;
 
-            case plClientMsg::kLoadRoom:
-            case plClientMsg::kLoadRoomHold:
-                IQueueRoomLoad(pMsg->GetRoomLocs(), (pMsg->GetClientMsgFlag() == plClientMsg::kLoadRoomHold));
-                if (!fHoldLoadRequests)
-                {
-                    ILoadNextRoom();
-                }
-                break;
+        case plClientMsg::kLoadRoom:
+        case plClientMsg::kLoadRoomHold:
+            IQueueRoomLoad(pMsg->GetRoomLocs(), (pMsg->GetClientMsgFlag() == plClientMsg::kLoadRoomHold));
+            if (!fHoldLoadRequests)
+            {
+                ILoadNextRoom();
+            }
+            break;
 
-            case plClientMsg::kLoadAgeKeys:
-                ((plResManager*)hsgResMgr::ResMgr())->LoadAgeKeys(pMsg->GetAgeName());
-                break;
+        case plClientMsg::kUnloadRoom:
+            IUnloadRooms(pMsg->GetRoomLocs());
+            break;
 
-            case plClientMsg::kReleaseAgeKeys:
-                ((plResManager *)hsgResMgr::ResMgr())->DropAgeKeys(pMsg->GetAgeName());
-                break;
+        case plClientMsg::kLoadNextRoom:
+            ILoadNextRoom();
+            break;
+
+        case plClientMsg::kLoadAgeKeys:
+            ((plResManager*)hsgResMgr::ResMgr())->LoadAgeKeys(pMsg->GetAgeName());
+            break;
+
+        case plClientMsg::kReleaseAgeKeys:
+            ((plResManager *)hsgResMgr::ResMgr())->DropAgeKeys(pMsg->GetAgeName());
+            break;
+
+        case plClientMsg::kDisableRenderScene:
+            plClient::GetInstance()->SetFlag(plClient::kFlagDBGDisableRender, true);
+            break;
+
+        case plClientMsg::kEnableRenderScene:
+            plClient::GetInstance()->SetFlag(plClient::kFlagDBGDisableRender, false);
+            break;
         }
         return true;
     }
 
-    plMovieMsg* mov = plMovieMsg::ConvertNoRef(msg);
-    if (mov)
+    if (plRenderRequestMsg* rendReq = plRenderRequestMsg::ConvertNoRef(msg))
+    {
+        IAddRenderRequest(rendReq->Request());
+        return true;
+    }
+
+    if (plMovieMsg* mov = plMovieMsg::ConvertNoRef(msg))
     {
         return IHandleMovieMsg(mov);
+    }
+
+    if (plResPatcherMsg* resMsg = plResPatcherMsg::ConvertNoRef(msg))
+    {
+        IHandlePatcherMsg(resMsg);
+        return true;
     }
 
     return hsKeyedObject::MsgReceive(msg);
@@ -468,9 +649,95 @@ bool plClient::MsgReceive(plMessage* msg)
 
 
 
+void plClient::IDetectAudioVideoSettings()
+{
+#if defined(HS_DEBUGGING) || defined(DEBUG)
+    plPipeline::fDefaultPipeParams.Windowed = true;
+#else
+    plPipeline::fDefaultPipeParams.Windowed = false;
+#endif
+
+    hsUNIXStream s;
+    plFileName audioIniFile = plFileName::Join(plFileSystem::GetInitPath(), "audio.ini");
+    plFileName graphicsIniFile = plFileName::Join(plFileSystem::GetInitPath(), "graphics.ini");
+
+#ifndef PLASMA_EXTERNAL_RELEASE
+    // internal builds can use the local dir
+    if (plFileInfo("init/audio.ini").Exists())
+    {
+        audioIniFile = "init/audio.ini";
+    }
+
+    if (plFileInfo("init/graphics.ini").Exists())
+    {
+        graphicsIniFile = "init/graphics.ini";
+    }
+#endif
+
+    //check to see if audio.ini exists
+    if (s.Open(audioIniFile))
+    {
+        s.Close();
+    }
+    else
+    {
+        IWriteDefaultAudioSettings(audioIniFile);
+    }
+
+    // check to see if graphics.ini exists
+    if (s.Open(graphicsIniFile))
+    {
+        s.Close();
+    }
+    else
+    {
+        IWriteDefaultGraphicsSettings(graphicsIniFile);
+    }
+}
+
+void plClient::IWriteDefaultGraphicsSettings(const plFileName& destFile)
+{
+    hsStream* stream = plEncryptedStream::OpenEncryptedFileWrite(destFile);
+
+    stream->WriteFmt("Graphics.Width {d}\n",                    plPipeline::fDefaultPipeParams.Width);
+    stream->WriteFmt("Graphics.Height {d}\n",                   plPipeline::fDefaultPipeParams.Height);
+    stream->WriteFmt("Graphics.ColorDepth {d}\n",               plPipeline::fDefaultPipeParams.ColorDepth);
+    stream->WriteFmt("Graphics.Windowed {}\n",                  plPipeline::fDefaultPipeParams.Windowed);
+    stream->WriteFmt("Graphics.AntiAliasAmount {d}\n",          plPipeline::fDefaultPipeParams.AntiAliasingAmount);
+    stream->WriteFmt("Graphics.AnisotropicLevel {d}\n",         plPipeline::fDefaultPipeParams.AnisotropicLevel);
+    stream->WriteFmt("Graphics.TextureQuality {d}\n",           plPipeline::fDefaultPipeParams.TextureQuality);
+    stream->WriteFmt("Quality.Level {d}\n",                     plPipeline::fDefaultPipeParams.VideoQuality);
+    stream->WriteFmt("Graphics.Shadow.Enable {d}\n",            plPipeline::fDefaultPipeParams.Shadows);
+    stream->WriteFmt("Graphics.EnablePlanarReflections {d}\n",  plPipeline::fDefaultPipeParams.PlanarReflections);
+    stream->WriteFmt("Graphics.EnableVSync {}\n",               plPipeline::fDefaultPipeParams.VSync);
+
+    stream->Close();
+    delete stream;
+    stream = nullptr;
+}
+
+void plClient::IWriteDefaultAudioSettings(const plFileName& destFile)
+{
+    hsStream* stream = plEncryptedStream::OpenEncryptedFileWrite(destFile);
+
+    stream->WriteFmt("Audio.Initialize {}\n",                   true);
+    stream->WriteFmt("Audio.UseEAX {}\n",                       false);
+    stream->WriteFmt("Audio.SetPriorityCutoff {d}\n",           6);
+    stream->WriteFmt("Audio.MuteAll {}\n",                      false);
+    stream->WriteFmt("Audio.SetChannelVolume SoundFX {d}\n",    1);
+    stream->WriteFmt("Audio.SetChannelVolume BgndMusic {d}\n",  1);
+    stream->WriteFmt("Audio.SetChannelVolume Ambience {d}\n",   1);
+    stream->WriteFmt("Audio.SetChannelVolume NPCVoice {d}\n",   1);
+    stream->WriteFmt("Audio.EnableVoiceRecording {d}\n",        1);
+
+    stream->Close();
+    delete stream;
+    stream = nullptr;
+}
 
 bool plClient::ILoadAge(const ST::string& ageName)
 {
+#if 1
     plFileName filename = plFileName::Join("dat", ST::format("{}.age", ageName));
     hsStream* stream = plEncryptedStream::OpenEncryptedFile(filename);
 
@@ -482,7 +749,7 @@ bool plClient::ILoadAge(const ST::string& ageName)
     ad.SeekFirstPage();
 
     plAgePage* page;
-    plKey clientKey = GetKey();
+    plKey clientKey = hsgResMgr::ResMgr()->FindKey( kClient_KEY );
 
     plClientMsg* loadAgeKeysMsg = new plClientMsg(plClientMsg::kLoadAgeKeys);
     loadAgeKeysMsg->SetAgeName(ageName);
@@ -501,6 +768,7 @@ bool plClient::ILoadAge(const ST::string& ageName)
     plClientMsg* dumpAgeKeys = new plClientMsg(plClientMsg::kReleaseAgeKeys);
     dumpAgeKeys->SetAgeName(ageName);
     dumpAgeKeys->Send(clientKey);
+#endif
 
     return true;
 }
@@ -510,11 +778,10 @@ bool plClient::ILoadAge(const ST::string& ageName)
 int plClient::IFindRoomByLoc(const plLocation& loc)
 {
     int i = 0;
-    for (auto it = fRooms.begin(); it != fRooms.end(); ++it)
+    for (int i = 0; i < fRooms.Count(); i++)
     {
-        if (it->fNode->GetKey()->GetUoid().GetLocation() == loc)
+        if (fRooms[i].fNode->GetKey()->GetUoid().GetLocation() == loc)
             return i;
-        i++;
     }
 
     return -1;
@@ -617,6 +884,85 @@ void plClient::ILoadNextRoom()
     }
 }
 
+void plClient::IUnloadRooms(const std::vector<plLocation>& locs)
+{
+    for (int i = 0; i < locs.size(); i++)
+    {
+        const plLocation& loc = locs[i];
+
+        if (!loc.IsValid())
+        {
+            continue;
+        }
+
+        plKey nodeKey = nullptr;
+
+        // First, look in our room list. It *should* be there, which allows us to avoid a
+        // potential nasty reload-find in the resMgr.
+        int roomIdx = IFindRoomByLoc(loc);
+        if (roomIdx != -1)
+        {
+            nodeKey = fRooms[roomIdx].fNode->GetKey();
+        }
+
+        if (nodeKey == nullptr)
+        {
+            nodeKey = plKeyFinder::Instance().FindSceneNodeKey(loc);
+        }
+
+        if (nodeKey != nullptr)
+        {
+            plSceneNode* node = plSceneNode::ConvertNoRef(nodeKey->ObjectIsLoaded());
+            if (node)
+            {
+                #ifndef PLASMA_EXTERNAL_RELEASE
+                plStatusLog::AddLineSF("pageouts.log", "SceneNode for {} loaded; Removing node", node->GetKey()->GetUoid().GetObjectName());
+                #endif
+                fPageMgr->RemoveNode(node);
+            }
+            else
+            {
+                #ifndef PLASMA_EXTERNAL_RELEASE
+                plStatusLog::AddLineSF("pageouts.log", "SceneNode for {} NOT loaded", nodeKey->GetUoid().GetObjectName());
+                #endif
+            }
+            GetKey()->Release(nodeKey);     // release notify interest in scene node
+
+            uint32_t recFlags = 0;
+            if (roomIdx != -1)
+            {
+                recFlags = fRooms[roomIdx].fFlags;
+                fRooms.Remove(roomIdx);
+            }
+
+            if (node == fCurrentNode)
+            {
+                fCurrentNode = nullptr;
+            }
+
+            #ifndef PLASMA_EXTERNAL_RELEASE
+            plStatusLog::AddLineSF("pageouts.log", "Telling netClientMgr about paging out {}", nodeKey->GetUoid().GetObjectName());
+            #endif
+
+#ifndef MINIMAL_GL_BUILD
+            if (plNetClientMgr::GetInstance() != nullptr)
+            {
+                if (!hsCheckBits(recFlags, plRoomRec::kHeld))
+                {
+                    // Don't care really about the message that just came in, we care whether it was really held or not
+                    plAgeLoader::GetInstance()->StartPagingOutRoom(&nodeKey, 1);
+                }
+                else
+                {
+                    // Tell NetClientManager not to expect any pageout info on this guy, since he was held
+                    plAgeLoader::GetInstance()->IgnorePagingOutRoom(&nodeKey, 1);
+                }
+            }
+#endif
+        }
+    }
+}
+
 void plClient::SetHoldLoadRequests(bool hold)
 {
     fHoldLoadRequests = hold;
@@ -633,9 +979,9 @@ void plClient::IRoomLoaded(plSceneNode* node, bool hold)
     fCurrentNode = node;
     // make sure we don't already have this room in the list:
     bool bAppend = true;
-    for (auto it = fRooms.begin(); it != fRooms.end(); ++it)
+    for (int i = 0; i < fRooms.Count(); i++)
     {
-        if (it->fNode == fCurrentNode)
+        if (fRooms[i].fNode == fCurrentNode)
         {
             bAppend = false;
             break;
@@ -645,34 +991,44 @@ void plClient::IRoomLoaded(plSceneNode* node, bool hold)
     {
         if (hold)
         {
-            fRooms.push_back(plRoomRec(fCurrentNode, plRoomRec::kHeld));
+            fRooms.Append(plRoomRec(fCurrentNode, plRoomRec::kHeld));
         }
         else
         {
-            fRooms.push_back(plRoomRec(fCurrentNode, 0));
+            fRooms.Append(plRoomRec(fCurrentNode, 0));
             fPageMgr->AddNode(fCurrentNode);
         }
     }
 
     fNumLoadingRooms--;
 
+    // Shut down the progress bar if that was the last room
+    if (fProgressBar != nil && fNumLoadingRooms <= 0)
+    {
+#ifndef PLASMA_EXTERNAL_RELEASE
+        if (!hold && plDispatchLogBase::IsLogging())
+        {
+            plDispatchLogBase::GetInstance()->LogStatusBarChange(fProgressBar->GetTitle().c_str(), "displaying messages");
+        }
+#endif // PLASMA_EXTERNAL_RELEASE
+    }
+
     hsRefCnt_SafeUnRef(fCurrentNode);
     plKey pRmKey = fCurrentNode->GetKey();
-    //plAgeLoader::GetInstance()->FinishedPagingInRoom(&pRmKey, 1);
+    plAgeLoader::GetInstance()->FinishedPagingInRoom(&pRmKey, 1);
     // *** this used to call "ActivateNode" (in physics) which wasn't implemented.
     // *** we should make this "turn on" physics for the selected node
     // *** depending on what guarantees we can make about the load state -- anything useful?
 
     // now tell all those who are interested that a room was loaded
-    /*if (!hold)
+    if (!hold)
     {
         plRoomLoadNotifyMsg* loadmsg = new plRoomLoadNotifyMsg;
         loadmsg->SetRoom(pRmKey);
         loadmsg->SetWhatHappen(plRoomLoadNotifyMsg::kLoaded);
         plgDispatch::MsgSend(loadmsg);
-    }*/
-
-    if (hold)
+    }
+    else
     {
         hsStatusMessageF("Done loading hold room %s, t=%f\n", pRmKey->GetName().c_str(), hsTimer::GetSeconds());
     }
@@ -689,6 +1045,27 @@ void plClient::IRoomLoaded(plSceneNode* node, bool hold)
 
     if (!fNumLoadingRooms)
         IStopProgress();
+}
+
+void plClient::IRoomUnloaded(plSceneNode* node)
+{
+    #ifndef PLASMA_EXTERNAL_RELEASE
+    plStatusLog::AddLineS("pageouts.log", "..    refMsg is onDestroy");
+    #endif
+
+    fCurrentNode = node;
+    hsRefCnt_SafeUnRef(fCurrentNode);
+    plKey pRmKey = fCurrentNode->GetKey();
+    if (plAgeLoader::GetInstance())
+    {
+        plAgeLoader::GetInstance()->FinishedPagingOutRoom(&pRmKey, 1);
+    }
+
+    // tell all those who are interested that a room was unloaded
+    plRoomLoadNotifyMsg* loadmsg = new plRoomLoadNotifyMsg;
+    loadmsg->SetRoom(pRmKey);
+    loadmsg->SetWhatHappen(plRoomLoadNotifyMsg::kUnloaded);
+    plgDispatch::MsgSend(loadmsg);
 }
 
 
@@ -785,6 +1162,19 @@ bool plClient::IDraw()
     plgDispatch::MsgSend(rendMsg);
     plProfile_EndTiming(RenderMsg);
 
+    plPreResourceMsg* preMsg = new plPreResourceMsg(fPipeline);
+    plgDispatch::MsgSend(preMsg);
+
+    // This might not be the ideal place for this, but it 
+    // needs to be AFTER the plRenderMsg is sent, and
+    // BEFORE BeginRender. (plRenderMsg causes construction of
+    // Dynamic objects (e.g. RT's), BeginRender uses them (e.g. shadows).
+    if( plPipeResReq::Check() || fPipeline->CheckResources() )
+    {
+        fPipeline->LoadResources();
+    }
+
+    plProfile_EndTiming(UpdateTime);
 
     plProfile_BeginTiming(DrawTime);
 
@@ -792,8 +1182,7 @@ bool plClient::IDraw()
     if (fPipeline->BeginRender())
     {
         plProfile_EndTiming(BeginRender);
-        //return IFlushRenderRequests();
-        return false;
+        return IFlushRenderRequests();
     }
     plProfile_EndTiming(BeginRender);
 
@@ -801,9 +1190,26 @@ bool plClient::IDraw()
     fPipeline->ClearRenderTarget();
     plProfile_EndTiming(ClearRender);
 
+    plProfile_BeginTiming(PreRender);
+    if (!fFlags.IsBitSet(kFlagDBGDisableRRequests))
+    {
+        IProcessPreRenderRequests();
+    }
+    plProfile_EndTiming(PreRender);
+
     plProfile_BeginTiming(MainRender);
-    fPageMgr->Render(fPipeline);
+    if (!fFlags.IsBitSet(kFlagDBGDisableRender))
+    {
+        fPageMgr->Render(fPipeline);
+    }
     plProfile_EndTiming(MainRender);
+
+    plProfile_BeginTiming(PostRender);
+    if (!fFlags.IsBitSet(kFlagDBGDisableRRequests))
+    {
+        IProcessPostRenderRequests();
+    }
+    plProfile_EndTiming(PostRender);
 
     plProfile_BeginTiming(Movies);
     IServiceMovies();
@@ -823,7 +1229,7 @@ bool plClient::IDraw()
     fPipeline->EndRender();
     plProfile_EndTiming(EndRender);
 
-    plProfile_EndTiming(DrawTime); 
+    plProfile_EndTiming(DrawTime);
 
     return false;
 }
@@ -836,8 +1242,7 @@ bool plClient::IDrawProgress()
     plProfile_BeginTiming(DrawTime);
     if (fPipeline->BeginRender())
     {
-        //return IFlushRenderRequests();
-        return false;
+        return IFlushRenderRequests();
     }
 
     // Override the clear color to black.
@@ -851,6 +1256,74 @@ bool plClient::IDrawProgress()
     plProfileManager::Instance().EndFrame();
 
     return false;
+}
+
+bool plClient::IFlushRenderRequests()
+{
+    // For those requesting ack's, we could go through and send them
+    // mail telling them their request was ill-timed. But hopefully,
+    // the lack of an acknowledgement will serve as notice.
+    int i;
+    for (i = 0; i < fPreRenderRequests.GetCount(); i++)
+    {
+        hsRefCnt_SafeUnRef(fPreRenderRequests[i]);
+    }
+    fPreRenderRequests.Reset();
+
+    for (i = 0; i < fPostRenderRequests.GetCount(); i++)
+    {
+        hsRefCnt_SafeUnRef(fPostRenderRequests[i]);
+    }
+    fPostRenderRequests.Reset();
+
+    return false;
+}
+
+void plClient::IProcessRenderRequests(hsTArray<plRenderRequest*>& reqs)
+{
+    int i;
+    for (i = 0; i < reqs.GetCount(); i++)
+    {
+        reqs[i]->Render(fPipeline, fPageMgr);
+        hsRefCnt_SafeUnRef(reqs[i]);
+    }
+    reqs.SetCount(0);
+}
+
+void plClient::IProcessPreRenderRequests()
+{
+    IProcessRenderRequests(fPreRenderRequests);
+}
+
+void plClient::IProcessPostRenderRequests()
+{
+    IProcessRenderRequests(fPostRenderRequests);
+}
+
+void plClient::IAddRenderRequest(plRenderRequest* req)
+{
+    if (req->GetPriority() < 0)
+    {
+        int i;
+        for (i = 0; i < fPreRenderRequests.GetCount(); i++)
+        {
+            if (req->GetPriority() < fPreRenderRequests[i]->GetPriority())
+                break;
+        }
+        fPreRenderRequests.Insert(i, req);
+        hsRefCnt_SafeRef(req);
+    }
+    else
+    {
+        int i;
+        for (i = 0; i < fPostRenderRequests.GetCount(); i++)
+        {
+            if (req->GetPriority() < fPostRenderRequests[i]->GetPriority())
+                break;
+        }
+        fPostRenderRequests.Insert(i, req);
+        hsRefCnt_SafeRef(req);
+    }
 }
 
 
@@ -944,6 +1417,13 @@ void plClient::IStartProgress(const char *title, float len)
     else
     {
         fProgressBar = plProgressMgr::GetInstance()->RegisterOperation(len, title, plProgressMgr::kNone, false, true);
+#ifndef PLASMA_EXTERNAL_RELEASE
+        if (plDispatchLogBase::IsLogging())
+        {
+            plDispatchLogBase::GetInstance()->LogStatusBarChange(fProgressBar->GetTitle().c_str(), "starting");
+        }
+#endif // PLASMA_EXTERNAL_RELEASE
+
         ((plResManager*)hsgResMgr::ResMgr())->SetProgressBarProc(IReadKeyedObjCallback);
         plDispatch::SetMsgRecieveCallback(IDispatchMsgReceiveCallback);
 
@@ -965,11 +1445,13 @@ void plClient::IStopProgress()
         delete fProgressBar;
         fProgressBar = nullptr;
 
-        //plPipeResReq::Request();
+        plPipeResReq::Request();
 
-        //fFlags.SetBit(kFlagGlobalDataLoaded);
-        //if (fFlags.IsBitSet(kFlagAsyncInitComplete))
-        //    ICompleteInit();
+        fFlags.SetBit(kFlagGlobalDataLoaded);
+        if (fFlags.IsBitSet(kFlagAsyncInitComplete))
+        {
+            ICompleteInit();
+        }
     }
 }
 
@@ -1129,4 +1611,68 @@ void plClient::IKillMovies()
     for (size_t i = 0; i < fMovies.size(); i++)
         delete fMovies[i];
     fMovies.clear();
+}
+
+void plClient::IOnAsyncInitComplete()
+{
+    // Load our custom fonts from our current dat directory
+    fFontCache->LoadCustomFonts("dat");
+
+    // We'd like to do a SetHoldLoadRequests here, but the GUI stuff doesn't draw right
+    // if you try to delay the loading for it.  To work around that, we allocate a
+    // global loading bar in advance and set it to a big enough range that when the GUI's
+    // are done loading about the right amount of it is filled.
+    fNumLoadingRooms++;
+    IStartProgress("Loading...", 0);
+
+    SetHoldLoadRequests(true);
+    fProgressBar->SetLength(fProgressBar->GetProgress());
+
+    fNumLoadingRooms--;
+
+    ((plResManager*)hsgResMgr::ResMgr())->PageInAge("GlobalAnimations");
+    SetHoldLoadRequests(false);
+
+#ifndef MINIMAL_GL_BUILD
+    // Tell the transition manager to start faded out. This is so we don't
+    // get a frame or two of non-faded drawing before we do our initial fade in
+    (void)(new plTransitionMsg( plTransitionMsg::kFadeOut, 0.0f, true ))->Send();
+#endif
+
+    fFlags.SetBit(kFlagAsyncInitComplete);
+    if (fFlags.IsBitSet(kFlagGlobalDataLoaded))
+    {
+        ICompleteInit();
+    }
+}
+
+void plClient::ICompleteInit () {
+#ifndef MINIMAL_GL_BUILD
+    plSimulationMgr::GetInstance()->Resume();               // start the sim at the last possible minute
+#endif
+
+    fFlags.SetBit(kFlagIniting, false);
+    hsStatusMessage("Client init complete.");
+
+    // Tell everyone we're ready to rock.
+    plClientMsg* clientMsg = new plClientMsg(plClientMsg::kInitComplete);
+    clientMsg->SetBCastFlag(plMessage::kBCastByType);
+    clientMsg->Send();
+
+    ILoadAge("GuildPub-Writers");
+    //plAgeLoader::GetInstance()->LoadAge("GuildPub-Writers");
+}
+
+void plClient::IHandlePatcherMsg(plResPatcherMsg* msg)
+{
+    plgDispatch::Dispatch()->UnRegisterForExactType(plResPatcherMsg::Index(), GetKey());
+
+#ifndef MINIMAL_GL_BUILD
+    if (!msg->Success()) {
+        plNetClientApp::GetInstance()->QueueDisableNet(true, msg->GetError().c_str());
+        return;
+    }
+#endif
+
+    IOnAsyncInitComplete();
 }

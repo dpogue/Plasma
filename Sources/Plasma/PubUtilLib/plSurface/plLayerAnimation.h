@@ -81,7 +81,7 @@ public:
 
     CLASSNAME_REGISTER( plLayerAnimationBase );
     GETINTERFACE_ANY( plLayerAnimationBase, plLayerInterface );
-    
+
     virtual plLayerInterface*           Attach(plLayerInterface* prev);
     //virtual uint32_t                        Eval(double secs, uint32_t frame, uint32_t ignore) = 0;
 
@@ -133,15 +133,14 @@ public:
 
     virtual void                        Read(hsStream* s, hsResMgr* mgr);
     virtual void                        Write(hsStream* s, hsResMgr* mgr);
-    
+
     const plLayerSDLModifier* GetSDLModifier() const { return fLayerSDLMod; }
     plAnimTimeConvert& GetTimeConvert() { return fTimeConvert; }
 
     void DefaultAnimation();
 };
 
-#ifndef MINIMAL_GL_BUILD
-class plLayerLinkAnimation : public plLayerAnimation   
+class plLayerLinkAnimation : public plLayerAnimation
 {
 protected:
     plKey fLinkKey;
@@ -159,7 +158,7 @@ protected:
     uint8_t fFadeFlags;
     uint8_t fLastFadeFlag;
     bool fFadeFlagsDirty;
-    
+
 public:
     plLayerLinkAnimation();
     ~plLayerLinkAnimation();
@@ -208,6 +207,5 @@ public:
     ST::string GetVarName() const { return fVarName; }
     void SetVarName(const ST::string &name) { fVarName = name; }
 };
-#endif
 
 #endif // plLayerAnimation_inc

@@ -47,4 +47,4 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plAgeLoader.h"
 REGISTER_CREATABLE(plAgeLoader);
 
-#endif      // plAgeLoaderCreatable_inc
+#endif // plAgeLoaderCreatable_inc

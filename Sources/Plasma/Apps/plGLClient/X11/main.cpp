@@ -71,6 +71,8 @@ static const plCmdArgDef s_cmdLineArgs[] = {
     { kCmdArgFlagged  | kCmdTypeString,     "Age",             kArgStartUpAgeName },
 };
 
+extern bool gDataServerLocal;
+
 plClientLoader gClient;
 xcb_connection_t* gXConn;
 
@@ -152,7 +154,6 @@ int main(int argc, char** argv)
     gClient.SetClientDisplay((hsWindowHndl)nullptr);
     gClient.Init();
 
-
     // We should quite frankly be done initing the client by now. But, if not, spawn the good old
     // "Starting URU, please wait..." dialog (not so yay)
     if (!gClient.IsInited())
@@ -161,6 +162,11 @@ int main(int argc, char** argv)
     }
 
     gClient->SetWindowHandle((hsWindowHndl)(uintptr_t)window);
+
+    if (cmdParser.IsSpecified(kArgStartUpAgeName))
+    {
+        gClient->SetQuitIntro(true);
+    }
 
     if (gClient->InitPipeline((hsWindowHndl)display) || !gClient->StartInit())
     {

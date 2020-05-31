@@ -130,6 +130,7 @@ public:
     bool    IsPageExcluded( const plAgePage *page, const ST::string& ageName = ST::null );
 
     const plAgeDescription  &GetCurrAgeDesc() const { return fCurAgeDescription; }
+    const ST::string GetCurrAgeFilename() const { return fCurAgeDescription.GetAgeName(); }
 
     // paging
     void FinishedPagingInRoom(plKey* rmKey, int numRms);    // call when finished paging in/out a room      

@@ -175,7 +175,6 @@ public:
     void Write(hsStream* stream, hsResMgr* mgr);
 };
 
-#ifndef MINIMAL_GL_BUILD
 class plAGInstanceCallbackMsg : public plEventCallbackMsg
 {
 public:
@@ -213,7 +212,6 @@ public:
     void SetAnimName(const ST::string& name) { fAnimName = name; }
     ST::string GetAnimName() const { return fAnimName; }
 };
-#endif
 
 
 #endif // plAnimCmdMsg_inc

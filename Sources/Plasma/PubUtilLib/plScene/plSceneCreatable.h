@@ -49,10 +49,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 REGISTER_CREATABLE(plMobileOccluder);
 REGISTER_CREATABLE(plOccluder);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plPostEffectMod.h"
 REGISTER_CREATABLE(plPostEffectMod);
-#endif
 
 #include "plRelevanceMgr.h"
 REGISTER_CREATABLE(plRelevanceMgr);

@@ -260,6 +260,7 @@ void plAGAnimInstance::SearchForGlobals()
     const plAgeGlobalAnim *ageAnim = plAgeGlobalAnim::ConvertNoRef(fAnimation);
     if (ageAnim != nil && fSDLChannels.size() > 0)
     {
+#ifndef MINIMAL_GL_BUILD
         extern const plSDLModifier *ExternFindAgeSDL();
         const plSDLModifier *sdlMod = ExternFindAgeSDL();
         if (!sdlMod)
@@ -273,6 +274,7 @@ void plAGAnimInstance::SearchForGlobals()
         int i;
         for (i = 0; i < fSDLChannels.size(); i++)
             fSDLChannels[i]->SetVar(var);
+#endif
     }
 }
 

@@ -328,12 +328,10 @@ void plLayerAnimation::Read(hsStream* s, hsResMgr* mgr)
     }
     Eval(hsTimer::GetSysSeconds(),0,0);
 
-#ifndef MINIMAL_GL_BUILD
     // add sdl modifier
     delete fLayerSDLMod;
     fLayerSDLMod = new plLayerSDLModifier;
     fLayerSDLMod->SetLayerAnimation(this);
-#endif
 }
 
 
@@ -374,7 +372,6 @@ uint32_t plLayerAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignore)
 bool plLayerAnimation::MsgReceive(plMessage* msg)
 {
     bool retVal = false;
-#ifndef MINIMAL_GL_BUILD
     // pass sdl msg to sdlMod
     plSDLModifierMsg* sdlMsg = plSDLModifierMsg::ConvertNoRef(msg);
     if (sdlMsg && fLayerSDLMod)
@@ -382,7 +379,6 @@ bool plLayerAnimation::MsgReceive(plMessage* msg)
         if (fLayerSDLMod->MsgReceive(sdlMsg))
             return true;    // msg handled
     }
-#endif
 
     plAnimCmdMsg* cmdMsg = plAnimCmdMsg::ConvertNoRef(msg);
     if( cmdMsg )
@@ -423,22 +419,21 @@ void plLayerAnimation::DefaultAnimation()
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MINIMAL_GL_BUILD
-plLayerLinkAnimation::plLayerLinkAnimation() : 
-    fLinkKey(nil), 
+plLayerLinkAnimation::plLayerLinkAnimation() :
+    fLinkKey(nil),
     fLeavingAge(true),
-    fEnabled(true), 
-    fFadeFlags(0), 
+    fEnabled(true),
+    fFadeFlags(0),
     fLastFadeFlag(0),
-    fFadeFlagsDirty(false) 
-{ 
+    fFadeFlagsDirty(false)
+{
     fIFaceCallback = new plEventCallbackMsg();
     fIFaceCallback->fEvent = kTime;
-    fIFaceCallback->fRepeats = 0;           
+    fIFaceCallback->fRepeats = 0;
 }
 
-plLayerLinkAnimation::~plLayerLinkAnimation() 
-{ 
+plLayerLinkAnimation::~plLayerLinkAnimation()
+{
     hsRefCnt_SafeUnRef(fIFaceCallback);
 }
 
@@ -446,7 +441,7 @@ plLayerLinkAnimation::~plLayerLinkAnimation()
 void plLayerLinkAnimation::Read(hsStream* s, hsResMgr* mgr)
 {
     plLayerAnimation::Read(s, mgr);
-    
+
     fLinkKey = mgr->ReadKey(s);
     fLeavingAge = s->ReadBool();
     plgDispatch::Dispatch()->RegisterForExactType(plLinkEffectBCMsg::Index(), GetKey());
@@ -455,7 +450,7 @@ void plLayerLinkAnimation::Read(hsStream* s, hsResMgr* mgr)
     plgDispatch::Dispatch()->RegisterForExactType(plAvatarStealthModeMsg::Index(), GetKey());
     plgDispatch::Dispatch()->RegisterForExactType(plIfaceFadeAvatarMsg::Index(), GetKey());
     plgDispatch::Dispatch()->RegisterForExactType(plPseudoLinkAnimTriggerMsg::Index(), GetKey());
-    
+
     fIFaceCallback->AddReceiver(GetKey());  
 }
 
@@ -463,7 +458,7 @@ void plLayerLinkAnimation::Read(hsStream* s, hsResMgr* mgr)
 void plLayerLinkAnimation::Write(hsStream* s, hsResMgr* mgr)
 {
     plLayerAnimation::Write(s, mgr);
-    
+
     mgr->WriteKey(s, fLinkKey);
     s->WriteBool(fLeavingAge);
 }
@@ -477,7 +472,7 @@ uint32_t plLayerLinkAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignor
         uint32_t passChans = dirty | fPassThruChannels;
         float oldAnimTime = fTimeConvert.CurrentAnimTime();
         float secs = oldAnimTime;
-        
+
         if (fFadeFlagsDirty)
         {
             float goal = 0.f;
@@ -488,7 +483,7 @@ uint32_t plLayerLinkAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignor
             {
                 float rate = 0.f;
                 float delta = (float)(wSecs - fEvalTime);
-                
+
                 if (fFadeFlags & kFadeLinking)
                 {
                     goal = fLength;
@@ -524,7 +519,7 @@ uint32_t plLayerLinkAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignor
             if (secs == goal)
                 fFadeFlagsDirty = false;
         }
-        
+
         if( secs != fCurrentTime )
         {
             fTimeConvert.SetCurrentAnimTime(secs);
@@ -535,7 +530,7 @@ uint32_t plLayerLinkAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignor
                 plAvatarOpacityCallbackMsg *opacityMsg = new plAvatarOpacityCallbackMsg(fLinkKey, kStop);
                 opacityMsg->SetBCastFlag(plMessage::kPropagateToModifiers);
                 opacityMsg->Send();
-            }               
+            }
             evalChans = fOwnedChannels & ~ignore & ~fPassThruChannels;
             fCurrentTime = secs;
         }
@@ -568,12 +563,12 @@ bool plLayerLinkAnimation::MsgReceive( plMessage* pMsg )
     {
         if (bcpMsg->fLinkKey != fLinkKey || bcpMsg->fLeavingAge)
             return true;
-    
+
         SetFadeFlag(kFadeLinkPrep, true);
         return true;
     }
-        
-        
+
+
     plLinkEffectBCMsg *msg = plLinkEffectBCMsg::ConvertNoRef(pMsg);
     if (msg != nil)
     {
@@ -587,10 +582,12 @@ bool plLayerLinkAnimation::MsgReceive( plMessage* pMsg )
 
             if (msg->HasLinkFlag(plLinkEffectBCMsg::kSendCallback))
             {
+#ifndef MINIMAL_GL_BUILD
                 plLinkEffectsMgr *mgr;
                 if ((mgr = plLinkEffectsMgr::ConvertNoRef(msg->GetSender()->ObjectIsLoaded())))
                     mgr->WaitForEffect(msg->fLinkKey, fTimeConvert.GetEnd() - fTimeConvert.GetBegin());
-            }           
+#endif
+            }
         }
         return true;
     }
@@ -605,12 +602,14 @@ bool plLayerLinkAnimation::MsgReceive( plMessage* pMsg )
             SetFadeFlag(kFadeLinking, true);
         else
             SetFadeFlag(kFadeLinking, false);
-        
+
+#ifndef MINIMAL_GL_BUILD
         // add a callback for when it's done if it's in forward
         plLinkEffectsMgr *mgr;
         if ((mgr = plLinkEffectsMgr::ConvertNoRef(pMsg->GetSender()->ObjectIsLoaded())))
             if (pSeudoMsg->fForward)
                 mgr->WaitForPseudoEffect(fLinkKey, fTimeConvert.GetEnd() - fTimeConvert.GetBegin());
+#endif
 
         return true;
     }
@@ -676,11 +675,9 @@ bool plLayerLinkAnimation::MsgReceive( plMessage* pMsg )
 
     return plLayerAnimation::MsgReceive( pMsg );
 }
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MINIMAL_GL_BUILD
 plLayerSDLAnimation::plLayerSDLAnimation() : plLayerAnimationBase(), fVar(nil) {}
 
 uint32_t plLayerSDLAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignore)
@@ -695,6 +692,7 @@ uint32_t plLayerSDLAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignore
         {
             if (!fVarName.empty())
             {
+#ifndef MINIMAL_GL_BUILD
                 extern const plSDLModifier *ExternFindAgeSDL();
                 const plSDLModifier *sdlMod = ExternFindAgeSDL();
                 if (sdlMod)
@@ -703,6 +701,7 @@ uint32_t plLayerSDLAnimation::Eval(double wSecs, uint32_t frame, uint32_t ignore
                     if (fVar)
                         sdlMod->AddNotifyForVar(GetKey(), fVarName, 0);
                 }
+#endif
             }
         }
         float secs;
@@ -752,4 +751,3 @@ void plLayerSDLAnimation::Write(hsStream* s, hsResMgr* mgr)
 
     s->WriteSafeString(fVarName);
 }
-#endif

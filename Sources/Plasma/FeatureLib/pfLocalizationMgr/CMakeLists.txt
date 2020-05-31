@@ -26,5 +26,7 @@ set(pfLocalizationMgr_HEADERS
 
 add_library(pfLocalizationMgr STATIC ${pfLocalizationMgr_SOURCES} ${pfLocalizationMgr_HEADERS})
 
+target_link_libraries(pfLocalizationMgr ${EXPAT_LIBRARY})
+
 source_group("Source Files" FILES ${pfLocalizationMgr_SOURCES})
 source_group("Header Files" FILES ${pfLocalizationMgr_HEADERS})

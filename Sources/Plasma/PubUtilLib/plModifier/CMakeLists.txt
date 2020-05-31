@@ -53,5 +53,8 @@ set(plModifier_HEADERS
 
 add_library(plModifier STATIC ${plModifier_SOURCES} ${plModifier_HEADERS})
 
+target_link_libraries(plModifier plNetCommon)
+target_link_libraries(plModifier plSDL)
+
 source_group("Source Files" FILES ${plModifier_SOURCES})
 source_group("Header Files" FILES ${plModifier_HEADERS})

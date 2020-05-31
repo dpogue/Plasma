@@ -45,7 +45,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define plAvatarMsg_inc
 
 #include "hsBitVector.h"
-#include "plAvatar/plArmatureMod.h"
+#include "hsGeometry3.h"
+#include "plAvatar/plAvDefs.h"
 #include "pnMessage/plEventCallbackMsg.h"
 
 class plSceneObject;
@@ -339,6 +340,7 @@ public:
 //
 ///////////////////
 
+#ifndef MINIMAL_GL_BUILD
 #ifndef SERVER
 class plAvPushBrainMsg : public plAvTaskMsg
 {
@@ -374,6 +376,7 @@ public:
 };
 
 #endif // SERVER
+#endif // MINIMAL_GL_BUILD
 
 
 // For entering/exiting "stealth mode"

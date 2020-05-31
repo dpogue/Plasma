@@ -45,18 +45,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnFactory/plCreator.h"
 
-#ifndef MINIMAL_GL_BUILD
 #include "plActivePrintShape.h"
 REGISTER_CREATABLE(plActivePrintShape);
-#endif
 
 #include "plClusterGroup.h"
 REGISTER_CREATABLE(plClusterGroup);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plCutter.h"
 REGISTER_CREATABLE(plCutter);
-#endif
 
 #include "plDrawableSpans.h"
 REGISTER_CREATABLE(plDrawableSpans);
@@ -66,10 +62,8 @@ REGISTER_CREATABLE(plDrawableSpans);
 REGISTER_CREATABLE(plDynaBulletMgr);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaDecalMgr.h"
 REGISTER_NONCREATABLE(plDynaDecalMgr);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plDynaFootMgr.h"
@@ -106,45 +100,33 @@ REGISTER_CREATABLE(plDynaTorpedoVSMgr);
 REGISTER_CREATABLE(plDynaWakeMgr);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plInstanceDrawInterface.h"
 REGISTER_CREATABLE(plInstanceDrawInterface);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plMorphDelta.h"
 REGISTER_CREATABLE(plMorphDelta);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plMorphSequence.h"
 REGISTER_CREATABLE(plMorphDataSet);
 REGISTER_CREATABLE(plMorphSequence);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plMorphSequenceSDLMod.h"
 REGISTER_CREATABLE(plMorphSequenceSDLMod);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plPrintShape.h"
 REGISTER_CREATABLE(plPrintShape);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plSharedMesh.h"
 REGISTER_CREATABLE(plSharedMesh);
 REGISTER_CREATABLE(plSharedMeshBCMsg);
-#endif
 
 #include "plSpaceTree.h"
 REGISTER_CREATABLE(plSpaceTree);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plWaveSetBase.h"
 REGISTER_NONCREATABLE(plWaveSetBase);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plWaveSet7.h"
