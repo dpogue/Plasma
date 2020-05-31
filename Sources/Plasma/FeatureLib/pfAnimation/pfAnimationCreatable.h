@@ -45,49 +45,35 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnFactory/plCreator.h"
 
-#ifndef MINIMAL_GL_BUILD
 #include "plBlower.h"
 REGISTER_CREATABLE(plBlower);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plFilterCoordInterface.h"
 REGISTER_CREATABLE(plFilterCoordInterface);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plFollowMod.h"
 REGISTER_CREATABLE(plFollowMod);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plLightModifier.h"
 REGISTER_CREATABLE(plLightModifier);
 REGISTER_CREATABLE(plLtdDirModifier);
 REGISTER_CREATABLE(plOmniModifier);
 REGISTER_CREATABLE(plSpotModifier);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plLineFollowMod.h"
 REGISTER_CREATABLE(plLineFollowMod);
 REGISTER_CREATABLE(plRailCameraMod);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "pfObjectFlocker.h"
 REGISTER_CREATABLE(pfObjectFlocker);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plRandomCommandMod.h"
 REGISTER_NONCREATABLE(plRandomCommandMod);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plStereizer.h"
 REGISTER_CREATABLE(plStereizer);
-#endif
 
 #include "plViewFaceModifier.h"
 REGISTER_CREATABLE(plViewFaceModifier);

@@ -80,7 +80,7 @@ target_link_libraries(plAudio
     PUBLIC
         OpenAL::OpenAL
         CoreLib
-        #plAnimation
+        plAnimation
         plAudioCore
         plMessage
 )

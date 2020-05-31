@@ -360,6 +360,7 @@ bool    plTransitionMgr::MsgReceive( plMessage* msg )
 
             if (link->HasLinkFlag(plLinkEffectBCMsg::kSendCallback))
             {
+#ifndef MINIMAL_GL_BUILD
                 plLinkEffectsMgr *mgr;
                 if( ( mgr = plLinkEffectsMgr::ConvertNoRef( link->GetSender()->ObjectIsLoaded() ) ) != nil )
                 {
@@ -367,6 +368,7 @@ bool    plTransitionMgr::MsgReceive( plMessage* msg )
 //                  hsRefCnt_SafeRef( cback ); // mgr has given us ownership, his ref is now ours. No need for another. -mf-
                     fCallbacks.Append( cback );
                 }
+#endif
             }
         }
         return true;

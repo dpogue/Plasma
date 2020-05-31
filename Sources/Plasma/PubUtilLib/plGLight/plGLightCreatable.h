@@ -45,10 +45,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnFactory/plCreator.h"
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDirectShadowMaster.h"
 REGISTER_CREATABLE(plDirectShadowMaster);
-#endif
 
 #include "plLightInfo.h"
 REGISTER_NONCREATABLE(plLightInfo);
@@ -57,24 +55,16 @@ REGISTER_CREATABLE(plLimitedDirLightInfo);
 REGISTER_CREATABLE(plOmniLightInfo);
 REGISTER_CREATABLE(plSpotLightInfo);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plLightSpace.h"
 REGISTER_CREATABLE(plLightSpace);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plPointShadowMaster.h"
 REGISTER_CREATABLE(plPointShadowMaster);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plShadowCaster.h"
 REGISTER_CREATABLE(plShadowCaster);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plShadowMaster.h"
 REGISTER_NONCREATABLE(plShadowMaster);
-#endif
 
 #endif // plGLightCreatable_inc

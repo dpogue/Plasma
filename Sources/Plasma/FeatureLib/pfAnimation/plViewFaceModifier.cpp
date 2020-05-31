@@ -48,12 +48,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsFastMath.h"
 #include "plPipeline.h"
 
-#include "plMessage/plRenderMsg.h"
 #include "plResMgr/plResManager.h"
 
-#ifndef MINIMAL_GL_BUILD
+#include "plMessage/plRenderMsg.h"
 #include "plMessage/plListenerMsg.h"
 #include "plMessage/plAvatarMsg.h"
+
+#ifndef MINIMAL_GL_BUILD
 #include "plAvatar/plAvBrainHuman.h"
 #include "plAvatar/plArmatureMod.h"
 #endif
@@ -128,12 +129,11 @@ void plViewFaceModifier::SetTarget(plSceneObject* so)
 
     plgDispatch::Dispatch()->RegisterForExactType(plRenderMsg::Index(), GetKey());
 
-#ifndef MINIMAL_GL_BUILD
-    if( HasFlag(kFaceList) )
+    if (HasFlag(kFaceList))
         plgDispatch::Dispatch()->RegisterForExactType(plListenerMsg::Index(), GetKey());
-    if( HasFlag(kFacePlay) )
+
+    if (HasFlag(kFacePlay))
         plgDispatch::Dispatch()->RegisterForExactType(plArmatureUpdateMsg::Index(), GetKey());
-#endif
 }
 
 bool plViewFaceModifier::IEval(double secs, float del, uint32_t dirty)
@@ -143,17 +143,11 @@ bool plViewFaceModifier::IEval(double secs, float del, uint32_t dirty)
 
 bool plViewFaceModifier::IFacePoint(plPipeline* pipe, const hsPoint3& at)
 {
-#ifndef MINIMAL_GL_BUILD
-#if 1 // BOUNDSTEST
-    extern int mfCurrentTest;
-    if( mfCurrentTest != 101 )
-    if( HasFlag(kMaxBounds) )
+    if (HasFlag(kMaxBounds))
     {
-        if( !pipe->TestVisibleWorld(fMaxBounds) )
+        if (!pipe->TestVisibleWorld(fMaxBounds))
             return false;
     }
-#endif // BOUNDSTEST
-#endif
 
     if( !(GetTarget() && GetTarget()->GetCoordinateInterface()) )
         return false;
@@ -284,8 +278,7 @@ plProfile_CreateTimer("ViewFacing", "RenderSetup", ViewFace);
 bool plViewFaceModifier::MsgReceive(plMessage* msg)
 {
     plRenderMsg* rend = plRenderMsg::ConvertNoRef(msg);
-
-    if( rend )
+    if (rend)
     {
         plProfile_BeginLap(ViewFace, this->GetKey()->GetUoid().GetObjectName().c_str());
 
@@ -322,10 +315,11 @@ bool plViewFaceModifier::MsgReceive(plMessage* msg)
         }
 
         IFacePoint(rend->Pipeline(), fFacePoint);
-        
+
         plProfile_EndLap(ViewFace, this->GetKey()->GetUoid().GetObjectName().c_str());
         return true;
     }
+
 #ifndef MINIMAL_GL_BUILD
     plArmatureUpdateMsg* armMsg = plArmatureUpdateMsg::ConvertNoRef(msg);
     if( armMsg && armMsg->IsLocal() )
@@ -345,8 +339,10 @@ bool plViewFaceModifier::MsgReceive(plMessage* msg)
 
         return true;
     }
+#endif
+
     plListenerMsg* list = plListenerMsg::ConvertNoRef(msg);
-    if( list )
+    if (list)
     {
         fFacePoint = list->GetPosition();
 
@@ -366,7 +362,7 @@ bool plViewFaceModifier::MsgReceive(plMessage* msg)
 
         return true;
     }
-#endif
+
     plGenRefMsg* refMsg = plGenRefMsg::ConvertNoRef(msg);
     if( refMsg )
     {

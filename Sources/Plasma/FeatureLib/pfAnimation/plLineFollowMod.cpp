@@ -274,6 +274,8 @@ bool plLineFollowMod::MsgReceive(plMessage* msg)
         ISetupStereizers(list);
         return true;
     }
+
+#ifndef MINIMAL_GL_BUILD
     plPlayerPageMsg* pPMsg = plPlayerPageMsg::ConvertNoRef(msg);
     if (pPMsg)
     {
@@ -283,6 +285,7 @@ bool plLineFollowMod::MsgReceive(plMessage* msg)
         }
         return true;
     }
+#endif
 
     return plMultiModifier::MsgReceive(msg);
 }
@@ -327,13 +330,15 @@ void plLineFollowMod::IRegister()
     case kFollowCamera:
         plgDispatch::Dispatch()->RegisterForExactType(plRenderMsg::Index(), GetKey());
         break;
+#ifndef MINIMAL_GL_BUILD
     case kFollowLocalAvatar:
-        {   
+        {
             if (plNetClientApp::GetInstance() && plNetClientApp::GetInstance()->GetLocalPlayer())
                 fRefObj = ((plSceneObject*)plNetClientApp::GetInstance()->GetLocalPlayer());
             plgDispatch::Dispatch()->RegisterForExactType(plPlayerPageMsg::Index(), GetKey());
             break;
         }
+#endif
     }
 }
 

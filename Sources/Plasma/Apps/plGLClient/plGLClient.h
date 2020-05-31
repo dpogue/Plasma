@@ -51,13 +51,17 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pnKeyedObject/plUoid.h"
 #include "plScene/plRenderRequest.h"
 
+class pfConsoleEngine;
+class pfConsole;
 class plFontCache;
 class plMovieMsg;
 class plMoviePlayer;
 class plOperationProgress;
 class plPageTreeMgr;
 class plPipeline;
+class plResPatcherMsg;
 class plSceneNode;
+class plTransitionMgr;
 
 typedef void (*plMessagePumpProc)();
 
@@ -96,14 +100,20 @@ protected:
     };
 
 
+    hsBitVector                 fFlags;
+
     plPageTreeMgr*              fPageMgr;
-    std::list<plRoomRec>        fRooms;
+    hsTArray<plRoomRec>         fRooms;
     plSceneNode*                fCurrentNode;
 
     plPipeline*                 fPipeline;
     hsColorRGBA                 fClearColor;
+    plTransitionMgr*            fTransitionMgr;
 
     plFontCache*                fFontCache;
+
+    pfConsoleEngine*            fConsoleEngine;
+    pfConsole*                  fConsole;
 
     hsWindowHndl                fWindowHndl;
     bool                        fDone;
@@ -125,15 +135,28 @@ protected:
 
     plMessagePumpProc           fMessagePumpProc;
 
+    hsTArray<plRenderRequest*>  fPreRenderRequests;
+    hsTArray<plRenderRequest*>  fPostRenderRequests;
+
 public:
+    enum
+    {
+        kFlagIniting,
+        kFlagDBGDisableRender,
+        kFlagDBGDisableRRequests,
+        kFlagAsyncInitComplete,
+        kFlagGlobalDataLoaded,
+    };
+
+
     plClient();
     virtual ~plClient();
 
     CLASSNAME_REGISTER(plClient);
     GETINTERFACE_ANY(plClient, hsKeyedObject);
 
-    static plClient*      GetInstance() { return fInstance; }
-    static void           SetInstance(plClient* v) { fInstance = v; }
+    static plClient* GetInstance() { return fInstance; }
+    static void SetInstance(plClient* v) { fInstance = v; }
 
     bool MsgReceive(plMessage* msg) override;
 
@@ -144,8 +167,14 @@ public:
     virtual bool Shutdown();
     virtual bool MainLoop();
 
+    bool HasFlag(int f) const { return fFlags.IsBitSet(f); }
+    void SetFlag(int f, bool on=true) { fFlags.SetBit(f, on); }
+
     plClient& SetDone(bool done) { fDone = done; return *this; }
     bool GetDone() { return fDone; }
+
+    bool GetQuitIntro() const { return fQuitIntro; }
+    void SetQuitIntro(bool on) { fQuitIntro = on; }
 
     // Set this to true to queue any room load requests that come in.  Set it to false to process them.
     void SetHoldLoadRequests(bool hold);
@@ -153,18 +182,36 @@ public:
     virtual plClient& SetWindowHandle(hsWindowHndl hndl) { fWindowHndl = hndl; return *this; }
     hsWindowHndl GetWindowHandle() { return fWindowHndl; }
 
-    plPipeline*     GetPipeline() { return fPipeline; }
+    plPipeline* GetPipeline() { return fPipeline; }
+
+    plSceneNode* GetCurrentScene() { return fCurrentNode; }
+
+    pfConsoleEngine* GetConsoleEngine() { return fConsoleEngine; }
 
     bool BeginGame();
 
     void SetMessagePumpProc(plMessagePumpProc proc) { fMessagePumpProc = proc; }
 
 protected:
+    /**
+     * Detect audio/video settings and save them to their respective ini file,
+     * if ini files don't exist.
+     */
+    void IDetectAudioVideoSettings();
+    void IWriteDefaultGraphicsSettings(const plFileName& destFile);
+    void IWriteDefaultAudioSettings(const plFileName& destFile);
+
     // Hackery to avoid all of plAgeLoader and the netclient stuff
     bool ILoadAge(const ST::string& ageName);
     bool IUpdate();
     bool IDraw();
     bool IDrawProgress();
+
+    bool IFlushRenderRequests();
+    void IProcessPreRenderRequests();
+    void IProcessPostRenderRequests();
+    void IProcessRenderRequests(hsTArray<plRenderRequest*>& reqs);
+    void IAddRenderRequest(plRenderRequest* req);
 
     void IStartProgress(const char *title, float len);
     void IIncProgress(float byHowMuch, const char *text);
@@ -183,7 +230,13 @@ protected:
     bool IIsRoomLoading(const plLocation& loc);
     void IQueueRoomLoad(const std::vector<plLocation>& locs, bool hold);
     void ILoadNextRoom();
+    void IUnloadRooms(const std::vector<plLocation>& locs);
     void IRoomLoaded(plSceneNode* node, bool hold);
+    void IRoomUnloaded(plSceneNode* node);
+
+    void ICompleteInit();
+    void IOnAsyncInitComplete();
+    void IHandlePatcherMsg(plResPatcherMsg* msg);
 };
 
 #endif

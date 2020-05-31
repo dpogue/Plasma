@@ -202,7 +202,7 @@ void plAGMasterMod::RemoveTarget(plSceneObject* o)
             o->RemoveModifier(fAGMasterSDLMod);
     }
     delete fAGMasterSDLMod;
-    fAGMasterSDLMod=nil;
+    fAGMasterSDLMod = nullptr;
 
     fTarget = nil;
 }

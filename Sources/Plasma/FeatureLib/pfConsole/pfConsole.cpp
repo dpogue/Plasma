@@ -174,21 +174,23 @@ class pfConsoleInputInterface : public plInputInterface
 
 //// Constructor & Destructor ////////////////////////////////////////////////
 
-pfConsole::pfConsole()
+pfConsole::pfConsole() : fInputInterface(nullptr), fEngine(nullptr)
 {
     fNumDisplayLines = 32;
-    fDisplayBuffer = nil;
+    fDisplayBuffer = nullptr;
     fTheConsole = this;
     fFXEnabled = true;
 }
 
 pfConsole::~pfConsole()
 {
-    if( fInputInterface != nil )
+    if (fInputInterface != nullptr)
     {
+#ifndef MINIMAL_GL_BUILD
         plInputIfaceMgrMsg *msg = new plInputIfaceMgrMsg( plInputIfaceMgrMsg::kRemoveInterface );
         msg->SetIFace( fInputInterface );
         plgDispatch::MsgSend( msg );
+#endif
 
         hsRefCnt_SafeUnRef( fInputInterface );
         fInputInterface = nil;
@@ -203,7 +205,9 @@ pfConsole::~pfConsole()
     fTheConsole = nil;
 
     plgDispatch::Dispatch()->UnRegisterForExactType( plConsoleMsg::Index(), GetKey() );
+#ifndef MINIMAL_GL_BUILD
     plgDispatch::Dispatch()->UnRegisterForExactType( plControlEventMsg::Index(), GetKey() );
+#endif
 }
 
 pfConsole * pfConsole::GetInstance () {
@@ -235,14 +239,18 @@ void    pfConsole::Init( pfConsoleEngine *engine )
     memset( fLastHelpMsg, 0, sizeof( fLastHelpMsg ) );
     fEngine = engine;
 
+#ifndef MINIMAL_GL_BUILD
     fInputInterface = new pfConsoleInputInterface( this );
     plInputIfaceMgrMsg *msg = new plInputIfaceMgrMsg( plInputIfaceMgrMsg::kAddInterface );
     msg->SetIFace( fInputInterface );
     plgDispatch::MsgSend( msg );
+#endif
 
     // Register for keyboard event messages
     plgDispatch::Dispatch()->RegisterForExactType( plConsoleMsg::Index(), GetKey() );
+#ifndef MINIMAL_GL_BUILD
     plgDispatch::Dispatch()->RegisterForExactType( plControlEventMsg::Index(), GetKey() );
+#endif
 }
 
 //// ISetMode ////////////////////////////////////////////////////////////////
@@ -252,7 +260,9 @@ void    pfConsole::ISetMode( uint8_t mode )
     fMode = mode; 
     fEffectCounter = ( fFXEnabled ? kEffectDivisions : 0 ); 
     fMsgTimeoutTimer = 0; 
+#ifndef MINIMAL_GL_BUILD
     fInputInterface->RefreshKeyMap();
+#endif
 }
 
 //// MsgReceive //////////////////////////////////////////////////////////////
@@ -260,6 +270,7 @@ void    pfConsole::ISetMode( uint8_t mode )
 #include <algorithm>
 bool    pfConsole::MsgReceive( plMessage *msg )
 {
+#ifndef MINIMAL_GL_BUILD
     // Handle screenshot saving...
     plCaptureRenderMsg* capMsg = plCaptureRenderMsg::ConvertNoRef(msg);
     if (capMsg) {
@@ -303,6 +314,7 @@ bool    pfConsole::MsgReceive( plMessage *msg )
         }
         return false;
     }
+#endif
 
     plConsoleMsg *cmd = plConsoleMsg::ConvertNoRef( msg );
     if( cmd != nil && cmd->GetString() != nil )
@@ -348,6 +360,7 @@ bool    pfConsole::MsgReceive( plMessage *msg )
 
 void    pfConsole::IHandleKey( plKeyEventMsg *msg )
 {
+#ifndef MINIMAL_GL_BUILD
     char            *c;
     wchar_t         key;
     int             i,eol;
@@ -698,6 +711,7 @@ void    pfConsole::IHandleKey( plKeyEventMsg *msg )
             IUpdateTooltip();
         }
     }
+#endif
 }
 
 //// IAddLineCallback ////////////////////////////////////////////////////////

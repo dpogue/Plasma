@@ -48,10 +48,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsGMaterial.h"
 REGISTER_CREATABLE(hsGMaterial);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plGrassShaderMod.h"
 REGISTER_CREATABLE(plGrassShaderMod);
-#endif
 
 #include "plLayer.h"
 REGISTER_CREATABLE(plLayer);
@@ -59,10 +57,8 @@ REGISTER_CREATABLE(plLayer);
 #include "plLayerAnimation.h"
 REGISTER_CREATABLE(plLayerAnimation);
 REGISTER_NONCREATABLE(plLayerAnimationBase);
-#ifndef MINIMAL_GL_BUILD
 REGISTER_CREATABLE(plLayerLinkAnimation);
 REGISTER_CREATABLE(plLayerSDLAnimation);
-#endif
 
 #include "plLayerDepth.h"
 REGISTER_CREATABLE(plLayerDepth);

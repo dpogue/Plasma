@@ -44,7 +44,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define plAvatarMsg_inc
 
 #include "hsBitVector.h"
-#include "plAvatar/plArmatureMod.h"
+#include "hsGeometry3.h"
+#include "plAvatar/plAvDefs.h"
 #include "pnMessage/plEventCallbackMsg.h"
 
 class plSceneObject;
@@ -332,6 +333,7 @@ public:
     virtual void WriteVersion(hsStream* s, hsResMgr* mgr);
 };
 
+#ifndef MINIMAL_GL_BUILD
 ///////////////////
 //
 // PLAVPUSHBRAINMSG
@@ -353,7 +355,9 @@ public:
 
     plArmatureBrain *fBrain;
 };
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 //////////////////
 //
 // PLAVPOPBRAINMSG
@@ -370,6 +374,7 @@ public:
     CLASSNAME_REGISTER( plAvPopBrainMsg );
     GETINTERFACE_ANY( plAvPopBrainMsg, plAvTaskMsg);
 };
+#endif
 
 
 // For entering/exiting "stealth mode"

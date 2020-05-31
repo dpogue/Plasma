@@ -478,6 +478,7 @@ void plAvBrainGenericMsg::ReadVersion(hsStream* s, hsResMgr* mgr)
         fTransitionTime = s->ReadLEScalar();
 }
 
+#ifndef MINIMAL_GL_BUILD
 ///////////////////
 //
 // PLAVPUSHBRAINMSG
@@ -512,6 +513,7 @@ void plAvPushBrainMsg::Write(hsStream *stream, hsResMgr *mgr)
     plAvTaskMsg::Write(stream, mgr);
     mgr->WriteCreatable(stream, fBrain);
 }
+#endif
 
 
 

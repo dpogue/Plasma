@@ -77,8 +77,10 @@ void plResPatcher::Shutdown()
 void plResPatcher::OnCompletion(ENetError result, const ST::string& status)
 {
     ST::string error;
+#ifndef MINIMAL_GL_BUILD
     if (IS_NET_ERROR(result))
         error = ST::format("Update Failed: {}\n{}", NetErrorAsString(result), status);
+#endif
     plgDispatch::Dispatch()->MsgQueue(new plResPatcherMsg(IS_NET_SUCCESS(result), error));
 }
 
@@ -135,6 +137,7 @@ void plResPatcher::OnProgressTick(uint64_t dl, uint64_t total, const ST::string&
 
 pfPatcher* plResPatcher::CreatePatcher()
 {
+#ifndef MINIMAL_GL_BUILD
     pfPatcher* patcher = new pfPatcher;
     patcher->OnCompletion(std::bind(&plResPatcher::OnCompletion, this, std::placeholders::_1, std::placeholders::_2));
     patcher->OnFileDownloadBegin(std::bind(&plResPatcher::OnFileDownloadBegin, this, std::placeholders::_1));
@@ -149,6 +152,9 @@ pfPatcher* plResPatcher::CreatePatcher()
     }
 
     return patcher;
+#else
+    return nullptr;
+#endif
 }
 
 void plResPatcher::InitProgress()
@@ -172,10 +178,12 @@ void plResPatcher::Update(const std::vector<ST::string>& manifests)
     if (gDataServerLocal)
         plgDispatch::Dispatch()->MsgSend(new plResPatcherMsg());
      else {
+#ifndef MINIMAL_GL_BUILD
         InitProgress();
         pfPatcher* patcher = CreatePatcher();
         patcher->RequestManifest(manifests);
         patcher->Start(); // whoosh... off it goes
+#endif
     }
 }
 
@@ -184,10 +192,12 @@ void plResPatcher::Update(const ST::string& manifest)
     if (gDataServerLocal)
         plgDispatch::Dispatch()->MsgSend(new plResPatcherMsg());
     else {
+#ifndef MINIMAL_GL_BUILD
         InitProgress();
         pfPatcher* patcher = CreatePatcher();
         patcher->RequestManifest(manifest);
         patcher->Start(); // whoosh... off it goes
+#endif
     }
 }
 

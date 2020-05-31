@@ -54,27 +54,19 @@ REGISTER_CREATABLE(plEAXListenerMod);
 
 #include "plSound.h"
 REGISTER_NONCREATABLE(plSound);
-#ifndef MINIMAL_GL_BUILD
 REGISTER_CREATABLE(plSoundVolumeApplicator);
-#endif
 
 #include "plWin32Sound.h"
 REGISTER_NONCREATABLE(plWin32Sound);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plWin32GroupedSound.h"
 REGISTER_CREATABLE(plWin32GroupedSound);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plWin32StaticSound.h"
 REGISTER_CREATABLE(plWin32StaticSound);
 REGISTER_CREATABLE(plWin32LinkSound);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plWin32StreamingSound.h"
 REGISTER_CREATABLE(plWin32StreamingSound);
-#endif
 
 #endif // plAudioCreatable_inc

@@ -91,10 +91,12 @@ void plAgeLoader::FinishedPagingInRoom(plKey* rmKey, int numRms)
 {
     if (numRms==0)
         return;
-        
+
     unsigned pendingPageIns = PendingPageIns().size();
 
+#ifndef MINIMAL_GL_BUILD
     plNetClientApp* nc = plNetClientApp::GetInstance();
+#endif
 
     // Send a msg to the server indicating that we have this room paged in
     plNetMsgPagingRoom * pagingMsg = new plNetMsgPagingRoom;
@@ -105,17 +107,21 @@ void plAgeLoader::FinishedPagingInRoom(plKey* rmKey, int numRms)
         plKey key=rmKey[i];
         if (!RemovePendingPageInRoomKey(key))   // room is done paging in
             continue;   // we didn't queue this room
-        
+
         if (!ReportRoomToServer(key))
             continue;
 
-        pagingMsg->AddRoom(key);        
+        pagingMsg->AddRoom(key);
+#ifndef MINIMAL_GL_BUILD
         hsLogEntry(nc->DebugMsg("\tSending PageIn/RequestState msg, room={}\n", key->GetName()));
+#endif
     }
     if( pagingMsg->GetNumRooms() > 0 )  // all rooms were reserved
     {
+#ifndef MINIMAL_GL_BUILD
         plNetClientMgr * mgr = plNetClientMgr::GetInstance();
         mgr->AddPendingPagingRoomMsg( pagingMsg );
+#endif
     }
     else
         delete pagingMsg;
@@ -138,8 +144,10 @@ void plAgeLoader::FinishedPagingInRoom(plKey* rmKey, int numRms)
 //
 void plAgeLoader::FinishedPagingOutRoom(plKey* rmKey, int numRms)
 {
+#ifndef MINIMAL_GL_BUILD
     plNetClientApp* nc = plNetClientApp::GetInstance();
     nc->StayAlive(hsTimer::GetSysSeconds());    // alive
+#endif
 
     int i;
     for(i=0;i<numRms;i++)
@@ -148,7 +156,9 @@ void plAgeLoader::FinishedPagingOutRoom(plKey* rmKey, int numRms)
         if( found != fPendingPageOuts.end() )
         {
             fPendingPageOuts.erase( found );
+#ifndef MINIMAL_GL_BUILD
             nc->DebugMsg("Finished paging out room {}", rmKey[i]->GetName());
+#endif
         }
     }
 
@@ -166,7 +176,9 @@ void plAgeLoader::FinishedPagingOutRoom(plKey* rmKey, int numRms)
 //
 void plAgeLoader::StartPagingOutRoom(plKey* rmKey, int numRms)
 {
+#ifndef MINIMAL_GL_BUILD
     plNetClientApp* nc = plNetClientApp::GetInstance();
+#endif
 
     plNetMsgPagingRoom pagingMsg;
     pagingMsg.SetNetProtocol(kNetProtocolCli2Game);
@@ -179,13 +191,17 @@ void plAgeLoader::StartPagingOutRoom(plKey* rmKey, int numRms)
             continue;
     
         pagingMsg.AddRoom(rmKey[i]);
+#ifndef MINIMAL_GL_BUILD
         nc->DebugMsg("\tSending PageOut msg, room={}", rmKey[i]->GetName());
+#endif
     }
 
     if (!pagingMsg.GetNumRooms())   // all rooms were reserved
         return;
 
+#ifndef MINIMAL_GL_BUILD
     nc->SendMsg(&pagingMsg);
+#endif
 }
 
 // Client telling us that this page isn't going to get the start/finish combo
@@ -195,8 +211,10 @@ void plAgeLoader::StartPagingOutRoom(plKey* rmKey, int numRms)
 // might change later, we go ahead and dup to avoid unnecessary bugs later
 void plAgeLoader::IgnorePagingOutRoom(plKey* rmKey, int numRms)
 {
+#ifndef MINIMAL_GL_BUILD
     plNetClientApp* nc = plNetClientApp::GetInstance();
     nc->StayAlive(hsTimer::GetSysSeconds());    // alive
+#endif
 
     int i;
     for(i=0;i<numRms;i++)
@@ -205,7 +223,9 @@ void plAgeLoader::IgnorePagingOutRoom(plKey* rmKey, int numRms)
         if( found != fPendingPageOuts.end() )
         {
             fPendingPageOuts.erase( found );
+#ifndef MINIMAL_GL_BUILD
             nc->DebugMsg("Ignoring paged out room {}", rmKey[i]->GetName());
+#endif
         }
     }
 
@@ -309,7 +329,7 @@ bool    plAgeLoader::IsPageExcluded( const plAgePage *page, const ST::string& ag
             plSimpleStateVariable* sdVar = IGetInitialAgeState()->FindVar(pageName);
             if (!sdVar)
                 return true;    // no sdl var, exclude
-            
+
             bool value;
             sdVar->Get(&value);
             return value ? false : true;    // exclude if var is false

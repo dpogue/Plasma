@@ -95,6 +95,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plResMgr/plKeyFinder.h"
 #include "plModifier/plSimpleModifier.h"
 #include "plAvatar/plAvatarMgr.h"
+#include "plAvatar/plArmatureMod.h"
 #include "plAvatar/plAvatarTasks.h"
 #include "plAvatar/plAvBrainGeneric.h"
 //#include "plHavok1/plSimulationMgr.h"

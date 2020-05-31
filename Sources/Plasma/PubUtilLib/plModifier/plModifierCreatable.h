@@ -54,18 +54,26 @@ REGISTER_CREATABLE(plAnimEventModifier);
 #include "plAnimTimeConvertSDLModifier.h"
 REGISTER_NONCREATABLE(plAnimTimeConvertSDLModifier);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plAxisAnimModifier.h"
 REGISTER_CREATABLE(plAxisAnimModifier);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plCloneSpawnModifier.h"
 REGISTER_CREATABLE(plCloneSpawnModifier);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plDecalEnableMod.h"
 REGISTER_CREATABLE(plDecalEnableMod);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plExcludeRegionModifier.h"
 REGISTER_CREATABLE(plExcludeRegionModifier);
 REGISTER_CREATABLE(plExcludeRegionSDLModifier);
+#endif
 
 #include "plGameMarkerModifier.h"
 REGISTER_CREATABLE(plGameMarkerModifier);
@@ -79,24 +87,34 @@ REGISTER_CREATABLE(plInterfaceInfoModifier);
 #include "plLayerSDLModifier.h"
 REGISTER_CREATABLE(plLayerSDLModifier);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plLogicModifier.h"
 REGISTER_CREATABLE(plLogicModifier);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plMaintainersMarkerModifier.h"
 REGISTER_CREATABLE(plMaintainersMarkerModifier);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plResponderModifier.h"
 REGISTER_CREATABLE(plResponderEnableMsg);
 REGISTER_CREATABLE(plResponderModifier);
+#endif
 
+#ifndef MINIMAL_GL_BUILD
 #include "plResponderSDLModifier.h"
 REGISTER_CREATABLE(plResponderSDLModifier);
+#endif
 
 #include "plSimpleModifier.h"
 REGISTER_NONCREATABLE(plSimpleModifier);
 
+#ifndef MINIMAL_GL_BUILD
 #include "plSpawnModifier.h"
 REGISTER_CREATABLE(plSpawnModifier);
+#endif
 
 #include "plSDLModifier.h"
 REGISTER_NONCREATABLE(plSDLModifier);
