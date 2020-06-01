@@ -63,6 +63,13 @@ void plClientLoader::Run()
     plClientResMgr::Instance().ILoadResources("resource.dat");
 
     fClient = new plClient();
+
+#if 0
+    fClient->SetWindowHandle(fWindow);
+    if (fClient->InitPipeline(fDisplay) || !fClient->StartInit()) {
+        fClient->SetDone(true);
+    }
+#endif
 }
 
 void plClientLoader::Start()
@@ -88,10 +95,12 @@ void plClientLoader::ShutdownStart()
     // Now request the sane exit
     fClient->SetDone(true);
 
-    /*
+#ifndef MINIMAL_GL_BUILD
     if (plNetClientMgr* mgr = plNetClientMgr::GetInstance())
+    {
         mgr->QueueDisableNet(false, nullptr);
-    */
+    }
+#endif
 }
 
 void plClientLoader::ShutdownEnd()
