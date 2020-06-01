@@ -63,11 +63,11 @@ enum
 };
 
 static const plCmdArgDef s_cmdLineArgs[] = {
-    { kCmdArgFlagged  | kCmdTypeBool,       "SkipLoginDialog", kArgSkipLoginDialog },
-    { kCmdArgFlagged  | kCmdTypeString,     "ServerIni",       kArgServerIni },
+    //{ kCmdArgFlagged  | kCmdTypeBool,       "SkipLoginDialog", kArgSkipLoginDialog },
+    //{ kCmdArgFlagged  | kCmdTypeString,     "ServerIni",       kArgServerIni },
     { kCmdArgFlagged  | kCmdTypeBool,       "LocalData",       kArgLocalData   },
-    { kCmdArgFlagged  | kCmdTypeBool,       "SkipPreload",     kArgSkipPreload },
-    { kCmdArgFlagged  | kCmdTypeInt,        "PlayerId",        kArgPlayerId },
+    //{ kCmdArgFlagged  | kCmdTypeBool,       "SkipPreload",     kArgSkipPreload },
+    //{ kCmdArgFlagged  | kCmdTypeInt,        "PlayerId",        kArgPlayerId },
     { kCmdArgFlagged  | kCmdTypeString,     "Age",             kArgStartUpAgeName },
 };
 
@@ -103,6 +103,11 @@ int main(int argc, char** argv)
     plCmdParser cmdParser(s_cmdLineArgs, std::size(s_cmdLineArgs));
     cmdParser.Parse(args);
 
+    if (!XInitThreads())
+    {
+        hsStatusMessage("Failed to initialize X11 in thread-safe mode");
+        return 1;
+    }
 
     /* Open the connection to the X server */
     xcb_connection_t* connection = xcb_connect(nullptr, nullptr);
@@ -151,7 +156,7 @@ int main(int argc, char** argv)
 
 
     gClient.SetClientWindow((hsWindowHndl)(uintptr_t)window);
-    gClient.SetClientDisplay((hsWindowHndl)nullptr);
+    gClient.SetClientDisplay((hsWindowHndl)display);
     gClient.Init();
 
     // We should quite frankly be done initing the client by now. But, if not, spawn the good old
@@ -161,16 +166,26 @@ int main(int argc, char** argv)
         gClient.Wait();
     }
 
+#if 1
+    // X11 & EGL & OpenGL aren't playing nice with threads. This code should
+    // be run in plClientLoader::Run but has to be here for now.
     gClient->SetWindowHandle((hsWindowHndl)(uintptr_t)window);
-
-    if (cmdParser.IsSpecified(kArgStartUpAgeName))
-    {
-        gClient->SetQuitIntro(true);
-    }
 
     if (gClient->InitPipeline((hsWindowHndl)display) || !gClient->StartInit())
     {
         gClient->SetDone(true);
+    }
+#endif
+
+    if (cmdParser.IsSpecified(kArgLocalData))
+    {
+        gDataServerLocal = true;
+    }
+
+    if (cmdParser.IsSpecified(kArgStartUpAgeName))
+    {
+        gDataServerLocal = true;
+        gClient->SetQuitIntro(true);
     }
 
     // Main loop
