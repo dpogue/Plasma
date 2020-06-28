@@ -100,7 +100,7 @@ int main(int argc, char** argv)
         args.push_back(ST::string::from_utf8(argv[i]));
     }
 
-    plCmdParser cmdParser(s_cmdLineArgs, arrsize(s_cmdLineArgs));
+    plCmdParser cmdParser(s_cmdLineArgs, std::size(s_cmdLineArgs));
     cmdParser.Parse(args);
 
     if (!XInitThreads())

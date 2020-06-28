@@ -80,7 +80,7 @@ protected:
     void ICreateGeometry();
     void IReleaseGeometry();
 
-    void IDrawToDevice(plPipeline *pipe) HS_OVERRIDE;
+    void IDrawToDevice(plPipeline *pipe) override;
 };
 
 #endif //_plGLPlateManager_inc_

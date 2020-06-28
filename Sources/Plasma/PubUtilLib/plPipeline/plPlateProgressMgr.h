@@ -73,8 +73,8 @@ protected:
     StaticText          fShowingStaticText;
     plDynamicTextMap*   fProgressMap;
 
-    void Activate() HS_OVERRIDE;
-    void Deactivate() HS_OVERRIDE;
+    void Activate() override;
+    void Deactivate() override;
 
     bool IDrawTheStupidThing(plPipeline* p, plOperationProgress* prog,
                              uint16_t x, uint16_t y,
@@ -86,7 +86,7 @@ public:
 
     static void DeclareThyself();
 
-    void Draw(plPipeline* pipe) HS_OVERRIDE;
+    void Draw(plPipeline* pipe) override;
 
     const ST::string GetLoadingFrameID(uint32_t index);
     uint32_t NumLoadingFrames() const;
