@@ -54,6 +54,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 class pfConsoleEngine;
 class pfConsole;
 class plFontCache;
+class plInputManager;
 class plMovieMsg;
 class plMoviePlayer;
 class plOperationProgress;
@@ -62,6 +63,7 @@ class plPipeline;
 class plResPatcherMsg;
 class plSceneNode;
 class plTransitionMgr;
+class plVirtualCam1;
 
 typedef void (*plMessagePumpProc)();
 
@@ -102,6 +104,8 @@ protected:
 
     hsBitVector                 fFlags;
 
+    plInputManager*             fInputManager;
+
     plPageTreeMgr*              fPageMgr;
     hsTArray<plRoomRec>         fRooms;
     plSceneNode*                fCurrentNode;
@@ -126,6 +130,8 @@ protected:
     std::vector<plLocation>     fRoomsLoading;
     int                         fNumPostLoadMsgs;
     float                       fPostLoadMsgInc;
+
+    plVirtualCam1*              fCamera;
 
     static plClient*            fInstance;
     static bool                 fDelayMS;

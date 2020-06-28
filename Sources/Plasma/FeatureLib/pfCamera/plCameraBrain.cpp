@@ -160,8 +160,10 @@ void plCameraBrain1::Push(bool recenter)
     {
         fRail->Init();
     }
+#ifndef MINIMAL_GL_BUILD
     if (recenter)
         plInputManager::SetRecenterMouse(false);
+#endif
     fOffsetPct = 1.0f;
     // force update once to pop into position before we render
     SetFlags(kCutPOAOnce);
@@ -631,6 +633,7 @@ bool plCameraBrain1::MsgReceive(plMessage* msg)
             return true;
         }
     }
+#ifndef MINIMAL_GL_BUILD
     plPlayerPageMsg* pPMsg = plPlayerPageMsg::ConvertNoRef(msg);
     if (pPMsg)
     {
@@ -652,6 +655,7 @@ bool plCameraBrain1::MsgReceive(plMessage* msg)
         }
         return true;
     }
+#endif
     plControlEventMsg* pCMsg = plControlEventMsg::ConvertNoRef(msg);
     if (pCMsg)
     {
@@ -660,8 +664,10 @@ bool plCameraBrain1::MsgReceive(plMessage* msg)
             SetMovementFlag(pCMsg->GetControlCode());
             if (pCMsg->GetControlCode() == S_SET_FREELOOK)
             {
+#ifndef MINIMAL_GL_BUILD
                 plInputManager::SetRecenterMouse(true);
                 plMouseDevice::HideCursor();
+#endif
             }
             if (pCMsg->GetControlCode() == B_CAMERA_ZOOM_IN && fFlags.IsBitSet(kZoomEnabled))
             {
@@ -704,8 +710,10 @@ bool plCameraBrain1::MsgReceive(plMessage* msg)
             ClearMovementFlag(pCMsg->GetControlCode());
             if (pCMsg->GetControlCode() == S_SET_FREELOOK)
             {
+#ifndef MINIMAL_GL_BUILD
                 plInputManager::SetRecenterMouse(false);
                 plMouseDevice::ShowCursor();
+#endif
             }
             else
             if ( (pCMsg->GetControlCode() == B_CAMERA_ZOOM_IN || pCMsg->GetControlCode() == B_CAMERA_ZOOM_OUT)  
@@ -779,12 +787,16 @@ plCameraBrain1_Drive::~plCameraBrain1_Drive()
 void plCameraBrain1_Drive::Push(bool recenter)
 {
     plCameraBrain1::Push(recenter);
+#ifndef MINIMAL_GL_BUILD
     plInputManager::SetRecenterMouse(true);
+#endif
     fLastTime = hsTimer::GetSeconds();
 }
 void plCameraBrain1_Drive::Pop()
 {   
+#ifndef MINIMAL_GL_BUILD
     plInputManager::SetRecenterMouse(false);
+#endif
 }
 
 // 
@@ -1001,6 +1013,7 @@ plCameraBrain1_Avatar::plCameraBrain1_Avatar(plCameraModifier1* pMod) : plCamera
 // destructor
 plCameraBrain1_Avatar::~plCameraBrain1_Avatar()
 {
+#ifndef MINIMAL_GL_BUILD
     if (!plNetClientMgr::GetInstance())
         return;
         
@@ -1014,7 +1027,7 @@ plCameraBrain1_Avatar::~plCameraBrain1_Avatar()
         pMsg->AddReceiver(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
         plgDispatch::MsgSend(pMsg);
     }
-
+#endif
 }
 
 void plCameraBrain1_Avatar::Pop()
@@ -1232,6 +1245,7 @@ bool plCameraBrain1_Avatar::MsgReceive(plMessage* msg)
             {
                 SetSubject((plSceneObject*)pRefMsg->GetRef());
                 plSceneObject* avSO = nil;
+#ifndef MINIMAL_GL_BUILD
                 if (plNetClientMgr::GetInstance())
                     avSO = plSceneObject::ConvertNoRef(plNetClientMgr::GetInstance()->GetLocalPlayer());
 
@@ -1241,6 +1255,7 @@ bool plCameraBrain1_Avatar::MsgReceive(plMessage* msg)
                     if (avMod)
                         avMod->RegisterForBehaviorNotify(GetKey());
                 }
+#endif
             }
             else
                 SetSubject(nil);
@@ -1292,6 +1307,7 @@ void plCameraBrain1_Avatar::Read(hsStream* stream, hsResMgr* mgr)
     
     if (fFlags.IsBitSet(kFollowLocalAvatar) && GetSubject())
     {
+#ifndef MINIMAL_GL_BUILD
         plSceneObject* avSO = plSceneObject::ConvertNoRef(plNetClientMgr::GetInstance()->GetLocalPlayer());
         if (GetSubject() == avSO)
         {
@@ -1299,6 +1315,7 @@ void plCameraBrain1_Avatar::Read(hsStream* stream, hsResMgr* mgr)
             if (avMod)
                 avMod->RegisterForBehaviorNotify(GetKey());
         }
+#endif
     }
 
 }
@@ -1857,6 +1874,7 @@ bool plCameraBrain1_Circle::MsgReceive(plMessage* msg)
             return true;
         }
     }
+#ifndef MINIMAL_GL_BUILD
     plPlayerPageMsg* pPMsg = plPlayerPageMsg::ConvertNoRef(msg);
     if (pPMsg && pPMsg->fPlayer == plNetClientMgr::GetInstance()->GetLocalPlayerKey())
     {
@@ -1885,6 +1903,7 @@ bool plCameraBrain1_Circle::MsgReceive(plMessage* msg)
         }
         return true;
     }
+#endif
     return (plCameraBrain1_Fixed::MsgReceive(msg));
 }
 

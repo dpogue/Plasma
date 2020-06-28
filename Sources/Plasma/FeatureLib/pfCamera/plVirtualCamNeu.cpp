@@ -82,6 +82,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plSurface/hsGMaterial.h"
 #include "pnNetCommon/plNetApp.h"
 #include "plNetClient/plNetClientMgr.h"
+#include "plAvatar/plArmatureMod.h"
 #include "plAvatar/plAvBrainHuman.h"
 #include "plAvatar/plAvatarMgr.h"
 
@@ -159,8 +160,10 @@ plVirtualCam1::plVirtualCam1()
     fZPanLimit = 0;
     fRetainedFY = 0.5f;
     // create built-in drive mode camera
+#ifndef MINIMAL_GL_BUILD
     fCameraDriveInterface = plDebugInputInterface::GetInstance();
     hsRefCnt_SafeRef( fCameraDriveInterface );
+#endif
 
     fDriveCamera = new plCameraModifier1;
     plCameraBrain1* pDriveBrain = new plCameraBrain1_Drive(fDriveCamera);
@@ -196,7 +199,9 @@ plVirtualCam1::~plVirtualCam1()
     fTransitionCamera->UnRegisterAs(kTransitionCamera_KEY);
     delete(fDriveCamera->GetBrain());
     delete(fDriveCamera);
+#ifndef MINIMAL_GL_BUILD
     hsRefCnt_SafeUnRef( fCameraDriveInterface );
+#endif
 
     if(fThirdPersonCam)
     {   
@@ -258,7 +263,9 @@ void plVirtualCam1::RebuildStack(const plKey& key)
         pMsg->SetCmd(plEnableMsg::kEnable);
         pMsg->AddType(plEnableMsg::kDrawable);
         pMsg->SetBCastFlag(plMessage::kPropagateToModifiers);
+#ifndef MINIMAL_GL_BUILD
         pMsg->AddReceiver(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
+#endif
         plgDispatch::MsgSend(pMsg);
     }
 
@@ -783,7 +790,9 @@ void plVirtualCam1::Output()
             pMsg->SetCmd(plEnableMsg::kEnable);
             pMsg->AddType(plEnableMsg::kDrawable);
             pMsg->SetBCastFlag(plMessage::kPropagateToModifiers);
+#ifndef MINIMAL_GL_BUILD
             pMsg->AddReceiver(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
+#endif
             plgDispatch::MsgSend(pMsg);
         }
     }
@@ -871,7 +880,9 @@ void plVirtualCam1::FirstPersonOverride()
 #endif
         SetFOV(GetCurrentStackCamera()); 
         GetCurrentStackCamera()->Push(!HasFlags(kAvatarWalking));
+#ifndef MINIMAL_GL_BUILD
         plAvatarInputInterface::GetInstance()->CameraInThirdPerson(true);
+#endif
         FreezeOutput(2);    
         UnFadeAvatarIn(1);
         fRetainedFY = fY;
@@ -895,7 +906,9 @@ void plVirtualCam1::FirstPersonOverride()
             GetCurrentStackCamera()->Pop();
             fFirstPersonOverride->Push(!HasFlags(kAvatarWalking));
             SetFOV(fFirstPersonOverride); 
+#ifndef MINIMAL_GL_BUILD
             plAvatarInputInterface::GetInstance()->CameraInThirdPerson(false);
+#endif
             // no need to keep transitioning if we are currently...
             if (fTransPos == POS_TRANS_FOLLOW)
                 FinishTransition();
@@ -911,6 +924,7 @@ void plVirtualCam1::FirstPersonOverride()
 
 bool plVirtualCam1::MsgReceive(plMessage* msg)
 {
+#ifndef MINIMAL_GL_BUILD
     plPlayerPageMsg* pPMsg = plPlayerPageMsg::ConvertNoRef(msg);
     if (pPMsg)
     {
@@ -949,13 +963,17 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
                     FirstPersonOverride();
                     //SetFlags(kJustLinkedIn);
                 }
+#ifndef MINIMAL_GL_BUILD
                 else
                     plAvatarInputInterface::GetInstance()->CameraInThirdPerson(true);
+#endif
             }
             else
             if (fFirstPersonOverride == nil)
             {
+#ifndef MINIMAL_GL_BUILD
                 plAvatarInputInterface::GetInstance()->CameraInThirdPerson(true);
+#endif
             }
         }
         else
@@ -967,6 +985,8 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         }
         return true;
     }
+#endif
+
     plControlEventMsg* pCtrlMsg = plControlEventMsg::ConvertNoRef(msg);
     if (pCtrlMsg)
     {
@@ -1019,6 +1039,8 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         }
         return true;
     }
+
+#ifndef MINIMAL_GL_BUILD
     plMouseEventMsg* pMouseMsg = plMouseEventMsg::ConvertNoRef(msg);
     if( pMouseMsg )
     {
@@ -1054,6 +1076,8 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         fDriveCamera->MsgReceive(msg);  
         return true;
     }
+#endif
+
     plWarpMsg* pWarpMsg = plWarpMsg::ConvertNoRef(msg);
     if (pWarpMsg)
     {
@@ -1103,8 +1127,10 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         else
         if (pCam->Cmd(plCameraMsg::kCreateNewDefaultCam))
         {
+#ifndef MINIMAL_GL_BUILD
             if (pCam->GetSubject() == plNetClientMgr::GetInstance()->GetLocalPlayer())
                 CreateDefaultCamera(pCam->GetSubject());
+#endif
             return true;
         }
         else
@@ -1144,8 +1170,10 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
                 }
                 
                 StartInterpPanLimits();
+#ifndef MINIMAL_GL_BUILD
                 if (fFirstPersonOverride)
                     plAvatarInputInterface::GetInstance()->CameraInThirdPerson(false);
+#endif
                 
                 if (foutLog)
                 {
@@ -1189,8 +1217,11 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
                         fprintf(foutLog, "changed to new camera\n");
                         fprintf(foutLog, "********************************************\n");
                     }   
+
+#ifndef MINIMAL_GL_BUILD
                     if (fFirstPersonOverride)
                         plAvatarInputInterface::GetInstance()->CameraInThirdPerson(true);
+#endif
                 
                     fPythonOverride->Push(!HasFlags(kAvatarWalking));
                     
@@ -1260,10 +1291,12 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
                 ClearFlags(kJustLinkedIn);
                 plCameraTargetFadeMsg* pMsg = new plCameraTargetFadeMsg;
                 pMsg->SetFadeOut(true);
+#ifndef MINIMAL_GL_BUILD
                 pMsg->SetSubjectKey(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
                 pMsg->SetBCastFlag(plMessage::kBCastByExactType);
                 pMsg->SetBCastFlag(plMessage::kNetPropagate, false);
                 pMsg->AddReceiver(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
+#endif
                 plgDispatch::MsgSend(pMsg);
                 return true;
             }
