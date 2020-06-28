@@ -41,12 +41,29 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include "plGLClient/plGLClient.h"
-
-#include "plResMgr/plResManager.h"
+#include "plGLClient/plClientLoader.h"
 
 #import "Cocoa/Cocoa.h"
 
-int main(int argc, const char* argv[])
+plClientLoader gClient;
+
+void PumpMessageQueueProc()
+{
+    NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
+                            untilDate:[NSDate distantPast]
+                            inMode:NSDefaultRunLoopMode
+                            dequeue:YES];
+
+    /*if ([event type] == NSKeyDown) {
+        gClient->SetDone(true);
+    }*/
+
+    [NSApp sendEvent:event];
+    [NSApp updateWindows];
+}
+
+
+int main(int argc, const char** argv)
 {
     // Autorelease Pool:
     // Objects declared in this scope will be automatically
@@ -77,67 +94,42 @@ int main(int argc, const char* argv[])
     // Window controller
     NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
 
-    plResManager *resMgr = new plResManager();
-    resMgr->SetDataPath("dat");
-    hsgResMgr::Init(resMgr);
+    gClient.SetWindowHandle((hsWindowHndl)window);
+    gClient.SetClientDisplay((hsWindowHndl)NULL);
+    gClient.Init(argc, argv);
 
-    if (!plFileInfo("resource.dat").Exists()) {
-        hsStatusMessage("Required file 'resource.dat' not found.");
-        return;
-    }
-    plClientResMgr::Instance().ILoadResources("resource.dat");
-
-    plClient* gClient = new plClient();
-    if (gClient == NULL)
+    // We should quite frankly be done initing the client by now. But, if not, spawn the good old
+    // "Starting URU, please wait..." dialog (not so yay)
+    if (!gClient.IsInited())
     {
-        return 1;
-    }
-
-    gClient->SetWindowHandle((hsWindowHndl)window);
-
-    if (gClient->InitPipeline((hsWindowHndl)NULL))
-    {
-        return 1;
-    }
-
-    if (!gClient->StartInit())
-    {
-        return 1;
+        gClient.Wait();
     }
 
     [window orderFrontRegardless];
 
     [NSApp finishLaunching];
 
-    do
+    // Main loop
+    if (gClient && !gClient->GetDone())
     {
-        gClient->MainLoop();
+        gClient->SetMessagePumpProc(PumpMessageQueueProc);
+        gClient.Start();
 
-        NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
-                                untilDate:[NSDate distantPast]
-                                inMode:NSDefaultRunLoopMode
-                                dequeue:YES];
+        do
+        {
+            gClient->MainLoop();
 
-        /*if ([event type] == NSKeyDown) {
-            gClient->SetDone(true);
-        }*/
+            if (gClient->GetDone()) {
+                break;
+            }
 
-        [NSApp sendEvent:event];
-        [NSApp updateWindows];
+            PumpMessageQueueProc();
 
-        if (gClient->GetDone()) {
-            break;
-        }
-    } while (true);
-
-    if (gClient)
-    {
-        gClient->Shutdown();
-        gClient = NULL;
+        } while (true);
     }
 
-    hsAssert(hsgResMgr::ResMgr()->RefCnt()==1, "resMgr has too many refs, expect mem leaks");
-    hsgResMgr::Shutdown(); // deletes fResMgr
+
+    gClient.ShutdownEnd();
 
     [pool drain];
 

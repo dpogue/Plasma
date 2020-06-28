@@ -49,6 +49,35 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //#include "plNetClient/plNetClientMgr.h"
 #include "plResMgr/plResManager.h"
 
+enum
+{
+    kArgSkipLoginDialog,
+    kArgServerIni,
+    kArgLocalData,
+    kArgSkipPreload,
+    kArgPlayerId,
+    kArgStartUpAgeName,
+};
+
+static const plCmdArgDef s_cmdLineArgs[] = {
+    //{ kCmdArgFlagged  | kCmdTypeBool,       "SkipLoginDialog", kArgSkipLoginDialog },
+    //{ kCmdArgFlagged  | kCmdTypeString,     "ServerIni",       kArgServerIni },
+    { kCmdArgFlagged  | kCmdTypeBool,       "LocalData",       kArgLocalData   },
+    //{ kCmdArgFlagged  | kCmdTypeBool,       "SkipPreload",     kArgSkipPreload },
+    //{ kCmdArgFlagged  | kCmdTypeInt,        "PlayerId",        kArgPlayerId },
+    { kCmdArgFlagged  | kCmdTypeString,     "Age",             kArgStartUpAgeName },
+};
+
+extern bool gDataServerLocal;
+
+
+plClientLoader::plClientLoader() :
+    fClient(nullptr),
+    fWindow(nullptr),
+    fDisplay(nullptr),
+    fArguments(s_cmdLineArgs, std::size(s_cmdLineArgs))
+{ }
+
 void plClientLoader::Run()
 {
     plResManager* resMgr = new plResManager();
@@ -64,12 +93,41 @@ void plClientLoader::Run()
 
     fClient = new plClient();
 
-#if 0
     fClient->SetWindowHandle(fWindow);
     if (fClient->InitPipeline(fDisplay) || !fClient->StartInit()) {
         fClient->SetDone(true);
     }
-#endif
+
+    HandleArguments();
+}
+
+void plClientLoader::HandleArguments()
+{
+    if (fArguments.IsSpecified(kArgLocalData))
+    {
+        gDataServerLocal = true;
+    }
+
+    if (fArguments.IsSpecified(kArgStartUpAgeName))
+    {
+        gDataServerLocal = true;
+        fClient->SetQuitIntro(true);
+    }
+}
+
+void plClientLoader::Init(int argc, const char** argv)
+{
+    hsAssert(fClient == nullptr, "trying to init the client more than once?");
+
+    std::vector<ST::string> args;
+    args.reserve(argc);
+    for (size_t i = 0; i < argc; i++)
+    {
+        args.push_back(ST::string::from_utf8(argv[i]));
+    }
+    fArguments.Parse(args);
+
+    hsThread::Start();
 }
 
 void plClientLoader::Start()

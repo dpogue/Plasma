@@ -42,12 +42,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "HeadSpin.h"
 #include "hsThread.h"
+#include "plCmdParser.h"
 
 class plClientLoader : private hsThread
 {
     class plClient* fClient;
     hsWindowHndl fWindow;
     hsWindowHndl fDisplay;
+    plCmdParser fArguments;
 
     virtual void OnQuit() override
     {
@@ -57,18 +59,19 @@ class plClientLoader : private hsThread
     /** Does the heavy lifting of client init */
     virtual void Run() override;
 
+    /**
+     * Handles parsing and application of command-line arguments to the client.
+     */
+    void HandleArguments();
+
 public:
-    plClientLoader() : fClient(nullptr), fWindow(nullptr), fDisplay(nullptr) { }
+    plClientLoader();
 
     /**
      * Initializes the client asynchronously including: loading the localization,
      * registry, dispatcher, etc.
      */
-    void Init()
-    {
-        hsAssert(fClient == nullptr, "trying to init the client more than once?");
-        hsThread::Start();
-    }
+    void Init(int argc, const char** argv);
 
     /**
      * Returns whether or not the client init is done

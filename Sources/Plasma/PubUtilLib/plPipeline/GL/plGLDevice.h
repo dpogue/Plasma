@@ -78,6 +78,7 @@ public:
     EGLSurface          fSurface;
     EGLContext          fContext;
 
+    size_t              fActiveThread;
     GLuint              fCurrentProgram;
     GLfloat             fMatrixL2W[16];
     GLfloat             fMatrixW2L[16];

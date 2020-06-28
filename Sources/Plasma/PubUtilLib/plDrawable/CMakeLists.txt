@@ -113,6 +113,7 @@ target_link_libraries(plDrawable plMath)
 #target_link_libraries(plDrawable plGLight)
 target_link_libraries(plDrawable plMessage)
 target_link_libraries(plDrawable plScene)
+target_link_libraries(plDrawable plSDL)
 target_link_libraries(plDrawable plSurface)
 
 source_group("Source Files" FILES ${plDrawable_SOURCES})

@@ -40,38 +40,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
+#include "plProduct.h"
 #include "plGLClient/plGLClient.h"
 #include "plGLClient/plClientLoader.h"
-
-#include "plResMgr/plResManager.h"
-#include "plClientResMgr/plClientResMgr.h"
-
-#include "plCmdParser.h"
 
 #include <xcb/xcb.h>
 #include <X11/Xlib-xcb.h>
 #include <unistd.h>
-
-enum
-{
-    kArgSkipLoginDialog,
-    kArgServerIni,
-    kArgLocalData,
-    kArgSkipPreload,
-    kArgPlayerId,
-    kArgStartUpAgeName,
-};
-
-static const plCmdArgDef s_cmdLineArgs[] = {
-    //{ kCmdArgFlagged  | kCmdTypeBool,       "SkipLoginDialog", kArgSkipLoginDialog },
-    //{ kCmdArgFlagged  | kCmdTypeString,     "ServerIni",       kArgServerIni },
-    { kCmdArgFlagged  | kCmdTypeBool,       "LocalData",       kArgLocalData   },
-    //{ kCmdArgFlagged  | kCmdTypeBool,       "SkipPreload",     kArgSkipPreload },
-    //{ kCmdArgFlagged  | kCmdTypeInt,        "PlayerId",        kArgPlayerId },
-    { kCmdArgFlagged  | kCmdTypeString,     "Age",             kArgStartUpAgeName },
-};
-
-extern bool gDataServerLocal;
 
 plClientLoader gClient;
 xcb_connection_t* gXConn;
@@ -91,18 +66,8 @@ void PumpMessageQueueProc()
 }
 
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
-    std::vector<ST::string> args;
-    args.reserve(argc);
-    for (size_t i = 0; i < argc; i++)
-    {
-        args.push_back(ST::string::from_utf8(argv[i]));
-    }
-
-    plCmdParser cmdParser(s_cmdLineArgs, std::size(s_cmdLineArgs));
-    cmdParser.Parse(args);
-
     if (!XInitThreads())
     {
         hsStatusMessage("Failed to initialize X11 in thread-safe mode");
@@ -136,7 +101,7 @@ int main(int argc, char** argv)
                       XCB_CW_EVENT_MASK,             /* masks               */
                       &event_mask);                  /* masks               */
 
-    const char* title = "plGLClient";
+    const char* title = plProduct::LongName().c_str();
     xcb_change_property(connection,
                         XCB_PROP_MODE_REPLACE,
                         window,
@@ -157,35 +122,13 @@ int main(int argc, char** argv)
 
     gClient.SetClientWindow((hsWindowHndl)(uintptr_t)window);
     gClient.SetClientDisplay((hsWindowHndl)display);
-    gClient.Init();
+    gClient.Init(argc, argv);
 
     // We should quite frankly be done initing the client by now. But, if not, spawn the good old
     // "Starting URU, please wait..." dialog (not so yay)
     if (!gClient.IsInited())
     {
         gClient.Wait();
-    }
-
-#if 1
-    // X11 & EGL & OpenGL aren't playing nice with threads. This code should
-    // be run in plClientLoader::Run but has to be here for now.
-    gClient->SetWindowHandle((hsWindowHndl)(uintptr_t)window);
-
-    if (gClient->InitPipeline((hsWindowHndl)display) || !gClient->StartInit())
-    {
-        gClient->SetDone(true);
-    }
-#endif
-
-    if (cmdParser.IsSpecified(kArgLocalData))
-    {
-        gDataServerLocal = true;
-    }
-
-    if (cmdParser.IsSpecified(kArgStartUpAgeName))
-    {
-        gDataServerLocal = true;
-        gClient->SetQuitIntro(true);
     }
 
     // Main loop
