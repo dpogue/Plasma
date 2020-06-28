@@ -43,11 +43,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "HeadSpin.h"
 #include "hsWindows.h"
 
-#include "plGLClient/plGLClient.h"
-
-#include "plResMgr/plResManager.h"
-
 #include "plProduct.h"
+#include "plGLClient/plGLClient.h"
+#include "plGLClient/plClientLoader.h"
+
 
 #define CLASSNAME "Plasma"
 
@@ -55,18 +54,32 @@ int gWinBorderDX    = GetSystemMetrics( SM_CXSIZEFRAME );
 int gWinBorderDY    = GetSystemMetrics( SM_CYSIZEFRAME );
 int gWinMenuDY      = GetSystemMetrics( SM_CYCAPTION );
 
-plClient* gClient = nullptr;
+plClientLoader gClient;
+
+void PumpMessageQueueProc()
+{
+    MSG msg;
+
+    // Look for a message
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    {
+        // Handle the message
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+}
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     // Handle messages
     switch (message) {
         case WM_CLOSE:
-            gClient->SetDone(TRUE);
+            gClient->SetDone(true);
             DestroyWindow(gClient->GetWindowHandle());
             break;
         case WM_DESTROY:
-            gClient->SetDone(TRUE);
+            gClient->SetDone(true);
             PostQuitMessage(0);
             break;
     }
@@ -103,69 +116,44 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         600 + gWinBorderDY * 2 + gWinMenuDY,
          NULL, NULL, hInst, NULL
     );
-
-
-    plResManager *resMgr = new plResManager();
-    resMgr->SetDataPath("dat");
-    hsgResMgr::Init(resMgr);
-
-    if (!plFileInfo("resource.dat").Exists()) {
-        hsStatusMessage("Required file 'resource.dat' not found.");
-        return;
-    }
-    plClientResMgr::Instance().ILoadResources("resource.dat");
-
-    gClient = new plClient();
-    if (gClient == nullptr)
-    {
-        return 1;
-    }
-
-    gClient->SetWindowHandle((hsWindowHndl)hWnd);
-
     HDC hDC = GetDC(hWnd);
 
-    if (gClient->InitPipeline((hsWindowHndl)hDC))
-    {
-        return 1;
-    }
+    gClient.SetClientWindow((hsWindowHndl)hWnd);
+    gClient.SetClientDisplay((hsWindowHndl)hDC);
+    gClient.Init(__argc, __argv);
 
-    if (!gClient->StartInit())
+    // We should quite frankly be done initing the client by now. But, if not, spawn the good old
+    // "Starting URU, please wait..." dialog (not so yay)
+    if (!gClient.IsInited())
     {
-        return 1;
+        gClient.Wait();
     }
 
     ShowWindow(gClient->GetWindowHandle(), SW_SHOW);
     BringWindowToTop(gClient->GetWindowHandle());
     UpdateWindow(gClient->GetWindowHandle());
 
-    MSG msg;
-    do
+    // Main loop
+    if (gClient && !gClient->GetDone())
     {
-        gClient->MainLoop();
+        gClient->SetMessagePumpProc(PumpMessageQueueProc);
+        gClient.Start();
 
-        if (gClient->GetDone()) {
-            break;
-        }
-
-        // Look for a message
-        while (PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ))
+        do
         {
-            // Handle the message
-            TranslateMessage( &msg );
-            DispatchMessage( &msg );
-        }
-    } while (WM_QUIT != msg.message);
+            gClient->MainLoop();
 
+            if (gClient->GetDone()) {
+                break;
+            }
 
-    if (gClient)
-    {
-        gClient->Shutdown();
-        gClient = nullptr;
+            PumpMessageQueueProc();
+
+        } while (true);
     }
 
-    hsAssert(hsgResMgr::ResMgr()->RefCnt()==1, "resMgr has too many refs, expect mem leaks");
-    hsgResMgr::Shutdown(); // deletes fResMgr
+
+    gClient.ShutdownEnd();
 
     return 0;
 }

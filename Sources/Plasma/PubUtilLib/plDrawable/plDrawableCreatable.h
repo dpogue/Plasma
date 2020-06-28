@@ -110,10 +110,8 @@ REGISTER_CREATABLE(plMorphDelta);
 REGISTER_CREATABLE(plMorphDataSet);
 REGISTER_CREATABLE(plMorphSequence);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plMorphSequenceSDLMod.h"
 REGISTER_CREATABLE(plMorphSequenceSDLMod);
-#endif
 
 #include "plPrintShape.h"
 REGISTER_CREATABLE(plPrintShape);

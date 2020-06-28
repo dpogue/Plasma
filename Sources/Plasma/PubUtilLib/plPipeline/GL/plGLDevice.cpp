@@ -44,6 +44,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLDevice.h"
 #include "plGLPipeline.h"
 
+#include "hsThread.h"
 #include "plDrawable/plGBufferGroup.h"
 #include "plGImage/plMipmap.h"
 #include "plGImage/plCubicEnvironmap.h"
@@ -85,6 +86,7 @@ plGLDevice::plGLDevice()
     fDisplay(EGL_NO_DISPLAY),
     fSurface(EGL_NO_SURFACE),
     fContext(EGL_NO_CONTEXT),
+    fActiveThread(hsThread::ThisThreadHash()),
     fCurrentProgram(0)
 {
     memcpy(fMatrixL2W, kIdentityMatrix, sizeof(GLfloat) * 16);
@@ -214,6 +216,18 @@ void plGLDevice::SetViewport()
 
 bool plGLDevice::BeginRender()
 {
+    if (fActiveThread == hsThread::ThisThreadHash()) {
+        return true;
+    }
+
+    fActiveThread = hsThread::ThisThreadHash();
+
+    /* Associate everything */
+    if (eglMakeCurrent(fDisplay, fSurface, fSurface, fContext) == EGL_FALSE) {
+        fErrorMsg = "Failed to attach EGL context to surface";
+        return false;
+    }
+
     return true;
 }
 

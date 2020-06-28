@@ -205,9 +205,7 @@ pfConsole::~pfConsole()
     fTheConsole = nil;
 
     plgDispatch::Dispatch()->UnRegisterForExactType( plConsoleMsg::Index(), GetKey() );
-#ifndef MINIMAL_GL_BUILD
     plgDispatch::Dispatch()->UnRegisterForExactType( plControlEventMsg::Index(), GetKey() );
-#endif
 }
 
 pfConsole * pfConsole::GetInstance () {
@@ -248,9 +246,7 @@ void    pfConsole::Init( pfConsoleEngine *engine )
 
     // Register for keyboard event messages
     plgDispatch::Dispatch()->RegisterForExactType( plConsoleMsg::Index(), GetKey() );
-#ifndef MINIMAL_GL_BUILD
     plgDispatch::Dispatch()->RegisterForExactType( plControlEventMsg::Index(), GetKey() );
-#endif
 }
 
 //// ISetMode ////////////////////////////////////////////////////////////////
@@ -270,7 +266,6 @@ void    pfConsole::ISetMode( uint8_t mode )
 #include <algorithm>
 bool    pfConsole::MsgReceive( plMessage *msg )
 {
-#ifndef MINIMAL_GL_BUILD
     // Handle screenshot saving...
     plCaptureRenderMsg* capMsg = plCaptureRenderMsg::ConvertNoRef(msg);
     if (capMsg) {
@@ -307,14 +302,15 @@ bool    pfConsole::MsgReceive( plMessage *msg )
     plControlEventMsg *ctrlMsg = plControlEventMsg::ConvertNoRef( msg );
     if( ctrlMsg != nil )
     {
+#ifndef MINIMAL_GL_BUILD
         if( ctrlMsg->ControlActivated() && ctrlMsg->GetControlCode() == B_CONTROL_CONSOLE_COMMAND && plNetClientMgr::GetInstance()->GetFlagsBit(plNetClientMgr::kPlayingGame))
         {
             fEngine->RunCommand( ctrlMsg->GetCmdString(), IAddLineCallback );
             return true;
         }
+#endif
         return false;
     }
-#endif
 
     plConsoleMsg *cmd = plConsoleMsg::ConvertNoRef( msg );
     if( cmd != nil && cmd->GetString() != nil )

@@ -460,27 +460,23 @@ void plMorphSequence::AddTarget(plSceneObject* so)
 {
     plSingleModifier::AddTarget(so);
 
-#ifndef MINIMAL_GL_BUILD
     if (!fMorphSDLMod)
     {
         fMorphSDLMod = new plMorphSequenceSDLMod;
         so->AddModifier(fMorphSDLMod);
     }
-#endif
 }
 
 void plMorphSequence::RemoveTarget(plSceneObject *so)
 {
     plSingleModifier::RemoveTarget(so);
 
-#ifndef MINIMAL_GL_BUILD
     if (so)
         if (fMorphSDLMod)
             so->RemoveModifier(fMorphSDLMod);
 
     delete fMorphSDLMod;
     fMorphSDLMod = nil;     
-#endif
 }
     
 void plMorphSequence::Read(hsStream* s, hsResMgr* mgr)

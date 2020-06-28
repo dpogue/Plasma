@@ -43,7 +43,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define _plGLConstants_inc_
 
 #define GL_GLEXT_PROTOTYPES
-#if HS_BUILD_FOR_OSX
+#if HS_BUILD_FOR_MACOS
 #    include <OpenGL/gl3.h>
 #    include <OpenGL/gl3ext.h>
 #else
