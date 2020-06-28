@@ -51,6 +51,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pnDispatch/plDispatchLogBase.h"
 
 #include "pnMessage/plAudioSysMsg.h"
+#include "pnMessage/plCameraMsg.h"
 #include "pnMessage/plClientMsg.h"
 #include "pnMessage/plProxyDrawMsg.h"
 #include "pnMessage/plTimeMsg.h"
@@ -98,6 +99,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pfAudio/plListener.h"
 
+#include "pfCamera/plVirtualCamNeu.h"
+
 #include "pfConsoleCore/pfConsoleEngine.h"
 #include "pfConsole/pfConsole.h"
 #include "pfConsole/pfConsoleDirSrc.h"
@@ -144,7 +147,8 @@ bool plClient::fDelayMS = false;
 plClient* plClient::fInstance = nullptr;
 
 plClient::plClient()
-:   fPipeline(nullptr),
+:   fInputManager(nullptr),
+    fPipeline(nullptr),
     fCurrentNode(nullptr),
     fTransitionMgr(nullptr),
     fPageMgr(nullptr),
@@ -157,6 +161,7 @@ plClient::plClient()
     fNumLoadingRooms(0),
     fNumPostLoadMsgs(0),
     fPostLoadMsgInc(0.f),
+    fCamera(nullptr),
     fQuitIntro(false)
 {
     hsStatusMessage("Constructing client\n");
@@ -270,6 +275,19 @@ bool plClient::Shutdown()
     IUnRegisterAs(fFontCache, kFontCache_KEY);
 
     IUnRegisterAs(fConsole, kConsoleObject_KEY);
+
+    IUnRegisterAs(fCamera, kVirtualCamera1_KEY);
+
+    // mark the listener for death.
+    // there's no need to keep this around...
+    plUoid lu(kListenerMod_KEY);
+    plKey pLKey = hsgResMgr::ResMgr()->FindKey(lu);
+    if (pLKey)
+    {
+        plListener* pLMod = plListener::ConvertNoRef(pLKey->GetObjectPtr());
+        if (pLMod)
+            pLMod->UnRegisterAs(kListenerMod_KEY);
+    }
 
     plgAudioSys::Shutdown();
 
@@ -414,16 +432,22 @@ bool plClient::StartInit()
 #endif
     plAgeLoader::GetInstance()->Init();
 
+    // create new virtual camera
+    fCamera = new plVirtualCam1;
+    fCamera->RegisterAs(kVirtualCamera1_KEY);
+    fCamera->Init();
+    fCamera->SetPipeline(GetPipeline());
+
+    plVirtualCam1::Refresh();
+
     plgDispatch::Dispatch()->RegisterForExactType(plMovieMsg::Index(), GetKey());
 
-#ifndef MINIMAL_GL_BUILD
     // create the listener for the audio system:
     plListener* pLMod = new plListener;
     pLMod->RegisterAs(kListenerMod_KEY);
 
     plgDispatch::Dispatch()->RegisterForExactType(plEvalMsg::Index(), pLMod->GetKey());
     plgDispatch::Dispatch()->RegisterForExactType(plAudioSysMsg::Index(), pLMod->GetKey());
-#endif
 
     plSynchedObject::PushSynchDisabled(false);      // enable dirty tracking
     return true;
@@ -431,7 +455,9 @@ bool plClient::StartInit()
 
 bool plClient::BeginGame()
 {
-    //plNetClientMgr::GetInstance()->Init();
+#ifndef MINIMAL_GL_BUILD
+    plNetClientMgr::GetInstance()->Init();
+#endif
 
     if (!fQuitIntro)
     {
@@ -1049,9 +1075,9 @@ void plClient::IRoomLoaded(plSceneNode* node, bool hold)
 
 void plClient::IRoomUnloaded(plSceneNode* node)
 {
-    #ifndef PLASMA_EXTERNAL_RELEASE
+#ifndef PLASMA_EXTERNAL_RELEASE
     plStatusLog::AddLineS("pageouts.log", "..    refMsg is onDestroy");
-    #endif
+#endif
 
     fCurrentNode = node;
     hsRefCnt_SafeUnRef(fCurrentNode);
@@ -1133,6 +1159,12 @@ bool plClient::IUpdate()
 
     plCoordinateInterface::SetTransformPhase(plCoordinateInterface::kTransformPhaseNormal);
 
+    plProfile_BeginTiming(CameraMsg);
+    plCameraMsg* cameras = new plCameraMsg;
+    cameras->SetCmd(plCameraMsg::kUpdateCameras);
+    cameras->SetBCastFlag(plMessage::kBCastByExactType);
+    plgDispatch::MsgSend(cameras);
+    plProfile_EndTiming(CameraMsg);
 
     return false;
 }
@@ -1352,8 +1384,8 @@ void plClient::IProgressMgrCallbackProc(plOperationProgress* progress)
     if (!fInstance)
         return;
 
-    // Increments the taskbar progress [Windows 7+]
 #ifdef HS_BUILD_FOR_WIN32
+    // Increments the taskbar progress [Windows 7+]
     if (gTaskbarList && fInstance->GetWindowHandle())
     {
         static TBPFLAG lastState = TBPF_NOPROGRESS;
@@ -1636,7 +1668,7 @@ void plClient::IOnAsyncInitComplete()
 #ifndef MINIMAL_GL_BUILD
     // Tell the transition manager to start faded out. This is so we don't
     // get a frame or two of non-faded drawing before we do our initial fade in
-    (void)(new plTransitionMsg( plTransitionMsg::kFadeOut, 0.0f, true ))->Send();
+    (void)(new plTransitionMsg(plTransitionMsg::kFadeOut, 0.0f, true))->Send();
 #endif
 
     fFlags.SetBit(kFlagAsyncInitComplete);

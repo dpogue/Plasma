@@ -71,10 +71,12 @@ bool plListener::IEval(double secs, float del, uint32_t dirty)
     if( fPrintDbgInfo ) 
         plDebugText::Instance().DrawString( x, 16, "Listener:", (uint32_t)0xffffffff, plDebugText::kStyleBold );
 
+#ifndef MINIMAL_GL_BUILD
     // Get the avatar's SceneObject
     plKey key = plNetClientMgr::GetInstance()->GetLocalPlayerKey();
     if(key)
         pRefObject = plSceneObject::ConvertNoRef(key->ObjectIsLoaded());
+#endif
 
     if( pRefObject == nil && fVCam == nil )
     {
@@ -145,6 +147,7 @@ bool plListener::IEval(double secs, float del, uint32_t dirty)
     {
         if( pRefObject != nil )
         {
+#ifndef MINIMAL_GL_BUILD
             plArmatureMod* arm = plAvatarMgr::GetInstance()->GetLocalAvatar();
             if (arm)
             {
@@ -155,6 +158,7 @@ bool plListener::IEval(double secs, float del, uint32_t dirty)
                     velType = kObject;
                 }
             }
+#endif
         }
     }
     else if( fVCam != nil )

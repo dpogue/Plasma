@@ -286,9 +286,11 @@ void plCameraModifier1::Update()
             if (!worldKey)
             {
                 plKey subject = plKey(GetBrain()->GetSubject()->GetKey());
+#ifndef MINIMAL_GL_BUILD
                 plArmatureMod* armMod = plAvatarMgr::FindAvatar(subject);
                 if (armMod && armMod->GetController() )
                     worldKey = armMod->GetController()->GetSubworld();
+#endif
             }
 
             if (worldKey)

@@ -113,12 +113,8 @@ void plSceneObject::Read(hsStream* stream, hsResMgr* mgr)
     // DI
     mgr->ReadKeyNotifyMe(stream, new plObjRefMsg(GetKey(), plRefMsg::kOnCreate, 0, plObjRefMsg::kInterface), plRefFlags::kActiveRef);
 
-#ifndef MINIMAL_GL_BUILD
     // SI
     mgr->ReadKeyNotifyMe(stream, new plObjRefMsg(GetKey(), plRefMsg::kOnCreate, 0, plObjRefMsg::kInterface), plRefFlags::kActiveRef);
-#else
-    mgr->ReadKey(stream);
-#endif
 
     // CI
     mgr->ReadKeyNotifyMe(stream, new plObjRefMsg(GetKey(), plRefMsg::kOnCreate, 0, plObjRefMsg::kInterface), plRefFlags::kActiveRef);

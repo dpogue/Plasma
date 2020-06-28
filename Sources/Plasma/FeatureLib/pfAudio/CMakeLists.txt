@@ -18,5 +18,7 @@ set(pfAudio_HEADERS
 
 add_library(pfAudio STATIC ${pfAudio_SOURCES} ${pfAudio_HEADERS})
 
+target_link_libraries(pfAudio pfAnimation)
+
 source_group("Source Files" FILES ${pfAudio_SOURCES})
 source_group("Header Files" FILES ${pfAudio_HEADERS})

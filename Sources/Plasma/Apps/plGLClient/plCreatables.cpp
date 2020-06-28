@@ -23,6 +23,8 @@
 #include "plSurface/plSurfaceCreatable.h"
 
 #include "pfAnimation/pfAnimationCreatable.h"
+#include "pfAudio/pfAudioCreatable.h"
+#include "pfCamera/pfCameraCreatable.h"
 #include "pfConsole/pfConsoleCreatable.h"
 
 #include "plGLClient.h"
