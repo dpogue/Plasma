@@ -139,6 +139,7 @@ public:
     GETINTERFACE_ANY( plParticleScaleMaxApplicator, plAGApplicator );
 };
 
+#if 0
 class plParticleGravityApplicator : public plParticleApplicator
 {
 protected:
@@ -158,5 +159,6 @@ public:
     CLASSNAME_REGISTER( plParticleDragApplicator );
     GETINTERFACE_ANY( plParticleDragApplicator, plAGApplicator );
 };
+#endif
 
 #endif

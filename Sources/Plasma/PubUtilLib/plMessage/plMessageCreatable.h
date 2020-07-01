@@ -326,11 +326,12 @@ REGISTER_CREATABLE(plVaultNotifyMsg);
 *
 ***/
 
-#ifndef MINIMAL_GL_BUILD
 #ifndef NO_AV_MSGS
     #ifndef SERVER
+#ifndef MINIMAL_GL_BUILD
         #include "plAvCoopMsg.h"
         REGISTER_CREATABLE(plAvCoopMsg);
+#endif
 
         #include "plLoadAvatarMsg.h"
         REGISTER_CREATABLE(plLoadAvatarMsg);
@@ -338,10 +339,11 @@ REGISTER_CREATABLE(plVaultNotifyMsg);
         #include "plLoadCloneMsg.h"
         REGISTER_CREATABLE(plLoadCloneMsg);
 
+#ifndef MINIMAL_GL_BUILD
         #include "plLoadClothingMsg.h"
         REGISTER_CREATABLE(plLoadClothingMsg);
+#endif
     #endif // ndef SERVER
 #endif // ndef NO_AV_MSGS
-#endif
 
 #endif // plMessageCreatable_inc

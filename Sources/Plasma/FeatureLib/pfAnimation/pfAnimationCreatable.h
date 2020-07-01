@@ -64,10 +64,8 @@ REGISTER_CREATABLE(plSpotModifier);
 REGISTER_CREATABLE(plLineFollowMod);
 REGISTER_CREATABLE(plRailCameraMod);
 
-#ifndef MINIMAL_GL_BUILD
 #include "pfObjectFlocker.h"
 REGISTER_CREATABLE(pfObjectFlocker);
-#endif
 
 #include "plRandomCommandMod.h"
 REGISTER_NONCREATABLE(plRandomCommandMod);

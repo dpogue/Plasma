@@ -119,6 +119,7 @@ void plParticleScaleMaxApplicator::IApply(const plAGModifier *mod, double time)
                                                     chan->Value(time) / 100.f);
 }
 
+#if 0
 void plParticleGravityApplicator::IApply(const plAGModifier *mod, double time)
 {
     plScalarChannel *chan = plScalarChannel::ConvertNoRef(fChannel);
@@ -132,4 +133,4 @@ void plParticleDragApplicator::IApply(const plAGModifier *mod, double time)
 //  IGetParticleGen(mod->GetTarget(0))->UpdateParam(plParticleUpdateMsg::kParamParticlesPerSecond,
 //                                                  chan->Value(time));
 }
-
+#endif

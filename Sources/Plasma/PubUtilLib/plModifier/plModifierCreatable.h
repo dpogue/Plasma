@@ -59,10 +59,8 @@ REGISTER_NONCREATABLE(plAnimTimeConvertSDLModifier);
 REGISTER_CREATABLE(plAxisAnimModifier);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plCloneSpawnModifier.h"
 REGISTER_CREATABLE(plCloneSpawnModifier);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plDecalEnableMod.h"
@@ -97,24 +95,18 @@ REGISTER_CREATABLE(plLogicModifier);
 REGISTER_CREATABLE(plMaintainersMarkerModifier);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plResponderModifier.h"
 REGISTER_CREATABLE(plResponderEnableMsg);
 REGISTER_CREATABLE(plResponderModifier);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plResponderSDLModifier.h"
 REGISTER_CREATABLE(plResponderSDLModifier);
-#endif
 
 #include "plSimpleModifier.h"
 REGISTER_NONCREATABLE(plSimpleModifier);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plSpawnModifier.h"
 REGISTER_CREATABLE(plSpawnModifier);
-#endif
 
 #include "plSDLModifier.h"
 REGISTER_NONCREATABLE(plSDLModifier);
