@@ -317,15 +317,11 @@ REGISTER_CREATABLE(plAIMsg);
 REGISTER_CREATABLE(plAvCoopMsg);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plLoadAvatarMsg.h"
 REGISTER_CREATABLE(plLoadAvatarMsg);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plLoadCloneMsg.h"
 REGISTER_CREATABLE(plLoadCloneMsg);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plLoadClothingMsg.h"
