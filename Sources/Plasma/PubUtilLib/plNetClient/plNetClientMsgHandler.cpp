@@ -405,11 +405,13 @@ MSG_HANDLER_DEFN(plNetClientMsgHandler,plNetMsgVoice)
     uint8_t numFrames = m->GetNumFrames();
     plKey key;
 
+#ifndef MINIMAL_GL_BUILD
     // Filter ignored sender
     if (VaultAmIgnoringPlayer(m->GetPlayerID())) {
         hsLogEntry(nc->DebugMsg("Ignoring voice chat from ignored player {}", m->GetPlayerID()));
         return hsOK;
     }
+#endif
 
     int idx=nc->fTransport.FindMember(m->GetPlayerID());
     plNetTransportMember* mbr = idx != -1 ? nc->fTransport.GetMember(idx) : nullptr;

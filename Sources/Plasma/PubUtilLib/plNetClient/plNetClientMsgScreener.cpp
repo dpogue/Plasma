@@ -88,9 +88,13 @@ bool plNetClientMsgScreener::IIsLocalAvatarKey(plKey key, const plNetGameMember*
 
 bool plNetClientMsgScreener::IIsLocalArmatureModKey(plKey key, const plNetGameMember* gm) const 
 {
+#ifndef MINIMAL_GL_BUILD
     plKey playerKey = plNetClientApp::GetInstance()->GetLocalPlayerKey();
     plArmatureMod* aMod = playerKey ? plAvatarMgr::GetInstance()->FindAvatar(playerKey) : nil; 
     return (!key || key==(aMod ? aMod->GetKey() : nil));
+#else
+    return false;
+#endif
 }
 
 //

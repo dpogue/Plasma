@@ -187,7 +187,9 @@ void plNetTransport::GetSubscriptions(plNetTransportMember* mbr, std::vector<int
 //
 int plNetTransport::SendMsg(int chan, plNetMessage* netMsg) const
 {
+#ifndef MINIMAL_GL_BUILD
     NetCommSendMsg(netMsg);
+#endif
     return hsOK;
     
     plNetClientMgr* nc=plNetClientMgr::GetInstance();
@@ -228,7 +230,9 @@ int plNetTransport::SendMsg(int chan, plNetMessage* netMsg) const
         if (rl && rl->GetNumReceivers())
         {           
 //          if ((ncRet=nc->GetNetClientComm().SendMsg(netMsg, nc->GetServerPeerID(), sendFlags, msgSize)) != plNetCore::kNetOK)
+#ifndef MINIMAL_GL_BUILD
             NetCommSendMsg(netMsg);
+#endif
             ret=0;  // sent
         }
     }

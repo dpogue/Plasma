@@ -45,6 +45,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *   
 ***/
 
+#ifndef MINIMAL_GL_BUILD
+
 #include "hsResMgr.h"
 
 #include "plNetCliAgeLeaver.h"
@@ -310,3 +312,5 @@ void NCAgeLeaverUpdate (
     ASSERT(leaver);
     leaver->Update();
 }
+
+#endif // MINIMAL_GL_BUILD

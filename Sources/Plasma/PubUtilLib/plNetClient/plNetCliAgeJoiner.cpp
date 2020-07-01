@@ -47,6 +47,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *   
 ***/
 
+#ifndef MINIMAL_GL_BUILD
+
 #include "plNetCliAgeJoiner.h"
 #include "plNetClientMgr.h"
 #include "plNetLinkingMgr.h"
@@ -544,3 +546,5 @@ void NCAgeJoinerUpdate (
     ASSERT(joiner);
     joiner->Update();
 }
+
+#endif // MINIMAL_GL_BUILD

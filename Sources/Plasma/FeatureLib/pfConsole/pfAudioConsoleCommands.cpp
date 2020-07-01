@@ -469,7 +469,6 @@ PF_CONSOLE_CMD(Listener, UseCameraVelocity, "", "Use the camera's velocity to se
     set->Send();
 }
 
-#ifndef MINIMAL_GL_BUILD
 PF_CONSOLE_CMD(Listener, UsePlayerOrientation, "", "Use the player's orientation to orient the listener")
 {
     plKey pKey = plNetClientMgr::GetInstance()->GetLocalPlayerKey();
@@ -573,4 +572,3 @@ PF_CONSOLE_CMD(Listener, XMode, "bool b", "Sets velocity and position to avatar,
         plStatusLog::AddLineSF("audio.log", "XMode off, {}, {}, {}", oldPosType, oldFacingType, oldVelType);
     }
 }
-#endif

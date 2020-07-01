@@ -196,7 +196,9 @@ void plNetClientMgr::Shutdown()
 
     IRemoveCloneRoom();
 
+#ifndef MINIMAL_GL_BUILD
     VaultDestroy();
+#endif
 
     // commit hara-kiri
     UnRegisterAs(kNetClientMgr_KEY);
@@ -331,13 +333,15 @@ int plNetClientMgr::Init()
 {
     int ret=hsOK;
     hsLogEntry( DebugMsg("*** plNetClientMgr::Init GMT:{}", plUnifiedTime::GetCurrent().Print()) );
-    
+
     IDumpOSVersionInfo();
-    
+
     if (GetFlagsBit(kNullSend))
         SetNullSend(true);
 
+#ifndef MINIMAL_GL_BUILD
     VaultInitialize();
+#endif
 
     IAddCloneRoom();
 
@@ -361,9 +365,12 @@ int plNetClientMgr::Init()
     plgDispatch::Dispatch()->RegisterForType(plVaultNotifyMsg::Index(), GetKey());
     plgDispatch::Dispatch()->RegisterForExactType(plResPatcherMsg::Index(), GetKey());
 
-    IInitNetClientComm();
+    if (!GetFlagsBit(kDisabled))
+    {
+        IInitNetClientComm();
+    }
 
-    return ret; 
+    return ret;
 }
 
 //
@@ -427,9 +434,11 @@ int plNetClientMgr::IPrepMsg(plNetMessage* msg)
 //
 void plNetClientMgr::IUnloadRemotePlayers()
 {
+#ifndef MINIMAL_GL_BUILD
     for (size_t i = fRemotePlayerKeys.size(); i > 0; --i)
         plAvatarMgr::GetInstance()->UnLoadAvatar(fRemotePlayerKeys[i-1], true);
     hsAssert(fRemotePlayerKeys.empty(), "Still remote players left when linking out");
+#endif
 }
 
 //
@@ -437,9 +446,11 @@ void plNetClientMgr::IUnloadRemotePlayers()
 //
 void plNetClientMgr::IUnloadNPCs()
 {
+#ifndef MINIMAL_GL_BUILD
     for (size_t i = fNPCKeys.size(); i > 0; --i)
         plAvatarMgr::GetInstance()->UnLoadAvatar(fNPCKeys[i-1], false);
     hsAssert(fNPCKeys.empty(), "Still npcs left when linking out");
+#endif
 }
 
 //
@@ -524,8 +535,10 @@ int plNetClientMgr::Update(double secs)
         IDisableNet();
     }
     
+#ifndef MINIMAL_GL_BUILD
     // Pump net messages
     NetCommUpdate();
+#endif
 
     static double lastUpdateTime=0;
     double curTime=hsTimer::GetSeconds();
@@ -551,8 +564,10 @@ int plNetClientMgr::Update(double secs)
             IShowRelevanceRegions();
     }
 
+#ifndef MINIMAL_GL_BUILD
     // Send dirty nodes, deliver vault callbacks, etc.
     VaultUpdate();
+#endif
 
     plNetLinkingMgr::GetInstance()->Update();
 
@@ -663,7 +678,11 @@ plNetGroupId plNetClientMgr::GetEffectiveNetGroup(const plSynchedObject*& obj) c
         else
         {
             const plLayerInterface* li = plLayerInterface::ConvertNoRef(obj);
+#ifndef MINIMAL_GL_BUILD
             const plClothingOutfit* cl = plClothingOutfit::ConvertNoRef(obj);
+#else
+            const plClothingOutfit* cl = nullptr;
+#endif
             if (li || cl)
             {
                 // the object is a layer interface or clothing object
@@ -915,6 +934,7 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
         return true;
     }
     
+#ifndef MINIMAL_GL_BUILD
     if (plNetCommAuthMsg * authMsg = plNetCommAuthMsg::ConvertNoRef(msg)) {
         if (IS_NET_ERROR(authMsg->result)) {
             char str[256];
@@ -925,7 +945,9 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
 
         return true;
     }
+#endif
 
+#ifndef MINIMAL_GL_BUILD
     if (plNetCommActivePlayerMsg * activePlrMsg = plNetCommActivePlayerMsg::ConvertNoRef(msg)) {
         if (IS_NET_ERROR(activePlrMsg->result)) {
             char str[256];
@@ -936,6 +958,7 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
             
         return true;
     }
+#endif
 
     plPlayerPageMsg *playerPageMsg = plPlayerPageMsg::ConvertNoRef(msg);
     if(playerPageMsg)
@@ -963,7 +986,7 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
     plCCRInvisibleMsg* invisMsg=plCCRInvisibleMsg::ConvertNoRef(msg);
     if (invisMsg)
     {
-        ::LogMsg(kLogDebug, "plNetClientMgr::MsgReceive - Got plCCRInvisibleMsg");
+        DebugMsg("plNetClientMgr::MsgReceive - Got plCCRInvisibleMsg");
         MakeCCRInvisible(invisMsg->fAvKey, invisMsg->fInvisLevel);
         return true;
     }
@@ -1016,6 +1039,7 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
         }
 
         // if we're linking to startup we don't need (or want) a player set
+#ifndef MINIMAL_GL_BUILD
         ST::string ageName = NetCommGetStartupAge()->ageDatasetName;
         if (ageName.empty())
             ageName = ST_LITERAL("StartUp");
@@ -1026,6 +1050,7 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
         link.GetAgeInfo()->SetAgeFilename(NetCommGetStartupAge()->ageDatasetName);
         link.SetLinkingRules(plNetCommon::LinkingRules::kOriginalBook);
         plNetLinkingMgr::GetInstance()->LinkToAge(&link);
+#endif
 
         return true;
     }
@@ -1091,27 +1116,33 @@ bool plNetClientMgr::CanSendMsg(plNetMessage * msg)
 //
 ST::string plNetClientMgr::GetPlayerName(const plKey avKey) const
 {
+#ifndef MINIMAL_GL_BUILD
     // local case
     if (!avKey || avKey == GetLocalPlayerKey())
         return NetCommGetPlayer()->playerName;
+#endif
 
     plNetTransportMember* mbr=TransportMgr().GetMember(TransportMgr().FindMember(avKey));
     return mbr ? mbr->GetPlayerName() : ST::string();
 }
 
 ST::string plNetClientMgr::GetPlayerNameById (unsigned playerId) const {
+#ifndef MINIMAL_GL_BUILD
     // local case
     if (NetCommGetPlayer()->playerInt == playerId)
         return NetCommGetPlayer()->playerName;
+#endif
 
     plNetTransportMember * mbr = TransportMgr().GetMember(TransportMgr().FindMember(playerId));
     return mbr ? mbr->GetPlayerName() : ST::string();
 }
 
 unsigned plNetClientMgr::GetPlayerIdByName (const ST::string & name) const {
+#ifndef MINIMAL_GL_BUILD
     // local case
     if (name.compare_i(NetCommGetPlayer()->playerName) == 0)
         return NetCommGetPlayer()->playerInt;
+#endif
 
     unsigned n = TransportMgr().GetNumMembers();
     for (unsigned i = 0; i < n; ++i)
@@ -1123,7 +1154,11 @@ unsigned plNetClientMgr::GetPlayerIdByName (const ST::string & name) const {
 
 uint32_t plNetClientMgr::GetPlayerID() const
 {
+#ifndef MINIMAL_GL_BUILD
     return NetCommGetPlayer()->playerInt;
+#else
+    return 0;
+#endif
 }
 
 //
@@ -1232,9 +1267,11 @@ void plNetClientMgr::IDisableNet () {
     
     if (!GetFlagsBit(kDisabled)) {
         SetFlagsBit(kDisabled);
+#ifndef MINIMAL_GL_BUILD
         // cause subsequent net operations to fail immediately, but don't block
         // waiting for net subsystem to shutdown (we'll do that later)
         NetCommEnableNet(false, false);
+#endif
 
         // display a msg to the player
         if ( fDisableMsg->yes )

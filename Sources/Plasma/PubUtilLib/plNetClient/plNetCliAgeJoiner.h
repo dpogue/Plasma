@@ -60,6 +60,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *
 ***/
 
+#ifndef MINIMAL_GL_BUILD
 class plMessage;
 struct plNCAgeJoiner;
 
@@ -96,6 +97,7 @@ bool NCAgeJoinerMsgReceive (    // returns true of message was processed
 void NCAgeJoinerUpdate (
     plNCAgeJoiner *         joiner
 );
+#endif
     
 
 

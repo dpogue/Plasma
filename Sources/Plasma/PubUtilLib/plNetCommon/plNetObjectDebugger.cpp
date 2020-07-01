@@ -114,13 +114,9 @@ bool plNetObjectDebugger::DebugObject::ObjectMatches(const char* objName, const 
         return StringMatches(objName);
     }
 
-#ifndef MINIMAL_GL_BUILD
     plLocation loc;
-    loc = plKeyFinder::Instance().FindLocation(NetCommGetAge()->ageDatasetName, pageName);
+    loc = plKeyFinder::Instance().FindLocation(plAgeLoader::GetInstance()->GetCurrAgeFilename(), pageName);
     return (StringMatches(objName) && loc==fLoc);
-#else
-    return StringMatches(objName);
-#endif
 }
 
 //
@@ -221,16 +217,14 @@ bool plNetObjectDebugger::AddDebugObject(const char* objName, const char* pageNa
     //
     // set plLocation
     //
-#ifndef MINIMAL_GL_BUILD
     plLocation loc;
     if (pageName)
     {
-        loc = plKeyFinder::Instance().FindLocation(NetCommGetAge()->ageDatasetName, pageName);
+        loc = plKeyFinder::Instance().FindLocation(plAgeLoader::GetInstance()->GetCurrAgeFilename(), pageName);
         flags |= kPageMatch;
     }
 
     fDebugObjects.push_back(new DebugObject(tmpObjName, loc, flags));
-#endif
 
     ICreateStatusLog();
 
