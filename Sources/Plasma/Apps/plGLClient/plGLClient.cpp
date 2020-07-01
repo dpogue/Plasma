@@ -112,7 +112,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pfPatcher/plManifests.h"
 
 
-PF_CONSOLE_LINK_ALL()
 
 plProfile_Extern(DrawTime);
 plProfile_Extern(UpdateTime);
@@ -422,7 +421,6 @@ bool plClient::StartInit()
     fTransitionMgr->RegisterAs(kTransitionMgr_KEY);       // fixedKey from plFixedKey.h
     fTransitionMgr->Init();
 
-    plgAudioSys::SetActive(true); // MINIMAL_GL_BUILD: Remove once the console is working
     plgAudioSys::Activate(true);
 
     /// Init Net before loading things
@@ -1655,17 +1653,41 @@ void plClient::IOnAsyncInitComplete()
     // global loading bar in advance and set it to a big enough range that when the GUI's
     // are done loading about the right amount of it is filled.
     fNumLoadingRooms++;
-    IStartProgress("Loading...", 0);
+    IStartProgress("Loading Global...", 0);
 
     SetHoldLoadRequests(true);
     fProgressBar->SetLength(fProgressBar->GetProgress());
+
+    /// Now parse final init files (*.fni). These are files just like ini files, only to be run
+    /// after all hell has broken loose in the client.
+    plFileName initFolder = plFileSystem::GetInitPath();
+    pfConsoleDirSrc dirSrc(fConsoleEngine, initFolder, "net*.fni");  // connect to net first
+#ifndef PLASMA_EXTERNAL_RELEASE
+    // internal builds also parse the local init folder
+    dirSrc.ParseDirectory("init", "net*.fni");
+#endif
+
+    dirSrc.ParseDirectory(initFolder, "*.fni");
+#ifndef PLASMA_EXTERNAL_RELEASE
+    // internal builds also parse the local init folder
+    dirSrc.ParseDirectory("init", "*.fni");
+#endif
+
+    // run fni in the Aux Init dir
+#if 0
+    if (fpAuxInitDir)
+    {
+        dirSrc.ParseDirectory(fpAuxInitDir, "net*.fni");   // connect to net first
+        dirSrc.ParseDirectory(fpAuxInitDir, "*.fni");
+    }
+#endif
 
     fNumLoadingRooms--;
 
     ((plResManager*)hsgResMgr::ResMgr())->PageInAge("GlobalAnimations");
     SetHoldLoadRequests(false);
 
-#ifndef MINIMAL_GL_BUILD
+#ifndef MINIMAL_GL_BUILD // The "hide" message never fires for this
     // Tell the transition manager to start faded out. This is so we don't
     // get a frame or two of non-faded drawing before we do our initial fade in
     (void)(new plTransitionMsg(plTransitionMsg::kFadeOut, 0.0f, true))->Send();

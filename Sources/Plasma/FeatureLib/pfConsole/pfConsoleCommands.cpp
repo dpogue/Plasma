@@ -283,6 +283,7 @@ plKey FindObjectByName(const ST::string& name, int type, const ST::string& ageNa
     }
 
     plKey key=nil;
+#ifndef MINIMAL_GL_BUILD
     // Try restricted to our age first, if we're not given an age name. This works
     // around most of the problems associated with unused keys in pages causing the pages to be marked
     // as not loaded and thus screwing up our searches
@@ -300,6 +301,7 @@ plKey FindObjectByName(const ST::string& name, int type, const ST::string& ageNa
             }
         }
     }
+#endif
     // Fallback
     key = plKeyFinder::Instance().StupidSearch(ageName, ST::null, type, name, subString);
 
@@ -426,6 +428,7 @@ PF_CONSOLE_BASE_CMD( SampleCmd3, "int, ...", "Sample command #3" )
 
 #endif // LIMIT_CONSOLE_COMMANDS
 
+#ifndef MINIMAL_GL_BUILD
 
 #ifndef LIMIT_CONSOLE_COMMANDS
 
@@ -6251,6 +6254,8 @@ PF_CONSOLE_CMD(Vault, Dump, "", "Prints the vault structure of current player an
 }
 
 #endif
+
+#endif // MINIMAL_GL_BUILD
 
 //////////////////////////////////////////////////////////////////////////////
 // End.

@@ -469,6 +469,7 @@ PF_CONSOLE_CMD(Listener, UseCameraVelocity, "", "Use the camera's velocity to se
     set->Send();
 }
 
+#ifndef MINIMAL_GL_BUILD
 PF_CONSOLE_CMD(Listener, UsePlayerOrientation, "", "Use the player's orientation to orient the listener")
 {
     plKey pKey = plNetClientMgr::GetInstance()->GetLocalPlayerKey();
@@ -502,7 +503,7 @@ PF_CONSOLE_CMD(Listener, UsePlayerVelocity, "", "Use the player's velocity to se
 PF_CONSOLE_CMD(Listener, XMode, "bool b", "Sets velocity and position to avatar, and orientation to camera")
 {
     static uint32_t oldPosType = 0, oldFacingType = 0, oldVelType = 0;
-    
+
     plSetListenerMsg *set = nil;
     plKey pKey = plNetClientMgr::GetInstance()->GetLocalPlayerKey();
     plListener* pListener = nullptr;
@@ -513,7 +514,7 @@ PF_CONSOLE_CMD(Listener, XMode, "bool b", "Sets velocity and position to avatar,
         plUoid lu(kListenerMod_KEY);
         plKey pLKey = hsgResMgr::ResMgr()->FindKey(lu);
         if (pLKey)
-        {   
+        {
             pListener = plListener::ConvertNoRef(pLKey->GetObjectPtr());
         }
 
@@ -524,9 +525,9 @@ PF_CONSOLE_CMD(Listener, XMode, "bool b", "Sets velocity and position to avatar,
             oldFacingType = pListener->GetAttachedFacingType();
             oldVelType = pListener->GetAttachedVelType();
         }
-        
+
         plStatusLog::AddLineS("audio.log", "XMode on");
-        
+
         plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kVCam | plSetListenerMsg::kFacing, nil, true );
         set->Send();
         if (pKey)
@@ -537,7 +538,7 @@ PF_CONSOLE_CMD(Listener, XMode, "bool b", "Sets velocity and position to avatar,
             set->Send();
         }
     }
-    else 
+    else
     {
         if(oldPosType == plListener::kCamera)
         {
@@ -572,3 +573,4 @@ PF_CONSOLE_CMD(Listener, XMode, "bool b", "Sets velocity and position to avatar,
         plStatusLog::AddLineSF("audio.log", "XMode off, {}, {}, {}", oldPosType, oldFacingType, oldVelType);
     }
 }
+#endif

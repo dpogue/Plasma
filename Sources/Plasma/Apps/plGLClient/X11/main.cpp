@@ -51,6 +51,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 plClientLoader gClient;
 xcb_connection_t* gXConn;
 
+#include "pfConsoleCore/pfConsoleEngine.h"
+PF_CONSOLE_LINK_ALL()
 
 void PumpMessageQueueProc()
 {
@@ -68,6 +70,8 @@ void PumpMessageQueueProc()
 
 int main(int argc, const char** argv)
 {
+    PF_CONSOLE_INITIALIZE(Audio)
+
     if (!XInitThreads())
     {
         hsStatusMessage("Failed to initialize X11 in thread-safe mode");
