@@ -60,6 +60,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *
 ***/
 
+#ifndef MINIMAL_GL_BUILD
 class plMessage;
 struct plNCAgeLeaver;
 
@@ -96,6 +97,7 @@ bool NCAgeLeaverMsgReceive (    // returns true of message was processed
 void NCAgeLeaverUpdate (
     plNCAgeLeaver *         leaver
 );
+#endif
 
 
 #endif // PLASMA20_SOURCES_PLASMA_PUBUTILLIB_PLNETCLIENT_PLNETCLIAGELEAVER_H

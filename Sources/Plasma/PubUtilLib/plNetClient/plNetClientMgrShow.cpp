@@ -260,6 +260,7 @@ void plNetClientMgr::IShowRelevanceRegions()
     plSceneObject* player = plSceneObject::ConvertNoRef(GetLocalPlayer());
     if (player)
     {
+#ifndef MINIMAL_GL_BUILD
         const plArmatureMod *avMod = plArmatureMod::ConvertNoRef(player->GetModifierByType(plArmatureMod::Index()));
         if (avMod)
         {
@@ -271,6 +272,7 @@ void plNetClientMgr::IShowRelevanceRegions()
 
             y += yOff;
         }
+#endif
     }
 
     for (i = 0; i < fTransport.GetNumMembers(); i++)
@@ -282,6 +284,7 @@ void plNetClientMgr::IShowRelevanceRegions()
         player = (mbr->GetAvatarKey() ? plSceneObject::ConvertNoRef(mbr->GetAvatarKey()->ObjectIsLoaded()) : nil);
         if (player)
         {
+#ifndef MINIMAL_GL_BUILD
             const plArmatureMod* avMod = plArmatureMod::ConvertNoRef(player->GetModifierByType(plArmatureMod::Index()));
             if (avMod)
             {
@@ -293,6 +296,7 @@ void plNetClientMgr::IShowRelevanceRegions()
 
                 y += yOff;
             }
+#endif
         }
     }
 
@@ -321,6 +325,7 @@ void plNetClientMgr::IShowAvatars()
 
     if (player)
     {
+#ifndef MINIMAL_GL_BUILD
         const plArmatureMod *avMod = plArmatureMod::ConvertNoRef(player->GetModifierByType(plArmatureMod::Index()));
         if (avMod)
         {
@@ -337,6 +342,7 @@ void plNetClientMgr::IShowAvatars()
                 txt.DrawString(x,y,str,255,255,255,255);
             }
         }
+#endif
     }
 
 
@@ -364,6 +370,7 @@ void plNetClientMgr::IShowAvatars()
 
         if (player)
         {
+#ifndef MINIMAL_GL_BUILD
             const plArmatureMod *avMod = plArmatureMod::ConvertNoRef(player->GetModifierByType(plArmatureMod::Index()));
             if (avMod)
             {
@@ -380,6 +387,7 @@ void plNetClientMgr::IShowAvatars()
                     txt.DrawString(x,y,str,255,255,255,255);
                 }
             }
+#endif
         }
 
     }

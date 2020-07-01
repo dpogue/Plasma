@@ -633,7 +633,6 @@ bool plCameraBrain1::MsgReceive(plMessage* msg)
             return true;
         }
     }
-#ifndef MINIMAL_GL_BUILD
     plPlayerPageMsg* pPMsg = plPlayerPageMsg::ConvertNoRef(msg);
     if (pPMsg)
     {
@@ -655,7 +654,6 @@ bool plCameraBrain1::MsgReceive(plMessage* msg)
         }
         return true;
     }
-#endif
     plControlEventMsg* pCMsg = plControlEventMsg::ConvertNoRef(msg);
     if (pCMsg)
     {
@@ -1013,7 +1011,6 @@ plCameraBrain1_Avatar::plCameraBrain1_Avatar(plCameraModifier1* pMod) : plCamera
 // destructor
 plCameraBrain1_Avatar::~plCameraBrain1_Avatar()
 {
-#ifndef MINIMAL_GL_BUILD
     if (!plNetClientMgr::GetInstance())
         return;
         
@@ -1027,7 +1024,6 @@ plCameraBrain1_Avatar::~plCameraBrain1_Avatar()
         pMsg->AddReceiver(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
         plgDispatch::MsgSend(pMsg);
     }
-#endif
 }
 
 void plCameraBrain1_Avatar::Pop()
@@ -1872,7 +1868,6 @@ bool plCameraBrain1_Circle::MsgReceive(plMessage* msg)
             return true;
         }
     }
-#ifndef MINIMAL_GL_BUILD
     plPlayerPageMsg* pPMsg = plPlayerPageMsg::ConvertNoRef(msg);
     if (pPMsg && pPMsg->fPlayer == plNetClientMgr::GetInstance()->GetLocalPlayerKey())
     {
@@ -1901,7 +1896,6 @@ bool plCameraBrain1_Circle::MsgReceive(plMessage* msg)
         }
         return true;
     }
-#endif
     return (plCameraBrain1_Fixed::MsgReceive(msg));
 }
 

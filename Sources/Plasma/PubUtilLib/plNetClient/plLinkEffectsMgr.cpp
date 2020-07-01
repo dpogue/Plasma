@@ -204,7 +204,7 @@ void plLinkEffectsMgr::ISendAllReadyCallbacks()
                 if (fLinks[i]->GetLinkKey() == plNetClientApp::GetInstance()->GetLocalPlayerKey())
                 {
                     plLinkOutUnloadMsg* lam = new plLinkOutUnloadMsg;   // derived from LoadAgeMsg
-                    lam->SetAgeFilename( NetCommGetAge()->ageDatasetName );
+                    lam->SetAgeFilename(plAgeLoader::GetInstance()->GetCurrAgeFilename());
                     lam->AddReceiver(plNetClientMgr::GetInstance()->GetKey());
                     lam->SetPlayerID(plNetClientMgr::GetInstance()->GetPlayerID());
                     lam->Send();
@@ -380,7 +380,11 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
                 bool linkToStartup = ageName.compare_i(kStartUpAgeFilename) == 0;      // To Startup
                 bool linkFromStartup = prevAgeName.compare_i(kStartUpAgeFilename) == 0;   // Leaving Startup
 
+#ifndef MINIMAL_GL_BUILD
                 bool cleftSolved = VaultHasChronicleEntry( kCleftSolved );
+#else
+                bool cleftSolved = true;
+#endif
 
                 bool linkToACA = ageName.compare_i(kAvCustomizationFilename) == 0;
                 bool linkFromACA = prevAgeName.compare_i(kAvCustomizationFilename) == 0;
@@ -408,6 +412,7 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
         {
             plATCAnim *linkInAnim = nil;
             plKey linkInAnimKey = nil;
+#ifndef MINIMAL_GL_BUILD
             const plArmatureMod *avMod = plArmatureMod::ConvertNoRef(avatar->GetModifierByType(plArmatureMod::Index()));
             if (pTriggerMsg->HasBCastFlag(plMessage::kNetNonLocal))
             {
@@ -429,6 +434,7 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
                 task->fDisablePhysics = false;
                 (new plAvTaskMsg(GetKey(), avMod->GetKey(), task))->Send();
             }
+#endif
                 
         }
         

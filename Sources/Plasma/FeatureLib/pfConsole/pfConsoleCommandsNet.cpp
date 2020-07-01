@@ -196,6 +196,7 @@ plKey FindObjectByName(const ST::string& name, int type, const ST::string& ageNa
 plKey FindObjectByNameAndType(const ST::string& name, const char* typeName, const ST::string& ageName,
                               const char** statusStr, bool subString=false);
 
+#ifndef MINIMAL_GL_BUILD
 //////////////////////////////////////////////////////////////////////////////
 //// Network Group Commands //////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -853,3 +854,4 @@ PF_CONSOLE_CMD( Net_Vault,
 
 #endif
 
+#endif // MINIMAL_GL_BUILD

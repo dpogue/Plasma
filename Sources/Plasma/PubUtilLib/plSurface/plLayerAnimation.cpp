@@ -582,11 +582,9 @@ bool plLayerLinkAnimation::MsgReceive( plMessage* pMsg )
 
             if (msg->HasLinkFlag(plLinkEffectBCMsg::kSendCallback))
             {
-#ifndef MINIMAL_GL_BUILD
                 plLinkEffectsMgr *mgr;
                 if ((mgr = plLinkEffectsMgr::ConvertNoRef(msg->GetSender()->ObjectIsLoaded())))
                     mgr->WaitForEffect(msg->fLinkKey, fTimeConvert.GetEnd() - fTimeConvert.GetBegin());
-#endif
             }
         }
         return true;
@@ -603,13 +601,11 @@ bool plLayerLinkAnimation::MsgReceive( plMessage* pMsg )
         else
             SetFadeFlag(kFadeLinking, false);
 
-#ifndef MINIMAL_GL_BUILD
         // add a callback for when it's done if it's in forward
         plLinkEffectsMgr *mgr;
         if ((mgr = plLinkEffectsMgr::ConvertNoRef(pMsg->GetSender()->ObjectIsLoaded())))
             if (pSeudoMsg->fForward)
                 mgr->WaitForPseudoEffect(fLinkKey, fTimeConvert.GetEnd() - fTimeConvert.GetBegin());
-#endif
 
         return true;
     }

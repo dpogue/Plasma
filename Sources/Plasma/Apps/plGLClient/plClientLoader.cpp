@@ -46,7 +46,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plPipeline.h"
 
 #include "plClientResMgr/plClientResMgr.h"
-//#include "plNetClient/plNetClientMgr.h"
+#include "plNetClient/plNetClientMgr.h"
 #include "plResMgr/plResManager.h"
 
 enum
@@ -153,12 +153,10 @@ void plClientLoader::ShutdownStart()
     // Now request the sane exit
     fClient->SetDone(true);
 
-#ifndef MINIMAL_GL_BUILD
     if (plNetClientMgr* mgr = plNetClientMgr::GetInstance())
     {
         mgr->QueueDisableNet(false, nullptr);
     }
-#endif
 }
 
 void plClientLoader::ShutdownEnd()

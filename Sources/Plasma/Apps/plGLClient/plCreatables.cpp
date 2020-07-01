@@ -64,7 +64,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plIntersect/plIntersectCreatable.h"
 #include "plMessage/plMessageCreatable.h"
 #include "plModifier/plModifierCreatable.h"
-//#include "plNetClient/plNetClientCreatable.h"
+#include "plNetClient/plNetClientCreatable.h"
 #include "plNetCommon/plNetCommonCreatable.h"
 #include "plNetMessage/plNetMessageCreatable.h"
 #include "plParticleSystem/plParticleCreatable.h"

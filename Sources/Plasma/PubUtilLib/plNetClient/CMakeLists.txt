@@ -37,5 +37,13 @@ set(plNetClient_HEADERS
 
 add_library(plNetClient STATIC ${plNetClient_SOURCES} ${plNetClient_HEADERS})
 
+target_link_libraries(plNetClient CoreLib)
+target_link_libraries(plNetClient pnNetCommon)
+target_link_libraries(plNetClient plContainer)
+target_link_libraries(plNetClient plNetClientComm)
+target_link_libraries(plNetClient plNetClientRecorder)
+target_link_libraries(plNetClient plNetTransport)
+target_link_libraries(plNetClient pfMessage) # Needed for pfKIMsg
+
 source_group("Source Files" FILES ${plNetClient_SOURCES})
 source_group("Header Files" FILES ${plNetClient_HEADERS})

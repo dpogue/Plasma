@@ -263,9 +263,7 @@ void plVirtualCam1::RebuildStack(const plKey& key)
         pMsg->SetCmd(plEnableMsg::kEnable);
         pMsg->AddType(plEnableMsg::kDrawable);
         pMsg->SetBCastFlag(plMessage::kPropagateToModifiers);
-#ifndef MINIMAL_GL_BUILD
         pMsg->AddReceiver(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
-#endif
         plgDispatch::MsgSend(pMsg);
     }
 
@@ -790,9 +788,7 @@ void plVirtualCam1::Output()
             pMsg->SetCmd(plEnableMsg::kEnable);
             pMsg->AddType(plEnableMsg::kDrawable);
             pMsg->SetBCastFlag(plMessage::kPropagateToModifiers);
-#ifndef MINIMAL_GL_BUILD
             pMsg->AddReceiver(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
-#endif
             plgDispatch::MsgSend(pMsg);
         }
     }
@@ -1127,10 +1123,8 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         else
         if (pCam->Cmd(plCameraMsg::kCreateNewDefaultCam))
         {
-#ifndef MINIMAL_GL_BUILD
             if (pCam->GetSubject() == plNetClientMgr::GetInstance()->GetLocalPlayer())
                 CreateDefaultCamera(pCam->GetSubject());
-#endif
             return true;
         }
         else
@@ -1291,12 +1285,10 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
                 ClearFlags(kJustLinkedIn);
                 plCameraTargetFadeMsg* pMsg = new plCameraTargetFadeMsg;
                 pMsg->SetFadeOut(true);
-#ifndef MINIMAL_GL_BUILD
                 pMsg->SetSubjectKey(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
                 pMsg->SetBCastFlag(plMessage::kBCastByExactType);
                 pMsg->SetBCastFlag(plMessage::kNetPropagate, false);
                 pMsg->AddReceiver(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
-#endif
                 plgDispatch::MsgSend(pMsg);
                 return true;
             }

@@ -210,7 +210,7 @@ void plAutoProfileImp::INextProfile()
         // Log the stats for this spawn point
         if (!fLastSpawnPointName.empty())
         {
-            ST::string ageName = NetCommGetAge()->ageDatasetName;
+            ST::string ageName = plAgeLoader::GetInstance()->GetCurrAgeFilename();
             plProfileManagerFull::Instance().LogStats(ageName, fLastSpawnPointName);
 
             plMipmap mipmap;

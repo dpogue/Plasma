@@ -64,6 +64,7 @@ int plNetClientCommMsgHandler::HandleMessage( plNetMessage* msg )
 
 int plNetClientMgr::IInitNetClientComm()
 {
+#ifndef MINIMAL_GL_BUILD
     NetCommActivatePostInitErrorHandler();
     NetCommActivateMsgDispatchers();
 
@@ -71,7 +72,8 @@ int plNetClientMgr::IInitNetClientComm()
     fNetClientComm.SetDefaultHandler(&fNetClientCommMsgHandler);
 
     SetFlagsBit(kNetClientCommInited);
-    
+#endif
+
     return hsOK;
 }
 
@@ -80,6 +82,9 @@ int plNetClientMgr::IInitNetClientComm()
 //
 int plNetClientMgr::IDeInitNetClientComm()
 {
+#ifndef MINIMAL_GL_BUILD
     SetFlagsBit(kNetClientCommInited, false);
+#endif
+
     return hsOK;
 }

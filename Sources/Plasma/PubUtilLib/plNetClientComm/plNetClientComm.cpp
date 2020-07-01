@@ -74,6 +74,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 extern  bool    gDataServerLocal;
 
+#ifndef MINIMAL_GL_BUILD
 /*****************************************************************************
 *
 *   Exported data
@@ -1260,6 +1261,7 @@ void NetCommSendFriendInvite (
     );
 }
 
+#endif
 
 /*****************************************************************************
 *
@@ -1278,7 +1280,9 @@ plNetClientComm::plNetClientComm()
 // ~plNetClientComm ----------------------------------------------
 plNetClientComm::~plNetClientComm()
 {
+#ifndef MINIMAL_GL_BUILD
     NetCommSetMsgPreHandler(nil, nil);
+#endif
 }
 
 // AddMsgHandlerForType ----------------------------------------------
@@ -1295,19 +1299,25 @@ void plNetClientComm::AddMsgHandlerForType( uint16_t msgClassIdx, MsgHandler* ha
 // AddMsgHandlerForExactType ----------------------------------------------
 void plNetClientComm::AddMsgHandlerForExactType( uint16_t msgClassIdx, MsgHandler* handler )
 {
+#ifndef MINIMAL_GL_BUILD
     NetCommAddMsgHandlerForExactType(msgClassIdx, MsgHandler::StaticMsgHandler, handler);
+#endif
 }
 
 // RemoveMsgHandler ----------------------------------------------
 bool plNetClientComm::RemoveMsgHandler( MsgHandler* handler )
 {
+#ifndef MINIMAL_GL_BUILD
     NetCommRemoveMsgHandler(kNetCommAllMsgClasses, kNetCommAllMsgHandlers, handler);
+#endif
     return true;
 }
 
 // SetDefaultHandler ----------------------------------------------
 void plNetClientComm::SetDefaultHandler( MsgHandler* handler) {
+#ifndef MINIMAL_GL_BUILD
     NetCommSetDefaultMsgHandler(MsgHandler::StaticMsgHandler, handler);
+#endif
 }
 
 // MsgHandler::StaticMsgHandler ----------------------------------------------

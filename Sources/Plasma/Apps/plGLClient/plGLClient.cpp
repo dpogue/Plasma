@@ -77,6 +77,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plMessage/plRoomLoadNotifyMsg.h"
 #include "plMessage/plTransitionMsg.h"
 
+#include "plNetClient/plLinkEffectsMgr.h"
+#include "plNetClient/plNetClientMgr.h"
+#include "plNetClient/plNetLinkingMgr.h"
+
 #include "plPipeline.h"
 #include "plPipeline/plPipelineCreate.h"
 #include "plPipeline/plPlateProgressMgr.h"
@@ -90,6 +94,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plScene/plSceneNode.h"
 #include "plScene/plPageTreeMgr.h"
 #include "plScene/plVisMgr.h"
+
+#include "plSDL/plSDL.h"
 
 #include "plStatGather/plProfileManagerFull.h"
 
@@ -182,9 +188,7 @@ plClient::plClient()
     fConsoleEngine = new pfConsoleEngine();
 
     // create network mgr before console runs
-#ifndef MINIMAL_GL_BUILD
     plNetClientMgr::SetInstance(new plNetClientMgr);
-#endif
     plAgeLoader::SetInstance(new plAgeLoader);
 
     // Use it to parse the init directory
@@ -238,12 +242,11 @@ bool plClient::Shutdown()
 
     hsStatusMessage("Shutting down client...\n");
 
-#ifndef MINIMAL_GL_BUILD
     if (plNetClientMgr* nc = plNetClientMgr::GetInstance())
     {
         nc->Shutdown();
     }
-#endif
+
     if (plAgeLoader* al = plAgeLoader::GetInstance())
     {
         al->Shutdown();
@@ -424,10 +427,8 @@ bool plClient::StartInit()
     plgAudioSys::Activate(true);
 
     /// Init Net before loading things
-#ifndef MINIMAL_GL_BUILD
     plgDispatch::Dispatch()->RegisterForExactType(plNetCommAuthMsg::Index(), GetKey());
     plNetClientMgr::GetInstance()->RegisterAs(kNetClientMgr_KEY);
-#endif
     plAgeLoader::GetInstance()->Init();
 
     // create new virtual camera
@@ -453,9 +454,7 @@ bool plClient::StartInit()
 
 bool plClient::BeginGame()
 {
-#ifndef MINIMAL_GL_BUILD
     plNetClientMgr::GetInstance()->Init();
-#endif
 
     if (!fQuitIntro)
     {
@@ -968,7 +967,6 @@ void plClient::IUnloadRooms(const std::vector<plLocation>& locs)
             plStatusLog::AddLineSF("pageouts.log", "Telling netClientMgr about paging out {}", nodeKey->GetUoid().GetObjectName());
             #endif
 
-#ifndef MINIMAL_GL_BUILD
             if (plNetClientMgr::GetInstance() != nullptr)
             {
                 if (!hsCheckBits(recFlags, plRoomRec::kHeld))
@@ -982,7 +980,6 @@ void plClient::IUnloadRooms(const std::vector<plLocation>& locs)
                     plAgeLoader::GetInstance()->IgnorePagingOutRoom(&nodeKey, 1);
                 }
             }
-#endif
         }
     }
 }
@@ -1113,6 +1110,12 @@ bool plClient::IUpdate()
 
     double currTime = hsTimer::GetSysSeconds();
     float delSecs = hsTimer::GetDelSysSeconds();
+
+    // do not change this ordering
+
+    plProfile_BeginTiming(UpdateNetTime);
+    plNetClientMgr::GetInstance()->Update(currTime);
+    plProfile_EndTiming(UpdateNetTime);
 
     // This TimeMsg doesn't really do much, except somehow it flushes the dispatch
     // after the NetClientMgr updates, delivering any SelfDestruct messages in the
@@ -1645,6 +1648,10 @@ void plClient::IKillMovies()
 
 void plClient::IOnAsyncInitComplete()
 {
+    // Init State Desc Language (files should now be downloaded and in place)
+    plSDLMgr::GetInstance()->SetNetApp(plNetClientMgr::GetInstance());
+    plSDLMgr::GetInstance()->Init( plSDL::kDisallowTimeStamping );
+
     // Load our custom fonts from our current dat directory
     fFontCache->LoadCustomFonts("dat");
 

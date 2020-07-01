@@ -100,6 +100,7 @@ struct NlmOpWaitOp : NlmOp {
     { }
 };
 
+#ifndef MINIMAL_GL_BUILD
 struct NlmJoinAgeOp : NlmOp {
     NetCommAge  age;
     bool muteSfx;
@@ -115,6 +116,7 @@ struct NlmLeaveAgeOp : NlmOp {
     : NlmOp(kNlmOpLeaveAgeOp), quitting(false)
     { }
 };
+#endif
 
 
 /*****************************************************************************
@@ -157,6 +159,7 @@ void plNetLinkingMgr::NCAgeJoinerCallback (
     void *                  notify,
     void *                  userState
 ) {
+#ifndef MINIMAL_GL_BUILD
     NCAgeJoinerCompleteNotify* params = (NCAgeJoinerCompleteNotify*)notify;
 
     // Tell the user we failed to link.
@@ -187,6 +190,7 @@ void plNetLinkingMgr::NCAgeJoinerCallback (
         
         DEFAULT_FATAL(type);
     }
+#endif
 }
 
 //============================================================================
@@ -196,6 +200,7 @@ void plNetLinkingMgr::NCAgeLeaverCallback (
     void *                  notify,
     void *                  userState
 ) {
+#ifndef MINIMAL_GL_BUILD
     switch (type) {
         case kAgeLeaveComplete: {
             ASSERT(leaver == s_ageLeaver);
@@ -211,6 +216,7 @@ void plNetLinkingMgr::NCAgeLeaverCallback (
         
         DEFAULT_FATAL(type);
     }
+#endif
 }
 
 //============================================================================
@@ -222,6 +228,7 @@ void plNetLinkingMgr::ExecNextOp () {
 
     NlmOp* op = s_opqueue.front();
 
+#ifndef MINIMAL_GL_BUILD
     switch (op->opcode) {
         case kNlmOpNoOp:
             break;
@@ -273,6 +280,7 @@ void plNetLinkingMgr::ExecNextOp () {
         default:
             break;
     }
+#endif
 
     s_opqueue.remove(op);
     delete op;
@@ -330,11 +338,13 @@ ST::string plNetLinkingMgr::GetProperAgeName( const ST::string & ageName )
 
 bool plNetLinkingMgr::MsgReceive( plMessage *msg )
 {
+#ifndef MINIMAL_GL_BUILD
     if (s_ageLeaver && NCAgeLeaverMsgReceive(s_ageLeaver, msg))
         return true;
 
     if (s_ageJoiner && NCAgeJoinerMsgReceive(s_ageJoiner, msg))
         return true;
+#endif
 
     if (plLinkToAgeMsg * pLinkMsg = plLinkToAgeMsg::ConvertNoRef(msg)) {
         if (!fLinkingEnabled)
@@ -363,10 +373,12 @@ bool plNetLinkingMgr::MsgReceive( plMessage *msg )
 
 void plNetLinkingMgr::Update()
 {
+#ifndef MINIMAL_GL_BUILD
     if (s_ageLeaver)
         NCAgeLeaverUpdate(s_ageLeaver);
     if (s_ageJoiner)
         NCAgeJoinerUpdate(s_ageJoiner);
+#endif
 
     ExecNextOp();
 }
@@ -420,6 +432,7 @@ void plNetLinkingMgr::IDoLink(plLinkToAgeMsg* msg)
     plNetClientMgr* nc = plNetClientMgr::GetInstance();
     GetAgeLink()->SetSpawnPoint(msg->GetAgeLink()->SpawnPoint());
 
+#ifndef MINIMAL_GL_BUILD
     if (fLinkedIn) {
         // Set the link out animation we should use
         if (plSceneObject *localSO = plSceneObject::ConvertNoRef(nc->GetLocalPlayer())) {
@@ -443,6 +456,7 @@ void plNetLinkingMgr::IDoLink(plLinkToAgeMsg* msg)
         std::size(joinAgeOp->age.spawnPtName)
         );
     QueueOp(joinAgeOp);
+#endif
 
     // UnRef
     msg->UnRef();
@@ -517,7 +531,9 @@ bool plNetLinkingMgr::IProcessVaultNotifyMsg(plVaultNotifyMsg* msg)
         case plVaultNotifyMsg::kRegisteredChildAgeLink:
         case plVaultNotifyMsg::kRegisteredOwnedAge:
         case plVaultNotifyMsg::kRegisteredSubAgeLink:
+#ifndef MINIMAL_GL_BUILD
             cVaultLink = VaultGetNode(msg->GetArgs()->GetInt(plNetCommon::VaultTaskArgs::kAgeLinkNode));
+#endif
             break;
         default:
             return false;
@@ -637,8 +653,10 @@ void plNetLinkingMgr::LinkToMyNeighborhoodAge( uint32_t playerID )
     plNetClientMgr * nc = plNetClientMgr::GetInstance();
 
     plAgeLinkStruct link;
+#ifndef MINIMAL_GL_BUILD
     if (!VaultGetLinkToMyNeighborhood(&link))
         return;
+#endif
         
     link.SetLinkingRules( plNetCommon::LinkingRules::kOwnedBook );
 
@@ -707,7 +725,7 @@ void plNetLinkingMgr::LinkToPlayersAge( uint32_t playerID )
 
     plLinkingMgrMsg* pMsg = new plLinkingMgrMsg();
     pMsg->SetCmd( kLinkPlayerHere );
-    pMsg->GetArgs()->AddInt( 0, NetCommGetPlayer()->playerInt );    // send them our id.
+    pMsg->GetArgs()->AddInt( 0, nc->GetPlayerID());    // send them our id.
     IDispatchMsg( pMsg, playerID );
 }
 
@@ -728,7 +746,9 @@ void plNetLinkingMgr::OfferLinkToPlayer( const plAgeLinkStruct * inInfo, uint32_
 
         plKey host = mgr->GetLocalPlayerKey();
         plKey guest = guestMem->GetAvatarKey();
+#ifndef MINIMAL_GL_BUILD
         plAvatarMgr::OfferLinkingBook(host, guest, linkM, host);
+#endif
     }
 }
 // my special version - cjp
@@ -746,7 +766,9 @@ void plNetLinkingMgr::OfferLinkToPlayer( const plAgeLinkStruct * inInfo, uint32_
 
         plKey guest = guestMem->GetAvatarKey();
         plKey host = mgr->GetLocalPlayerKey();
+#ifndef MINIMAL_GL_BUILD
         plAvatarMgr::OfferLinkingBook(host, guest, linkM, replyKey);
+#endif
     }
 }
 
@@ -772,6 +794,7 @@ void plNetLinkingMgr::IPostProcessLink()
     bool hood = (info->GetAgeFilename().compare_i(kNeighborhoodAgeFilename) == 0);
     bool psnl = (info->GetAgeFilename().compare_i(kPersonalAgeFilename) == 0);
 
+#ifndef MINIMAL_GL_BUILD
     // Update our online status 
     if (hsRef<RelVaultNode> rvnInfo = VaultGetPlayerInfoNode()) {
         VaultPlayerInfoNode accInfo(rvnInfo);
@@ -780,6 +803,7 @@ void plNetLinkingMgr::IPostProcessLink()
         accInfo.SetAgeInstUuid(ageInstGuid);
         accInfo.SetOnline(true);
     }
+#endif
     
     switch (link->GetLinkingRules()) {
 
@@ -788,6 +812,7 @@ void plNetLinkingMgr::IPostProcessLink()
             if (city)
                 break;
                 
+#ifndef MINIMAL_GL_BUILD
             {   // Ensure we're in the AgeOwners folder
                 hsRef<RelVaultNode> fldr = VaultGetAgeAgeOwnersFolder();
                 hsRef<RelVaultNode> info = VaultGetPlayerInfoNode();
@@ -802,6 +827,7 @@ void plNetLinkingMgr::IPostProcessLink()
                             nil
                         );
             }
+#endif
         }
         break;  
 
@@ -810,6 +836,7 @@ void plNetLinkingMgr::IPostProcessLink()
             if (city)
                 break;
                 
+#ifndef MINIMAL_GL_BUILD
             {   // Ensure we're in the CanVisit folder
                 hsRef<RelVaultNode> fldr = VaultGetAgeCanVisitFolder();
                 hsRef<RelVaultNode> info = VaultGetPlayerInfoNode();
@@ -824,13 +851,16 @@ void plNetLinkingMgr::IPostProcessLink()
                             nil
                         );
             }
+#endif
         }
         break;
         
         case plNetCommon::LinkingRules::kSubAgeBook: {
+#ifndef MINIMAL_GL_BUILD
             // Register the previous age as a sub age of the current one so that we can link back to that instance
             plAgeLinkStruct subAgeLink;
             VaultAgeFindOrCreateSubAgeLink(GetPrevAgeLink()->GetAgeInfo(), &subAgeLink, NetCommGetAge()->ageInstId);
+#endif
         }
         break;
     }
@@ -862,6 +892,7 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
         accInfo.SetOnline(false);
     }
 #else
+#ifndef MINIMAL_GL_BUILD
     // Update our online status 
     if (hsRef<RelVaultNode> rvnInfo = VaultGetPlayerInfoNode()) {
         VaultPlayerInfoNode accInfo(rvnInfo);
@@ -870,6 +901,7 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
         accInfo.SetAgeInstUuid(*ageInstGuid);
         accInfo.SetOnline(true);
     }
+#endif
 #endif
 
     //------------------------------------------------------------------------
@@ -927,6 +959,7 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
                 ageInfo.SetAgeFilename(info->GetAgeFilename());
 
                 plAgeLinkStruct ownedLink;
+#ifndef MINIMAL_GL_BUILD
                 if (!VaultGetOwnedAgeLink(&ageInfo, &ownedLink)) {
                     // Fill in fields for new age create.
                     if (!info->HasAgeUserDefinedName())
@@ -1010,6 +1043,7 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
                         }
                     }
                 }
+#endif
             }
 
             link->SetLinkingRules(plNetCommon::LinkingRules::kOwnedBook);
@@ -1021,6 +1055,7 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
         case plNetCommon::LinkingRules::kOwnedBook:
             {
                 plAgeLinkStruct ownedLink;
+#ifndef MINIMAL_GL_BUILD
                 if (VaultGetOwnedAgeLink(info, &ownedLink)) {
                     info->CopyFrom(ownedLink.GetAgeInfo());
                     // Remember spawn point (treasure book support)                     
@@ -1030,6 +1065,7 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
                 else {
                     success = kLinkFailed;
                 }
+#endif
             }
             break;
 
@@ -1038,10 +1074,12 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
         case plNetCommon::LinkingRules::kVisitBook:
             {
                 plAgeLinkStruct visitLink;
+#ifndef MINIMAL_GL_BUILD
                 if (VaultGetVisitAgeLink(info, &visitLink))
                     info->CopyFrom(visitLink.GetAgeInfo());
                 else
                     success = kLinkFailed;
+#endif
             }
             break;
 
@@ -1050,11 +1088,13 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
         //  plNetClientTaskHandler will add a SubAge back link to our current age once we arrive there.
         case plNetCommon::LinkingRules::kSubAgeBook:
             {
+#ifndef MINIMAL_GL_BUILD
                 plAgeLinkStruct subAgeLink;
                 if (VaultAgeFindOrCreateSubAgeLink(info, &subAgeLink, NetCommGetAge()->ageInstId))
                     info->CopyFrom(subAgeLink.GetAgeInfo());
                 else
                     success = kLinkDeferred;
+#endif
             }
             break;
 
@@ -1064,6 +1104,7 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
         case plNetCommon::LinkingRules::kChildAgeBook:
             {
                 plAgeLinkStruct childLink;
+#ifndef MINIMAL_GL_BUILD
                 switch(VaultAgeFindOrCreateChildAgeLink(
                           link->GetParentAgeFilename(),
                           info,
@@ -1078,6 +1119,7 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
                     case true:
                         success = kLinkImmediately;
                 }
+#endif
 
                 if (success == kLinkImmediately)
                     info->CopyFrom(childLink.GetAgeInfo());
@@ -1100,10 +1142,12 @@ uint8_t plNetLinkingMgr::IPreProcessLink()
 
 ////////////////////////////////////////////////////////////////////
 void plNetLinkingMgr::LeaveAge (bool quitting) {
+#ifndef MINIMAL_GL_BUILD
     // Queue leave op
     NlmLeaveAgeOp * leaveAgeOp = new NlmLeaveAgeOp;
     leaveAgeOp->quitting = quitting;
     QueueOp(leaveAgeOp);
+#endif
 
 }
  

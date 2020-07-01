@@ -206,9 +206,7 @@ bool plAgeLoader::ILoadAge(const ST::string& ageName)
 
     fAgeName = ageName;
 
-#ifndef MINIMAL_GL_BUILD
     nc->DebugMsg( "Net: Loading age {}", fAgeName);
-#endif
 
     if ((fFlags & kLoadMask) != 0)
         ErrorAssert(__LINE__, __FILE__, "Fatal Error:\nAlready loading or unloading an age.\n%s will now exit.",
@@ -274,14 +272,12 @@ bool plAgeLoader::ILoadAge(const ST::string& ageName)
     //
     // Load the Age's SDL Hook object (and it's python modifier)
     //
-#ifndef MINIMAL_GL_BUILD
     plUoid oid=nc->GetAgeSDLObjectUoid(fAgeName);
     plKey ageSDLObjectKey = hsgResMgr::ResMgr()->FindKey(oid);
     if (ageSDLObjectKey)
     {
         hsgResMgr::ResMgr()->AddViaNotify(ageSDLObjectKey, new plGenRefMsg(nc->GetKey(), plRefMsg::kOnCreate, -1, plNetClientMgr::kAgeSDLHook), plRefFlags::kActiveRef);
     }
-#endif
 
     int nPages = 0;
 
@@ -293,18 +289,14 @@ bool plAgeLoader::ILoadAge(const ST::string& ageName)
     {
         if( IsPageExcluded( page, fAgeName) )
         {
-#ifndef MINIMAL_GL_BUILD
             nc->DebugMsg("\tExcluding page {}\n", page->GetName());
-#endif
             continue;
         }
 
         nPages++;
 
         pMsg1->AddRoomLoc(ad.CalcPageLocation(page->GetName()));
-#ifndef MINIMAL_GL_BUILD
         nc->DebugMsg("\tPaging in room {}\n", page->GetName());
-#endif
     }
 
     pMsg1->Send(clientKey);

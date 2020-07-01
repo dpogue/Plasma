@@ -155,7 +155,9 @@ void plNetClientMgr::ISendCCRPetition(plCCRPetitionMsg* petMsg)
     info.AddValue( "Petition", "Content", note );
     info.AddValue( "Petition", "Title", title );
     info.AddValue( "Petition", "Language", plLocalization::GetLanguageName( plLocalization::GetLanguage() ) );
+#ifndef MINIMAL_GL_BUILD
     info.AddValue( "Petition", "AcctName", NetCommGetAccount()->accountName.c_str() );
+#endif
     char buffy[20];
     sprintf(buffy, "%u", GetPlayerID());
     info.AddValue( "Petition", "PlayerID", buffy );
@@ -171,7 +173,9 @@ void plNetClientMgr::ISendCCRPetition(plCCRPetitionMsg* petMsg)
     buf.resize( size );
     ram.CopyToMem( (void*)buf.data() );
 
+#ifndef MINIMAL_GL_BUILD
     NetCliAuthSendCCRPetition(buf.c_str());
+#endif
 }
 
 //
@@ -199,6 +203,7 @@ void plNetClientMgr::SendLocalPlayerAvatarCustomizations()
 {
     plSynchEnabler ps(true);    // make sure synching is enabled, since this happens during load
 
+#ifndef MINIMAL_GL_BUILD
     const plArmatureMod * avMod = plAvatarMgr::GetInstance()->GetLocalAvatar();
     hsAssert(avMod,"Failed to get local avatar armature modifier.");
     avMod->GetClothingOutfit()->DirtySynchState(kSDLClothing, plSynchedObject::kBCastToClients | plSynchedObject::kForceFullSend);
@@ -222,6 +227,7 @@ void plNetClientMgr::SendLocalPlayerAvatarCustomizations()
     for (i = 0; i < morphs.GetCount(); i++)
         if (morphs[i]->GetTarget(0))
             morphs[i]->GetTarget(0)->DirtySynchState(kSDLMorphSequence, plSynchedObject::kBCastToClients);
+#endif
 
 }
 
@@ -286,7 +292,7 @@ int plNetClientMgr::ISendGameMessage(plMessage* msg)
         for(i=0;i<dstIDs->size();i++)
         {
             uint32_t playerID = (*dstIDs)[i];
-            if (playerID == NetCommGetPlayer()->playerInt)
+            if (playerID == GetPlayerID())
                 continue;
             hsLogEntry( DebugMsg( "\tAdding receiver: {}" , playerID ) );
             ((plNetMsgGameMessageDirected*)netMsgWrap)->Receivers()->AddReceiverPlayerID( playerID );

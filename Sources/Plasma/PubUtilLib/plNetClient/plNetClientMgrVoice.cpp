@@ -250,10 +250,12 @@ bool plNetClientMgr::IUpdateListenList(double secs)
 
                     if (fTransport.GetMember(i)->IsServer())
                         continue;
+#ifndef MINIMAL_GL_BUILD
                     if(VaultAmIgnoringPlayer(fTransport.GetMember(i)->GetPlayerID()))
                     {           
                         continue;
                     }
+#endif
                     plKey k=fTransport.GetMember(i)->GetAvatarKey();
 #if 0
                     if (!k)
@@ -371,7 +373,7 @@ void plNetClientMgr::IHandleNetVoiceListMsg(plNetVoiceListMsg* msg)
         bool included = false;
         for (i = 0; i < msg->GetClientList()->Count(); i++)
         {   
-            if (msg->GetClientList()->AcquireArray()[i] == NetCommGetPlayer()->playerInt)
+            if (msg->GetClientList()->AcquireArray()[i] == GetPlayerID())
             {   
                 included = true;
                 break;

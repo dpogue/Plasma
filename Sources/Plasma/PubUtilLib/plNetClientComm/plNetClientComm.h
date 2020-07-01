@@ -63,6 +63,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 class plNetMessage;
 
+#ifndef MINIMAL_GL_BUILD
 
 /*****************************************************************************
 *
@@ -285,6 +286,8 @@ void NetCommSendFriendInvite (
     const ST::string& toName,
     const plUUID&     inviteUuid
 );
+
+#endif
 
 #endif // PLASMA20_SOURCES_PLASMA_PUBUTILLIB_PLNETCLIENTCOMM_PLNETCLIENTCOMM_H
 

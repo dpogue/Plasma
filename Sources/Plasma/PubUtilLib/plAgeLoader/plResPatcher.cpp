@@ -178,11 +178,13 @@ void plResPatcher::Update(const std::vector<ST::string>& manifests)
     if (gDataServerLocal)
         plgDispatch::Dispatch()->MsgSend(new plResPatcherMsg());
      else {
-#ifndef MINIMAL_GL_BUILD
         InitProgress();
+#ifndef MINIMAL_GL_BUILD
         pfPatcher* patcher = CreatePatcher();
         patcher->RequestManifest(manifests);
         patcher->Start(); // whoosh... off it goes
+#else
+        OnCompletion(kNetSuccess, "Skipping patching");
 #endif
     }
 }
@@ -197,6 +199,8 @@ void plResPatcher::Update(const ST::string& manifest)
         pfPatcher* patcher = CreatePatcher();
         patcher->RequestManifest(manifest);
         patcher->Start(); // whoosh... off it goes
+#else
+        OnCompletion(kNetSuccess, "Skipping patching");
 #endif
     }
 }
