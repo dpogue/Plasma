@@ -307,6 +307,7 @@ bool    plSceneInputInterface::MsgReceive( plMessage *msg )
                             }
                         }
                         
+#ifndef MINIMAL_GL_BUILD
                         // see if it is an avatar 
                         plArmatureMod* armMod = (plArmatureMod*)plArmatureMod::ConvertNoRef( pObj->GetModifier(i));
                         if (armMod)
@@ -452,6 +453,7 @@ bool    plSceneInputInterface::MsgReceive( plMessage *msg )
                             plMouseDevice::AddNameToCursor(plNetClientMgr::GetInstance()->GetPlayerName(fCurrentClickable));
                             return true;
                         }
+#endif
                     }
                     // here! it's an object which is not clickable
                     // no object, or not clickable or avatar
@@ -494,7 +496,9 @@ bool    plSceneInputInterface::MsgReceive( plMessage *msg )
         {
             if (!pLOSMsg->fNoHit)
             {
+#ifndef MINIMAL_GL_BUILD
                 plAvatarMgr::GetInstance()->GetLocalAvatar()->TurnToPoint(pLOSMsg->fHitPoint);
+#endif
             }
             return true;
         }
@@ -814,6 +818,7 @@ bool    plSceneInputInterface::MsgReceive( plMessage *msg )
 
 void plSceneInputInterface::ILinkOffereeToAge()
 {
+#ifndef MINIMAL_GL_BUILD
     // check vault to see if we've got an instance of the offered age now, if not create one and wait until we get a reply...
     plAgeInfoStruct info;
     info.SetAgeFilename(fOfferedAgeFile);
@@ -905,6 +910,7 @@ void plSceneInputInterface::ILinkOffereeToAge()
 //          fPendingLink = false;
 //          ISendAvatarDisabledNotification(true);
     }
+#endif
 }
 
 //// ISetLastClicked /////////////////////////////////////////////////////////
@@ -976,6 +982,7 @@ void    plSceneInputInterface::ISetLastClicked( plKey obj, hsPoint3 hitPoint )
 
 bool plSceneInputInterface::InterpretInputEvent( plInputEventMsg *pMsg )
 {
+#ifndef MINIMAL_GL_BUILD
     plControlEventMsg* pControlEvent = plControlEventMsg::ConvertNoRef(pMsg);
     if (pControlEvent)
     {
@@ -1004,6 +1011,7 @@ bool plSceneInputInterface::InterpretInputEvent( plInputEventMsg *pMsg )
         }
         return false;
     }
+#endif
 
     plMouseEventMsg *mouseMsg = plMouseEventMsg::ConvertNoRef( pMsg );
     if( mouseMsg != nil )

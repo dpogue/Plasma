@@ -71,6 +71,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plGImage/plFontCache.h"
 
+#include "plInputCore/plInputManager.h"
+#include "plInputCore/plInputInterfaceMgr.h"
+#include "plInputCore/plInputDevice.h"
+
+#include "plMessage/plInputEventMsg.h"
 #include "plMessage/plMovieMsg.h"
 #include "plMessage/plRenderMsg.h"
 #include "plMessage/plResPatcherMsg.h"
@@ -242,6 +247,12 @@ bool plClient::Shutdown()
 
     hsStatusMessage("Shutting down client...\n");
 
+    // First, before anybody else goes away, write out our key mappings
+    if (plInputInterfaceMgr::GetInstance())
+    {
+        plInputInterfaceMgr::GetInstance()->WriteKeyMap();
+    }
+
     if (plNetClientMgr* nc = plNetClientMgr::GetInstance())
     {
         nc->Shutdown();
@@ -251,6 +262,8 @@ bool plClient::Shutdown()
     {
         al->Shutdown();
     }
+
+    IUnRegisterAs(fInputManager, kInput_KEY);
 
     for (int i = 0; i < fRooms.Count(); i++)
     {
@@ -306,6 +319,33 @@ bool plClient::Shutdown()
     UnRegisterAs(kClient_KEY);
 
     return false;
+}
+
+
+void plClient::InitInputs()
+{
+    hsStatusMessage("InitInputs client\n");
+
+    fInputManager = new plInputManager(fWindowHndl);
+    fInputManager->CreateInterfaceMod(fPipeline);
+    fInputManager->RegisterAs(kInput_KEY);
+    plgDispatch::Dispatch()->RegisterForExactType(plIMouseXEventMsg::Index(), fInputManager->GetKey());
+    plgDispatch::Dispatch()->RegisterForExactType(plIMouseYEventMsg::Index(), fInputManager->GetKey());
+    plgDispatch::Dispatch()->RegisterForExactType(plIMouseBEventMsg::Index(), fInputManager->GetKey());
+    plgDispatch::Dispatch()->RegisterForExactType(plEvalMsg::Index(), fInputManager->GetKey());
+
+    plInputDevice* pKeyboard = new plKeyboardDevice();
+    fInputManager->AddInputDevice(pKeyboard);
+
+    plInputDevice* pMouse = new plMouseDevice();
+    fInputManager->AddInputDevice(pMouse);
+
+#ifndef MINIMAL_GL_BUILD
+    if (fWindowActive)
+    {
+        fInputManager->Activate( true );
+    }
+#endif
 }
 
 
@@ -408,6 +448,11 @@ bool plClient::StartInit()
     gDisp = plgDispatch::Dispatch();
     gTimerMgr = plgTimerCallbackMgr::Mgr();
 
+    //
+    // initialize input system
+    //
+    InitInputs();
+
     /// Init the console object
     /// Note: this can be done last because the console engine was inited first, and
     /// everything in code that works with the console does so through the console engine
@@ -438,6 +483,8 @@ bool plClient::StartInit()
     fCamera->SetPipeline(GetPipeline());
 
     plVirtualCam1::Refresh();
+    plMouseDevice::Instance()->SetDisplayResolution((float)fPipeline->Width(), (float)fPipeline->Height());
+    plInputManager::SetRecenterMouse(false);
 
     plgDispatch::Dispatch()->RegisterForExactType(plMovieMsg::Index(), GetKey());
 

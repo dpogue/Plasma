@@ -186,11 +186,9 @@ pfConsole::~pfConsole()
 {
     if (fInputInterface != nullptr)
     {
-#ifndef MINIMAL_GL_BUILD
         plInputIfaceMgrMsg *msg = new plInputIfaceMgrMsg( plInputIfaceMgrMsg::kRemoveInterface );
         msg->SetIFace( fInputInterface );
         plgDispatch::MsgSend( msg );
-#endif
 
         hsRefCnt_SafeUnRef( fInputInterface );
         fInputInterface = nil;
@@ -237,12 +235,10 @@ void    pfConsole::Init( pfConsoleEngine *engine )
     memset( fLastHelpMsg, 0, sizeof( fLastHelpMsg ) );
     fEngine = engine;
 
-#ifndef MINIMAL_GL_BUILD
     fInputInterface = new pfConsoleInputInterface( this );
     plInputIfaceMgrMsg *msg = new plInputIfaceMgrMsg( plInputIfaceMgrMsg::kAddInterface );
     msg->SetIFace( fInputInterface );
     plgDispatch::MsgSend( msg );
-#endif
 
     // Register for keyboard event messages
     plgDispatch::Dispatch()->RegisterForExactType( plConsoleMsg::Index(), GetKey() );
@@ -256,9 +252,7 @@ void    pfConsole::ISetMode( uint8_t mode )
     fMode = mode; 
     fEffectCounter = ( fFXEnabled ? kEffectDivisions : 0 ); 
     fMsgTimeoutTimer = 0; 
-#ifndef MINIMAL_GL_BUILD
     fInputInterface->RefreshKeyMap();
-#endif
 }
 
 //// MsgReceive //////////////////////////////////////////////////////////////
@@ -302,13 +296,11 @@ bool    pfConsole::MsgReceive( plMessage *msg )
     plControlEventMsg *ctrlMsg = plControlEventMsg::ConvertNoRef( msg );
     if( ctrlMsg != nil )
     {
-#ifndef MINIMAL_GL_BUILD
         if( ctrlMsg->ControlActivated() && ctrlMsg->GetControlCode() == B_CONTROL_CONSOLE_COMMAND && plNetClientMgr::GetInstance()->GetFlagsBit(plNetClientMgr::kPlayingGame))
         {
             fEngine->RunCommand( ctrlMsg->GetCmdString(), IAddLineCallback );
             return true;
         }
-#endif
         return false;
     }
 
@@ -356,7 +348,6 @@ bool    pfConsole::MsgReceive( plMessage *msg )
 
 void    pfConsole::IHandleKey( plKeyEventMsg *msg )
 {
-#ifndef MINIMAL_GL_BUILD
     char            *c;
     wchar_t         key;
     int             i,eol;
@@ -575,6 +566,7 @@ void    pfConsole::IHandleKey( plKeyEventMsg *msg )
         // are we in Python mode?
         else if ( fPythonMode )
         {
+#ifndef MINIMAL_GL_BUILD
             // are we in Python multi-line mode?
             if ( fPythonMultiLines > 0 )
             {
@@ -641,6 +633,7 @@ void    pfConsole::IHandleKey( plKeyEventMsg *msg )
             }
             // find the end of the line
             for( c = fWorkingLine, eol = 0; *c != 0; eol++, c++ );
+#endif
         }
         else
         {
@@ -678,6 +671,7 @@ void    pfConsole::IHandleKey( plKeyEventMsg *msg )
         // do they want to go into Python mode?
         else if( !fHelpMode && key == L'\\' && fWorkingCursor == 0 )
         {
+#ifndef MINIMAL_GL_BUILD
             // toggle Python mode
             fPythonMode = fPythonMode ? false:true;
             if ( fPythonMode )
@@ -693,6 +687,7 @@ void    pfConsole::IHandleKey( plKeyEventMsg *msg )
                     fPythonFirstTime = false;       // do this only once!
                 }
             }
+#endif
         }
         // or are they just typing in a working line
         else if( strlen( fWorkingLine ) < kMaxCharsWide - 2 && key != 0 )
@@ -707,7 +702,6 @@ void    pfConsole::IHandleKey( plKeyEventMsg *msg )
             IUpdateTooltip();
         }
     }
-#endif
 }
 
 //// IAddLineCallback ////////////////////////////////////////////////////////
