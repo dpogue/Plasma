@@ -44,26 +44,96 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLClient/plGLClient.h"
 #include "plGLClient/plClientLoader.h"
 
+#include "pcSmallRect.h"
+#include "plInputCore/plInputManager.h"
+#include "plMessage/plInputEventMsg.h"
+
 #include <xcb/xcb.h>
+#include <xcb/xfixes.h>
+#include <xcb/xproto.h>
 #include <X11/Xlib-xcb.h>
 #include <unistd.h>
 
 plClientLoader gClient;
 xcb_connection_t* gXConn;
+bool gHasXFixes = false;
+pcSmallRect gWindowSize;
 
 #include "pfConsoleCore/pfConsoleEngine.h"
 PF_CONSOLE_LINK_ALL()
 
 void PumpMessageQueueProc()
 {
-    xcb_generic_event_t* event = xcb_poll_for_event(gXConn);
-    if (event && ((event->response_type & ~0x80) == XCB_KEY_PRESS))
-    {
-        xcb_key_press_event_t* kbe = reinterpret_cast<xcb_key_press_event_t*>(event);
+    xcb_generic_event_t* event;
 
-        if (kbe->detail == 24) {
-            gClient->SetDone(true);
+    while (event = xcb_poll_for_event(gXConn)) {
+        switch (event->response_type & ~0x80)
+        {
+        case XCB_CONFIGURE_NOTIFY: // Window resize
+            {
+                xcb_configure_notify_event_t* cne = reinterpret_cast<xcb_configure_notify_event_t*>(event);
+                gWindowSize.Set(cne->x, cne->y, cne->width, cne->height);
+            }
+            break;
+
+        case XCB_KEY_PRESS: // Keyboard key press
+            {
+                xcb_key_press_event_t* kbe = reinterpret_cast<xcb_key_press_event_t*>(event);
+
+                if (kbe->detail == 24) {
+                    gClient->SetDone(true);
+                }
+            }
+            break;
+
+        case XCB_ENTER_NOTIFY: // Mouse over windows
+            {
+                if (gHasXFixes)
+                {
+                    xcb_enter_notify_event_t* ene = reinterpret_cast<xcb_enter_notify_event_t*>(event);
+                    xcb_xfixes_hide_cursor(gXConn, ene->root);
+                    xcb_flush(gXConn);
+                }
+            }
+            break;
+
+        case XCB_LEAVE_NOTIFY: // Mouse off windows
+            {
+                if (gHasXFixes)
+                {
+                    xcb_leave_notify_event_t* lne = reinterpret_cast<xcb_leave_notify_event_t*>(event);
+                    xcb_xfixes_show_cursor(gXConn, lne->root);
+                    xcb_flush(gXConn);
+                }
+            }
+            break;
+
+        case XCB_MOTION_NOTIFY: // Mouse Movement
+            {
+                xcb_motion_notify_event_t* me = reinterpret_cast<xcb_motion_notify_event_t*>(event);
+
+                plIMouseXEventMsg* pXMsg = new plIMouseXEventMsg;
+                plIMouseYEventMsg* pYMsg = new plIMouseYEventMsg;
+
+                pXMsg->fWx = me->event_x;
+                pXMsg->fX = (float)me->event_x / (float)gWindowSize.fWidth;
+
+                pYMsg->fWy = me->event_y;
+                pYMsg->fY = (float)me->event_y / (float)gWindowSize.fHeight;
+
+                gClient->GetInputManager()->MsgReceive(pXMsg);
+                gClient->GetInputManager()->MsgReceive(pYMsg);
+
+                delete(pXMsg);
+                delete(pYMsg);
+            }
+            break;
+
+        default:
+            break;
         }
+
+        free(event);
     }
 }
 
@@ -84,16 +154,34 @@ int main(int argc, const char** argv)
 
 
     /* Get the first screen */
-    const xcb_setup_t      *setup  = xcb_get_setup(connection);
-    xcb_screen_iterator_t   iter   = xcb_setup_roots_iterator(setup);
-    xcb_screen_t           *screen = iter.data;
+    const xcb_setup_t* setup = xcb_get_setup(gXConn);
+    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
+    xcb_screen_t* screen = iter.data;
+
+    /* Check for XFixes support for hiding the cursor */
+    const xcb_query_extension_reply_t* qe_reply = xcb_get_extension_data(gXConn, &xcb_xfixes_id);
+    if (qe_reply && qe_reply->present)
+    {
+        /* We *must* negotiate the XFixes version with the server */
+        xcb_xfixes_query_version_cookie_t qv_cookie = xcb_xfixes_query_version(gXConn, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
+        xcb_xfixes_query_version_reply_t* qv_reply = xcb_xfixes_query_version_reply(gXConn, qv_cookie, nullptr);
+
+        gHasXFixes = qv_reply->major_version >= 4;
+
+        free(qv_reply);
+    }
 
 
-    const uint32_t event_mask = XCB_EVENT_MASK_KEY_PRESS;
+    const uint32_t event_mask = XCB_EVENT_MASK_EXPOSURE
+                              | XCB_EVENT_MASK_ENTER_WINDOW
+                              | XCB_EVENT_MASK_LEAVE_WINDOW
+                              | XCB_EVENT_MASK_KEY_PRESS
+                              | XCB_EVENT_MASK_POINTER_MOTION
+                              | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 
     /* Create the window */
-    xcb_window_t window = xcb_generate_id(connection);
-    xcb_create_window(connection,                    /* Connection          */
+    xcb_window_t window = xcb_generate_id(gXConn);
+    xcb_create_window(gXConn,                        /* Connection          */
                       XCB_COPY_FROM_PARENT,          /* depth (same as root)*/
                       window,                        /* window Id           */
                       screen->root,                  /* parent window       */
@@ -106,7 +194,7 @@ int main(int argc, const char** argv)
                       &event_mask);                  /* masks               */
 
     const char* title = plProduct::LongName().c_str();
-    xcb_change_property(connection,
+    xcb_change_property(gXConn,
                         XCB_PROP_MODE_REPLACE,
                         window,
                         XCB_ATOM_WM_NAME,
@@ -116,13 +204,14 @@ int main(int argc, const char** argv)
                         title);
 
     /* Map the window on the screen */
-    xcb_map_window(connection, window);
+    xcb_map_window(gXConn, window);
 
     /* Make sure commands are sent before we pause so that the window gets shown */
-    xcb_flush(connection);
+    xcb_flush(gXConn);
 
     Display* display = XOpenDisplay(nullptr);
 
+    gWindowSize.Set(0, 0, 800, 600);
 
     gClient.SetClientWindow((hsWindowHndl)(uintptr_t)window);
     gClient.SetClientDisplay((hsWindowHndl)display);
@@ -157,7 +246,7 @@ int main(int argc, const char** argv)
 
     gClient.ShutdownEnd();
 
-    xcb_disconnect(connection);
+    xcb_disconnect(gXConn);
 
     return 0;
 }

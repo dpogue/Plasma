@@ -168,6 +168,7 @@ public:
 
     bool MsgReceive(plMessage* msg) override;
 
+    void InitInputs();
     bool InitPipeline(hsWindowHndl display);
 
 
@@ -190,10 +191,9 @@ public:
     virtual plClient& SetWindowHandle(hsWindowHndl hndl) { fWindowHndl = hndl; return *this; }
     hsWindowHndl GetWindowHandle() { return fWindowHndl; }
 
+    plInputManager* GetInputManager() { return fInputManager; }
     plPipeline* GetPipeline() { return fPipeline; }
-
     plSceneNode* GetCurrentScene() { return fCurrentNode; }
-
     pfConsoleEngine* GetConsoleEngine() { return fConsoleEngine; }
 
     bool BeginGame();

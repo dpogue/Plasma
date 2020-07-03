@@ -59,7 +59,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plDrawable/plDrawableCreatable.h"
 #include "plGImage/plGImageCreatable.h"
 #include "plGLight/plGLightCreatable.h"
-//#include "plInputCore/plInputCoreCreatable.h"
+#include "plInputCore/plInputCoreCreatable.h"
 #include "plInterp/plInterpCreatable.h"
 #include "plIntersect/plIntersectCreatable.h"
 #include "plMessage/plMessageCreatable.h"

@@ -160,10 +160,8 @@ plVirtualCam1::plVirtualCam1()
     fZPanLimit = 0;
     fRetainedFY = 0.5f;
     // create built-in drive mode camera
-#ifndef MINIMAL_GL_BUILD
     fCameraDriveInterface = plDebugInputInterface::GetInstance();
     hsRefCnt_SafeRef( fCameraDriveInterface );
-#endif
 
     fDriveCamera = new plCameraModifier1;
     plCameraBrain1* pDriveBrain = new plCameraBrain1_Drive(fDriveCamera);
@@ -199,9 +197,7 @@ plVirtualCam1::~plVirtualCam1()
     fTransitionCamera->UnRegisterAs(kTransitionCamera_KEY);
     delete(fDriveCamera->GetBrain());
     delete(fDriveCamera);
-#ifndef MINIMAL_GL_BUILD
     hsRefCnt_SafeUnRef( fCameraDriveInterface );
-#endif
 
     if(fThirdPersonCam)
     {   
@@ -1036,7 +1032,6 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         return true;
     }
 
-#ifndef MINIMAL_GL_BUILD
     plMouseEventMsg* pMouseMsg = plMouseEventMsg::ConvertNoRef(msg);
     if( pMouseMsg )
     {
@@ -1072,7 +1067,6 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         fDriveCamera->MsgReceive(msg);  
         return true;
     }
-#endif
 
     plWarpMsg* pWarpMsg = plWarpMsg::ConvertNoRef(msg);
     if (pWarpMsg)
