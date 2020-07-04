@@ -111,6 +111,7 @@ void plClientLoader::HandleArguments()
     if (fArguments.IsSpecified(kArgStartUpAgeName))
     {
         gDataServerLocal = true;
+        fClient->SetInitialAgeName(fArguments.GetString(kArgStartUpAgeName));
         fClient->SetQuitIntro(true);
     }
 }

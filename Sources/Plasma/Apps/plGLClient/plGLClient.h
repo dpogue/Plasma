@@ -144,6 +144,8 @@ protected:
     hsTArray<plRenderRequest*>  fPreRenderRequests;
     hsTArray<plRenderRequest*>  fPostRenderRequests;
 
+    ST::string                  fInitialAgeName;
+
 public:
     enum
     {
@@ -198,6 +200,8 @@ public:
 
     void SetMessagePumpProc(plMessagePumpProc proc) { fMessagePumpProc = proc; }
 
+    void SetInitialAgeName(ST::string ageName) { fInitialAgeName = ageName; }
+
 protected:
     /**
      * Detect audio/video settings and save them to their respective ini file,
@@ -207,8 +211,6 @@ protected:
     void IWriteDefaultGraphicsSettings(const plFileName& destFile);
     void IWriteDefaultAudioSettings(const plFileName& destFile);
 
-    // Hackery to avoid all of plAgeLoader and the netclient stuff
-    bool ILoadAge(const ST::string& ageName);
     bool IUpdate();
     bool IDraw();
     bool IDrawProgress();

@@ -758,44 +758,6 @@ void plClient::IWriteDefaultAudioSettings(const plFileName& destFile)
     stream = nullptr;
 }
 
-bool plClient::ILoadAge(const ST::string& ageName)
-{
-#if 1
-    plFileName filename = plFileName::Join("dat", ST::format("{}.age", ageName));
-    hsStream* stream = plEncryptedStream::OpenEncryptedFile(filename);
-
-    plAgeDescription ad;
-    ad.Read(stream);
-    ad.SetAgeName(ageName);
-    stream->Close();
-    delete stream;
-    ad.SeekFirstPage();
-
-    plAgePage* page;
-    plKey clientKey = hsgResMgr::ResMgr()->FindKey( kClient_KEY );
-
-    plClientMsg* loadAgeKeysMsg = new plClientMsg(plClientMsg::kLoadAgeKeys);
-    loadAgeKeysMsg->SetAgeName(ageName);
-    loadAgeKeysMsg->Send(clientKey);
-
-    plClientMsg* pMsg1 = new plClientMsg(plClientMsg::kLoadRoom);
-    pMsg1->SetAgeName(ageName);
-
-    while ((page = ad.GetNextPage()) != nullptr)
-    {
-        pMsg1->AddRoomLoc(ad.CalcPageLocation(page->GetName()));
-    }
-
-    pMsg1->Send(clientKey);
-
-    plClientMsg* dumpAgeKeys = new plClientMsg(plClientMsg::kReleaseAgeKeys);
-    dumpAgeKeys->SetAgeName(ageName);
-    dumpAgeKeys->Send(clientKey);
-#endif
-
-    return true;
-}
-
 
 
 int plClient::IFindRoomByLoc(const plLocation& loc)
@@ -1471,7 +1433,7 @@ void plClient::IStartProgress(const char *title, float len)
 
 void plClient::IStopProgress()
 {
-    if (/*false &&*/ fProgressBar)
+    if (fProgressBar)
     {
         plDispatch::SetMsgRecieveCallback(nullptr);
         ((plResManager*)hsgResMgr::ResMgr())->SetProgressBarProc(IReadKeyedObjCallback);
@@ -1720,8 +1682,12 @@ void plClient::ICompleteInit () {
     clientMsg->SetBCastFlag(plMessage::kBCastByType);
     clientMsg->Send();
 
-    ILoadAge("GuildPub-Writers");
-    //plAgeLoader::GetInstance()->LoadAge("GuildPub-Writers");
+    if (fInitialAgeName.empty())
+    {
+        fInitialAgeName = "GuildPub-Writers";
+    }
+
+    plAgeLoader::GetInstance()->LoadAge(fInitialAgeName);
 }
 
 void plClient::IHandlePatcherMsg(plResPatcherMsg* msg)
