@@ -171,6 +171,9 @@ bool plGLDevice::InitDevice()
 
 #ifdef HS_DEBUGGING
     glEnable(GL_DEBUG_OUTPUT);
+    // Turn off low-severity messages
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_FALSE);
     glDebugMessageCallback(GLDebugLog, 0);
 #endif
 
@@ -569,6 +572,7 @@ void plGLDevice::MakeTextureRef(TextureRef* tRef, plLayerInterface* layer, plMip
         glTexParameteri(tRef->fMapping, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     }
 
+    tRef->SetDirty(false);
 #ifdef HS_DEBUGGING
     GLuint e;
     if ((e = glGetError()) != GL_NO_ERROR) {
@@ -609,6 +613,7 @@ void plGLDevice::MakeCubicTextureRef(TextureRef* tRef, plLayerInterface* layer, 
         glTexParameteri(tRef->fMapping, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     }
 
+    tRef->SetDirty(false);
 #ifdef HS_DEBUGGING
     GLuint e;
     if ((e = glGetError()) != GL_NO_ERROR) {
