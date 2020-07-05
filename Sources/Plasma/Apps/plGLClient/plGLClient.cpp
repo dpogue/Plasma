@@ -378,12 +378,9 @@ bool plClient::InitPipeline(hsWindowHndl display)
 
     hsVector3 up;
     hsPoint3 from, at;
-    //from.Set(0.f, 0.f, 10.f);
-    from.Set(-24.5391f, -22.1473f, 10.f);
-    //at.Set(0.f, 20.f, 0.f);
-    at.Set(-23.6462f, 2.2479f, 10.f);
-    //up.Set(0.f, 0.f, -1.f);
-    up.Set(0,0.f,1.f);
+    from.Set(0.f, 0.f, 10.f);
+    at.Set(0.f, 20.f, 0.f);
+    up.Set(0.f, 0.f, -1.f);
     hsMatrix44 cam;
     cam.MakeCamera(&from,&at,&up);
 
@@ -394,9 +391,6 @@ bool plClient::InitPipeline(hsWindowHndl display)
 
     hsMatrix44 id;
     id.Reset();
-
-    // MINIMAL_GL_BUILD: Make plViewFaceModifiers work, until we have the real camera
-    cam.GetInverse(&id);
 
     pipe->SetWorldToCamera(cam, id);
     pipe->RefreshMatrices();
@@ -1724,6 +1718,8 @@ void plClient::ICompleteInit () {
     fFlags.SetBit(kFlagIniting, false);
     hsStatusMessage("Client init complete.");
 
+    fCamera->SetCutNextTrans();
+
     // Tell everyone we're ready to rock.
     plClientMsg* clientMsg = new plClientMsg(plClientMsg::kInitComplete);
     clientMsg->SetBCastFlag(plMessage::kBCastByType);
@@ -1741,12 +1737,10 @@ void plClient::IHandlePatcherMsg(plResPatcherMsg* msg)
 {
     plgDispatch::Dispatch()->UnRegisterForExactType(plResPatcherMsg::Index(), GetKey());
 
-#ifndef MINIMAL_GL_BUILD
     if (!msg->Success()) {
         plNetClientApp::GetInstance()->QueueDisableNet(true, msg->GetError().c_str());
         return;
     }
-#endif
 
     IOnAsyncInitComplete();
 }
