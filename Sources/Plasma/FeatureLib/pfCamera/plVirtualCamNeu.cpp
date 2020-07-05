@@ -338,6 +338,7 @@ void plVirtualCam1::SetDepth(float h, float y)
 // force drive mode from console
 void plVirtualCam1::Drive()
 {
+#ifndef MINIMAL_GL_BUILD
     if (GetCurrentCamera() == fDriveCamera)
     {   
         fCameraDriveInterface->SetEnabled( false );
@@ -348,6 +349,7 @@ void plVirtualCam1::Drive()
         #endif
     }
     else
+#endif
     {
         // set it to the current camera position -
         fDriveCamera->GetBrain()->SetGoal(GetCurrentCamera()->GetTargetPos());
@@ -872,9 +874,7 @@ void plVirtualCam1::FirstPersonOverride()
 #endif
         SetFOV(GetCurrentStackCamera()); 
         GetCurrentStackCamera()->Push(!HasFlags(kAvatarWalking));
-#ifndef MINIMAL_GL_BUILD
         plAvatarInputInterface::GetInstance()->CameraInThirdPerson(true);
-#endif
         FreezeOutput(2);    
         UnFadeAvatarIn(1);
         fRetainedFY = fY;
@@ -898,9 +898,7 @@ void plVirtualCam1::FirstPersonOverride()
             GetCurrentStackCamera()->Pop();
             fFirstPersonOverride->Push(!HasFlags(kAvatarWalking));
             SetFOV(fFirstPersonOverride); 
-#ifndef MINIMAL_GL_BUILD
             plAvatarInputInterface::GetInstance()->CameraInThirdPerson(false);
-#endif
             // no need to keep transitioning if we are currently...
             if (fTransPos == POS_TRANS_FOLLOW)
                 FinishTransition();
@@ -938,6 +936,8 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         }
         return true;
     }
+#endif
+
     plAvatarBehaviorNotifyMsg *behNotifymsg = plAvatarBehaviorNotifyMsg::ConvertNoRef(msg);
     if (behNotifymsg)
     {
@@ -955,17 +955,13 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
                     FirstPersonOverride();
                     //SetFlags(kJustLinkedIn);
                 }
-#ifndef MINIMAL_GL_BUILD
                 else
                     plAvatarInputInterface::GetInstance()->CameraInThirdPerson(true);
-#endif
             }
             else
             if (fFirstPersonOverride == nil)
             {
-#ifndef MINIMAL_GL_BUILD
                 plAvatarInputInterface::GetInstance()->CameraInThirdPerson(true);
-#endif
             }
         }
         else
@@ -977,7 +973,6 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         }
         return true;
     }
-#endif
 
     plControlEventMsg* pCtrlMsg = plControlEventMsg::ConvertNoRef(msg);
     if (pCtrlMsg)
@@ -1158,10 +1153,8 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
                 }
                 
                 StartInterpPanLimits();
-#ifndef MINIMAL_GL_BUILD
                 if (fFirstPersonOverride)
                     plAvatarInputInterface::GetInstance()->CameraInThirdPerson(false);
-#endif
                 
                 if (foutLog)
                 {
@@ -1206,10 +1199,8 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
                         fprintf(foutLog, "********************************************\n");
                     }   
 
-#ifndef MINIMAL_GL_BUILD
                     if (fFirstPersonOverride)
                         plAvatarInputInterface::GetInstance()->CameraInThirdPerson(true);
-#endif
                 
                     fPythonOverride->Push(!HasFlags(kAvatarWalking));
                     
