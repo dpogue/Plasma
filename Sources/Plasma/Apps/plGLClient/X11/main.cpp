@@ -59,6 +59,18 @@ xcb_connection_t* gXConn;
 bool gHasXFixes = false;
 pcSmallRect gWindowSize;
 
+const unsigned char KEYCODE_LINUX_TO_HID[256] = {
+    0,41,30,31,32,33,34,35,36,37,38,39,45,46,42,43,20,26,8,21,23,28,24,12,18,19,
+    47,48,158,224,4,22,7,9,10,11,13,14,15,51,52,53,225,49,29,27,6,25,5,17,16,54,
+    55,56,229,85,226,44,57,58,59,60,61,62,63,64,65,66,67,83,71,95,96,97,86,92,
+    93,94,87,89,90,91,98,99,0,0,100,68,69,0,0,0,0,0,0,0,88,228,84,154,230,0,74,
+    82,75,80,79,77,81,78,73,76,0,0,0,0,0,103,0,72,0,0,0,0,0,227,231,0,0,0,0,0,0,
+    0,0,0,0,0,0,118,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,104,105,106,107,108,109,110,111,112,113,114,115,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
 #include "pfConsoleCore/pfConsoleEngine.h"
 PF_CONSOLE_LINK_ALL()
 
@@ -76,13 +88,34 @@ void PumpMessageQueueProc()
             }
             break;
 
-        case XCB_KEY_PRESS: // Keyboard key press
+        case XCB_KEY_PRESS:     // Keyboard key press
+        case XCB_KEY_RELEASE:   // Keyboard key release
             {
                 xcb_key_press_event_t* kbe = reinterpret_cast<xcb_key_press_event_t*>(event);
 
-                if (kbe->detail == 24) {
-                    gClient->SetDone(true);
+                bool down = (kbe->response_type & ~0x80) == XCB_KEY_PRESS;
+
+                /* X11 offsets Linux keycodes by 8 */
+                uint32_t keycode = kbe->detail - 8;
+                plKeyDef key = KEY_UNMAPPED;
+                if (keycode < 256)
+                {
+                    key = (plKeyDef)KEYCODE_LINUX_TO_HID[keycode];
                 }
+
+                #ifdef MINIMAL_GL_BUILD
+                if (key == KEY_Q) { // Quit when Q is hit
+                    gClient->SetDone(true);
+                    break;
+                }
+                #endif
+
+                if (down)
+                {
+                    gClient->SetQuitIntro(true);
+                }
+
+                gClient->GetInputManager()->HandleKeyEvent(key, down, false);
             }
             break;
 
@@ -126,6 +159,98 @@ void PumpMessageQueueProc()
 
                 delete(pXMsg);
                 delete(pYMsg);
+            }
+            break;
+
+        case XCB_BUTTON_PRESS:
+            {
+                xcb_button_press_event_t* bpe = reinterpret_cast<xcb_button_press_event_t*>(event);
+
+                /* Handle scroll wheel */
+                if (bpe->detail == XCB_BUTTON_INDEX_4 || bpe->detail == XCB_BUTTON_INDEX_5)
+                {
+                /*
+                case XCB_BUTTON_INDEX_4:
+                    pMsg->fButton |= kWheelPos;
+                    pMsg->SetWheelDelta(120.0f);
+                    break;
+                case XCB_BUTTON_INDEX_5:
+                    pMsg->fButton |= kWheelNeg;
+                    pMsg->SetWheelDelta(-120.0f);
+                    break;
+                */
+                    break;
+                }
+
+                plIMouseXEventMsg* pXMsg = new plIMouseXEventMsg;
+                plIMouseYEventMsg* pYMsg = new plIMouseYEventMsg;
+                plIMouseBEventMsg* pBMsg = new plIMouseBEventMsg;
+
+                pXMsg->fWx = bpe->event_x;
+                pXMsg->fX = (float)bpe->event_x / (float)gWindowSize.fWidth;
+
+                pYMsg->fWy = bpe->event_y;
+                pYMsg->fY = (float)bpe->event_y / (float)gWindowSize.fHeight;
+
+                switch (bpe->detail) {
+                case XCB_BUTTON_INDEX_1:
+                    pBMsg->fButton |= kLeftButtonDown;
+                    break;
+                case XCB_BUTTON_INDEX_2:
+                    pBMsg->fButton |= kMiddleButtonDown;
+                    break;
+                case XCB_BUTTON_INDEX_3:
+                    pBMsg->fButton |= kRightButtonDown;
+                    break;
+                default:
+                    break;
+                }
+
+                gClient->GetInputManager()->MsgReceive(pXMsg);
+                gClient->GetInputManager()->MsgReceive(pYMsg);
+                gClient->GetInputManager()->MsgReceive(pBMsg);
+
+                delete(pXMsg);
+                delete(pYMsg);
+                delete(pBMsg);
+            }
+            break;
+
+        case XCB_BUTTON_RELEASE:
+            {
+                xcb_button_release_event_t* bre = reinterpret_cast<xcb_button_release_event_t*>(event);
+
+                plIMouseXEventMsg* pXMsg = new plIMouseXEventMsg;
+                plIMouseYEventMsg* pYMsg = new plIMouseYEventMsg;
+                plIMouseBEventMsg* pBMsg = new plIMouseBEventMsg;
+
+                pXMsg->fWx = bre->event_x;
+                pXMsg->fX = (float)bre->event_x / (float)gWindowSize.fWidth;
+
+                pYMsg->fWy = bre->event_y;
+                pYMsg->fY = (float)bre->event_y / (float)gWindowSize.fHeight;
+
+                switch (bre->detail) {
+                case XCB_BUTTON_INDEX_1:
+                    pBMsg->fButton |= kLeftButtonUp;
+                    break;
+                case XCB_BUTTON_INDEX_2:
+                    pBMsg->fButton |= kMiddleButtonUp;
+                    break;
+                case XCB_BUTTON_INDEX_3:
+                    pBMsg->fButton |= kRightButtonUp;
+                    break;
+                default:
+                    break;
+                }
+
+                gClient->GetInputManager()->MsgReceive(pXMsg);
+                gClient->GetInputManager()->MsgReceive(pYMsg);
+                gClient->GetInputManager()->MsgReceive(pBMsg);
+
+                delete(pXMsg);
+                delete(pYMsg);
+                delete(pBMsg);
             }
             break;
 
@@ -173,10 +298,13 @@ int main(int argc, const char** argv)
 
 
     const uint32_t event_mask = XCB_EVENT_MASK_EXPOSURE
+                              | XCB_EVENT_MASK_KEY_PRESS
+                              | XCB_EVENT_MASK_KEY_RELEASE
+                              | XCB_EVENT_MASK_POINTER_MOTION
+                              | XCB_EVENT_MASK_BUTTON_PRESS
+                              | XCB_EVENT_MASK_BUTTON_RELEASE
                               | XCB_EVENT_MASK_ENTER_WINDOW
                               | XCB_EVENT_MASK_LEAVE_WINDOW
-                              | XCB_EVENT_MASK_KEY_PRESS
-                              | XCB_EVENT_MASK_POINTER_MOTION
                               | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 
     /* Create the window */
