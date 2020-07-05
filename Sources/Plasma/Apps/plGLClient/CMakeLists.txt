@@ -66,10 +66,10 @@ endif(WIN32)
 
 add_executable(plGLClient ${plGLClient_SOURCES} ${plGLClient_HEADERS})
 
-if(CAN_BUILD_RESOURCE_DAT AND PLASMA_BUILD_RESOURCE_DAT)
-    add_subdirectory(external)
-    add_dependencies(plGLClient externalResources)
-endif()
+#if(CAN_BUILD_RESOURCE_DAT AND PLASMA_BUILD_RESOURCE_DAT)
+#    add_subdirectory(external)
+#    add_dependencies(plGLClient externalResources)
+#endif()
 
 target_link_libraries(plGLClient string_theory)
 # Plasma Libs
