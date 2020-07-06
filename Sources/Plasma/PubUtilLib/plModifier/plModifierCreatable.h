@@ -54,10 +54,8 @@ REGISTER_CREATABLE(plAnimEventModifier);
 #include "plAnimTimeConvertSDLModifier.h"
 REGISTER_NONCREATABLE(plAnimTimeConvertSDLModifier);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plAxisAnimModifier.h"
 REGISTER_CREATABLE(plAxisAnimModifier);
-#endif
 
 #include "plCloneSpawnModifier.h"
 REGISTER_CREATABLE(plCloneSpawnModifier);
