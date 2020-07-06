@@ -142,7 +142,7 @@ bool plGLDevice::InitDevice()
 
     /* Set up the GL context */
     EGLint ctx_attrs[] = {
-        EGL_CONTEXT_CLIENT_VERSION, 4,
+        EGL_CONTEXT_CLIENT_VERSION, 3,
         EGL_NONE
     };
 
