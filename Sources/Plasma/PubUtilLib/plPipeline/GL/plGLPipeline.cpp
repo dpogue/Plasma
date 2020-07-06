@@ -58,8 +58,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #if HS_BUILD_FOR_MACOS
 #    include <OpenGL/gl3.h>
 #    include <OpenGL/gl3ext.h>
-
-#    define glClearDepthf glClearDepth
 #else
 #    include <GL/gl.h>
 #    include <GL/glext.h>
@@ -131,7 +129,7 @@ plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3
 
     if (fDevice.InitDevice()) {
         glClearColor(0.f, 0.f, 0.f, 0.f);
-        glClearDepthf(1.f);
+        glClearDepth(1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
@@ -321,7 +319,7 @@ void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth)
             masks |= GL_DEPTH_BUFFER_BIT;
 
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-        glClearDepthf(clearDepth);
+        glClearDepth((double)clearDepth);
 
         glClear(masks);
     }
