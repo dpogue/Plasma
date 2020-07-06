@@ -89,7 +89,7 @@ ST::string pfFilePasswordStore::GetPassword(const ST::string& username)
 
 #ifndef PLASMA_EXTERNAL_RELEASE
     // internal builds can use the local init directory
-    plFileName local("init\\login.dat");
+    plFileName local = plFileName::Join("init", "login.dat");
     if (plFileInfo(local).Exists())
         loginDat = local;
 #endif
@@ -122,7 +122,7 @@ bool pfFilePasswordStore::SetPassword(const ST::string& username, const ST::stri
 
 #ifndef PLASMA_EXTERNAL_RELEASE
     // internal builds can use the local init directory
-    plFileName local("init\\login.dat");
+    plFileName local = plFileName::Join("init", "login.dat");
     if (plFileInfo(local).Exists())
         loginDat = local;
 #endif
