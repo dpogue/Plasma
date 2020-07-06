@@ -55,6 +55,7 @@ class pfConsoleEngine;
 class pfConsole;
 class plFontCache;
 class plInputManager;
+class plLinkEffectsMgr;
 class plMovieMsg;
 class plMoviePlayer;
 class plOperationProgress;
@@ -113,7 +114,7 @@ protected:
     plPipeline*                 fPipeline;
     hsColorRGBA                 fClearColor;
     plTransitionMgr*            fTransitionMgr;
-
+    plLinkEffectsMgr*           fLinkEffectsMgr;
     plFontCache*                fFontCache;
 
     pfConsoleEngine*            fConsoleEngine;
@@ -121,6 +122,7 @@ protected:
 
     hsWindowHndl                fWindowHndl;
     bool                        fDone;
+    bool                        fWindowActive;
     double                      fLastProgressUpdate;
     plOperationProgress*        fProgressBar;
 
@@ -195,6 +197,10 @@ public:
     plPipeline* GetPipeline() { return fPipeline; }
     plSceneNode* GetCurrentScene() { return fCurrentNode; }
     pfConsoleEngine* GetConsoleEngine() { return fConsoleEngine; }
+
+    // The client window has focus (true) or lost it (false)
+    virtual void WindowActivate(bool active);
+    virtual bool WindowActive() const { return fWindowActive; }
 
     bool BeginGame();
 

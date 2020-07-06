@@ -53,6 +53,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pnMessage/plAudioSysMsg.h"
 #include "pnMessage/plCameraMsg.h"
 #include "pnMessage/plClientMsg.h"
+#include "pnMessage/plCmdIfaceModMsg.h"
 #include "pnMessage/plProxyDrawMsg.h"
 #include "pnMessage/plTimeMsg.h"
 
@@ -65,7 +66,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plAudio/plAudioSystem.h"
 
 #include "plDrawable/plAccessGeometry.h"
-//#include "plDrawable/plVisLOSMgr.h"
+#include "plDrawable/plVisLOSMgr.h"
 
 #include "plFile/plEncryptedStream.h"
 
@@ -161,11 +162,13 @@ plClient::plClient()
     fPipeline(nullptr),
     fCurrentNode(nullptr),
     fTransitionMgr(nullptr),
+    fLinkEffectsMgr(nullptr),
     fPageMgr(nullptr),
     fFontCache(nullptr),
     fConsole(nullptr),
     fWindowHndl(nullptr),
     fDone(false),
+    fWindowActive(false),
     fProgressBar(nullptr),
     fHoldLoadRequests(false),
     fNumLoadingRooms(0),
@@ -245,6 +248,13 @@ bool plClient::Shutdown()
     plProxyDrawMsg* nuke = new plProxyDrawMsg(plProxyDrawMsg::kAllTypes | plProxyDrawMsg::kDestroy);
     plgDispatch::MsgSend(nuke);
 
+#ifndef MINIMAL_GL_BUILD
+    if (plAVIWriter::IsInitialized())
+    {
+        plAVIWriter::Instance().Shutdown();
+    }
+#endif
+
     hsStatusMessage("Shutting down client...\n");
 
     // First, before anybody else goes away, write out our key mappings
@@ -252,6 +262,22 @@ bool plClient::Shutdown()
     {
         plInputInterfaceMgr::GetInstance()->WriteKeyMap();
     }
+
+#ifndef MINIMAL_GL_BUILD
+    // tell Python that its ok to shutdown
+    PythonInterface::WeAreInShutdown(); 
+
+    // Shutdown the journalBook API
+    pfJournalBook::SingletonShutdown();
+
+    /// Take down the KI
+    pfGameGUIMgr* mgr = pfGameGUIMgr::GetInstance();
+    if (mgr)
+    {
+        // unload the blackbar which will bootstrap in the rest of the KI dialogs
+        mgr->UnloadDialog("KIBlackBar");
+    }
+#endif
 
     if (plNetClientMgr* nc = plNetClientMgr::GetInstance())
     {
@@ -264,6 +290,9 @@ bool plClient::Shutdown()
     }
 
     IUnRegisterAs(fInputManager, kInput_KEY);
+#ifndef MINIMAL_GL_BUILD
+    IUnRegisterAs(fGameGUIMgr, kGameGUIMgr_KEY);
+#endif
 
     for (int i = 0; i < fRooms.Count(); i++)
     {
@@ -278,6 +307,16 @@ bool plClient::Shutdown()
     delete fPipeline;
     fPipeline = nullptr;
 
+#ifndef MINIMAL_GL_BUILD
+    if (plSimulationMgr::GetInstance())
+    {
+        plSimulationMgr::Shutdown();
+    }
+
+    plAvatarMgr::ShutDown();
+    plRelevanceMgr::DeInit();
+#endif
+
     if (fPageMgr) {
         fPageMgr->Reset();
     }
@@ -287,9 +326,23 @@ bool plClient::Shutdown()
     delete fConsoleEngine;
     fConsoleEngine = nullptr;
 
+    IUnRegisterAs(fLinkEffectsMgr, kLinkEffectsMgr_KEY);
+
+#ifndef MINIMAL_GL_BUILD
+    plClothingMgr::DeInit();
+#endif
+
     IUnRegisterAs(fFontCache, kFontCache_KEY);
 
+#ifndef MINIMAL_GL_BUILD
+    pfMarkerMgr::Shutdown();
+#endif
+
     IUnRegisterAs(fConsole, kConsoleObject_KEY);
+
+#ifndef MINIMAL_GL_BUILD
+    PythonInterface::finiPython();
+#endif
 
     IUnRegisterAs(fCamera, kVirtualCamera1_KEY);
 
@@ -310,6 +363,8 @@ bool plClient::Shutdown()
     {
         pfLocalizationMgr::Shutdown();
     }
+
+    plVisLOSMgr::DeInit();
 
     delete fPageMgr;
     fPageMgr = nullptr;
@@ -340,12 +395,10 @@ void plClient::InitInputs()
     plInputDevice* pMouse = new plMouseDevice();
     fInputManager->AddInputDevice(pMouse);
 
-#ifndef MINIMAL_GL_BUILD
     if (fWindowActive)
     {
-        fInputManager->Activate( true );
+        fInputManager->Activate(true);
     }
-#endif
 }
 
 
@@ -437,7 +490,13 @@ bool plClient::StartInit()
     plGlobalVisMgr::Init();
     fPageMgr = new plPageTreeMgr();
 
-    //plVisLOSMgr::Init(fPipeline, fPageMgr);
+    plVisLOSMgr::Init(fPipeline, fPageMgr);
+
+    // init globals
+#ifndef MINIMAL_GL_BUILD
+    plAvatarMgr::GetInstance();
+    plRelevanceMgr::Init();
+#endif
 
     gDisp = plgDispatch::Dispatch();
     gTimerMgr = plgTimerCallbackMgr::Mgr();
@@ -463,12 +522,30 @@ bool plClient::StartInit()
     fTransitionMgr->RegisterAs(kTransitionMgr_KEY);       // fixedKey from plFixedKey.h
     fTransitionMgr->Init();
 
+    // Init the Age Linking effects manager
+    fLinkEffectsMgr = new plLinkEffectsMgr();
+    fLinkEffectsMgr->RegisterAs( kLinkEffectsMgr_KEY ); // fixedKey from plFixedKey.h
+    fLinkEffectsMgr->Init();
+
+#ifndef MINIMAL_GL_BUILD
+    /// Init the in-game GUI manager
+    fGameGUIMgr = new pfGameGUIMgr();
+    fGameGUIMgr->RegisterAs( kGameGUIMgr_KEY );
+    fGameGUIMgr->Init();
+#endif
+
     plgAudioSys::Activate(true);
 
     /// Init Net before loading things
     plgDispatch::Dispatch()->RegisterForExactType(plNetCommAuthMsg::Index(), GetKey());
     plNetClientMgr::GetInstance()->RegisterAs(kNetClientMgr_KEY);
     plAgeLoader::GetInstance()->Init();
+
+    plCmdIfaceModMsg* pModMsg2 = new plCmdIfaceModMsg;
+    pModMsg2->SetBCastFlag(plMessage::kBCastByExactType);
+    pModMsg2->SetSender(fConsole->GetKey());
+    pModMsg2->SetCmd(plCmdIfaceModMsg::kAdd);
+    plgDispatch::MsgSend(pModMsg2);
 
     // create new virtual camera
     fCamera = new plVirtualCam1;
@@ -477,6 +554,9 @@ bool plClient::StartInit()
     fCamera->SetPipeline(GetPipeline());
 
     plVirtualCam1::Refresh();
+#ifndef MINIMAL_GL_BUILD
+    pfGameGUIMgr::GetInstance()->SetAspectRatio( (float)fPipeline->Width() / (float)fPipeline->Height() );
+#endif
     plMouseDevice::Instance()->SetDisplayResolution((float)fPipeline->Width(), (float)fPipeline->Height());
     plInputManager::SetRecenterMouse(false);
 
@@ -797,6 +877,30 @@ void plClient::IWriteDefaultAudioSettings(const plFileName& destFile)
     stream->Close();
     delete stream;
     stream = nullptr;
+}
+
+void plClient::WindowActivate(bool active)
+{
+    if (fDone)
+        return;
+
+    if (fWindowActive != active)
+    {
+        if (fInputManager)
+        {
+            fInputManager->Activate(active);
+        }
+
+#ifndef MINIMAL_GL_BUILD
+        plArmatureMod::WindowActivate(active);
+
+        // Remember, we are no longer exclusive fullscreen, so we actually have to toggle the desktop resolution
+        // whee? wait. WHEEE!
+        if (fPipeline->IsFullScreen())
+            IChangeResolution(active ? fPipeline->Width() : 0, active ? fPipeline->Height() : 0);
+#endif
+    }
+    fWindowActive = active;
 }
 
 
@@ -1655,6 +1759,12 @@ void plClient::IOnAsyncInitComplete()
     plSDLMgr::GetInstance()->SetNetApp(plNetClientMgr::GetInstance());
     plSDLMgr::GetInstance()->Init( plSDL::kDisallowTimeStamping );
 
+#ifndef MINIMAL_GL_BUILD
+    PythonInterface::initPython();
+    // set the pipeline for the python cyMisc module so that it can do a screen capture
+    cyMisc::SetPipeline(fPipeline);
+#endif
+
     // Load our custom fonts from our current dat directory
     fFontCache->LoadCustomFonts("dat");
 
@@ -1665,8 +1775,25 @@ void plClient::IOnAsyncInitComplete()
     fNumLoadingRooms++;
     IStartProgress("Loading Global...", 0);
 
+#ifndef MINIMAL_GL_BUILD
+    /// Init the KI
+    pfGameGUIMgr    *mgr = pfGameGUIMgr::GetInstance();
+    mgr->LoadDialog( "KIBlackBar" );    // load the blackbar which will bootstrap in the rest of the KI dialogs
+
+    // Init the journal book API
+    pfJournalBook::SingletonInit();
+#endif
+
     SetHoldLoadRequests(true);
     fProgressBar->SetLength(fProgressBar->GetProgress());
+
+#ifndef MINIMAL_GL_BUILD
+    plClothingMgr::Init();
+    // Load in any clothing data
+    ((plResManager*)hsgResMgr::ResMgr())->PageInAge("GlobalClothing");
+
+    pfMarkerMgr::Instance();
+#endif
 
     /// Now parse final init files (*.fni). These are files just like ini files, only to be run
     /// after all hell has broken loose in the client.
