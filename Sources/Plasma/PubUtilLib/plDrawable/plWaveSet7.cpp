@@ -99,7 +99,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plTweak.h"
 
 #ifndef PLASMA_EXTERNAL_RELEASE
-#include "plStatusLog/plStatusLog.h"
 #include "plPipeline/plPlates.h"
 #endif // PLASMA_EXTERNAL_RELEASE
 

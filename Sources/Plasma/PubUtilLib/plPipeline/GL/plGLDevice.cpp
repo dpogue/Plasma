@@ -49,8 +49,15 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGImage/plMipmap.h"
 #include "plGImage/plCubicEnvironmap.h"
 
-#define HS_DEBUGGING 1
+#ifndef GL_LUMINANCE
+#define GL_LUMINANCE GL_RED
+#endif
 
+#ifndef GL_LUMINANCE_ALPHA
+#define GL_LUMINANCE_ALPHA GL_RG
+#endif
+
+#if defined(GL_VERSION_4_3) && defined(HS_DEBUGGING)
 void GLAPIENTRY GLDebugLog(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     if (severity <= GL_DEBUG_SEVERITY_MEDIUM) { // Yes, higher is a lower enum value
@@ -59,6 +66,7 @@ void GLAPIENTRY GLDebugLog(GLenum source, GLenum type, GLuint id, GLenum severit
                 type, severity, message );
     }
 }
+#endif
 
 static float kIdentityMatrix[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -169,7 +177,7 @@ bool plGLDevice::InitDevice()
         return false;
     }
 
-#ifdef HS_DEBUGGING
+#if defined(GL_VERSION_4_3) && defined(HS_DEBUGGING)
     glEnable(GL_DEBUG_OUTPUT);
     // Turn off low-severity messages
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
@@ -502,13 +510,6 @@ void plGLDevice::CheckTexture(TextureRef* tRef)
 
 void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
 {
-#ifdef HS_DEBUGGING
-    GLuint e = GL_NO_ERROR;
-    if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(ST::format("Bind Texture failed {}", uint32_t(e)).c_str());
-    }
-#endif
-
     tRef->fLevels = img->GetNumLevels() - 1;
 
     if (img->IsCompressed()) {
@@ -524,28 +525,12 @@ void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
             img->SetCurrLevel(lvl);
 
             glCompressedTexImage2D(mapping, lvl, tRef->fFormat, img->GetCurrWidth(), img->GetCurrHeight(), 0, img->GetCurrLevelSize(), img->GetCurrLevelPtr());
-
-#ifdef HS_DEBUGGING
-            if ((e = glGetError()) != GL_NO_ERROR) {
-                hsStatusMessage(ST::format("Texture Image failed {} at level {}", uint32_t(e), lvl).c_str());
-            }
-#endif
         }
     } else {
         for (GLuint lvl = 0; lvl <= tRef->fLevels; lvl++) {
             img->SetCurrLevel(lvl);
 
             glTexImage2D(mapping, lvl, tRef->fFormat, img->GetCurrWidth(), img->GetCurrHeight(), 0, tRef->fDataFormat, tRef->fDataType, img->GetCurrLevelPtr());
-
-#ifdef HS_DEBUGGING
-            if ((e = glGetError()) != GL_NO_ERROR) {
-                hsStatusMessage(ST::format("NonDXT Texture Image failed {} at level {}", uint32_t(e), lvl).c_str());
-
-                if (img->GetKey()) {
-                    hsStatusMessage(ST::format("\t{}", img->GetKeyName()).c_str());
-                }
-            }
-#endif
         }
     }
 }
@@ -563,6 +548,10 @@ void plGLDevice::MakeTextureRef(TextureRef* tRef, plLayerInterface* layer, plMip
 
     BindTexture(tRef, img, tRef->fMapping);
 
+#ifdef GL_VERSION_4_3
+    glObjectLabel(GL_TEXTURE, tRef->fRef, -1, img->GetKeyName().c_str());
+#endif
+
     glTexParameteri(tRef->fMapping, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     if (tRef->fLevels) {
@@ -573,12 +562,6 @@ void plGLDevice::MakeTextureRef(TextureRef* tRef, plLayerInterface* layer, plMip
     }
 
     tRef->SetDirty(false);
-#ifdef HS_DEBUGGING
-    GLuint e;
-    if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(ST::format("Mipmap Texture failed {} (Texture {})", uint32_t(e), img->GetKeyName()).c_str());
-    }
-#endif
 }
 
 
@@ -595,6 +578,10 @@ void plGLDevice::MakeCubicTextureRef(TextureRef* tRef, plLayerInterface* layer, 
 
     tRef->fMapping = GL_TEXTURE_CUBE_MAP;
     glBindTexture(tRef->fMapping, tRef->fRef);
+
+#ifdef GL_VERSION_4_3
+    glObjectLabel(GL_TEXTURE, tRef->fRef, -1, img->GetKeyName().c_str());
+#endif
 
     for (size_t i = 0; i < 6; i++) {
         BindTexture(tRef, img->GetFace(i), kFaceMapping[i]);
@@ -614,12 +601,6 @@ void plGLDevice::MakeCubicTextureRef(TextureRef* tRef, plLayerInterface* layer, 
     }
 
     tRef->SetDirty(false);
-#ifdef HS_DEBUGGING
-    GLuint e;
-    if ((e = glGetError()) != GL_NO_ERROR) {
-        hsStatusMessage(ST::format("Cubic Texture failed {} (Texture {})", uint32_t(e), img->GetKeyName()).c_str());
-    }
-#endif
 }
 
 

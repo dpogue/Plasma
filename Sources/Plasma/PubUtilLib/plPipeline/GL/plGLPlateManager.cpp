@@ -85,6 +85,7 @@ void plGLPlateManager::ICreateGeometry()
 
     GLuint vbo, ibo, vao;
 
+#ifdef GL_VERSION_4_5
     glCreateBuffers(1, &vbo);
     glObjectLabel(GL_BUFFER, vbo, -1, "plPlate/VBO");
     glNamedBufferStorage(vbo, sizeof(verts), verts, 0);
@@ -113,6 +114,7 @@ void plGLPlateManager::ICreateGeometry()
     glVertexArrayAttribBinding(vao, kVtxNormal, 0);
     glVertexArrayAttribBinding(vao, kVtxColor, 0);
     glVertexArrayAttribBinding(vao, kVtxUVWSrc0, 0);
+#endif
 
     fBuffers = {vbo, ibo, vao };
 }
@@ -120,10 +122,12 @@ void plGLPlateManager::ICreateGeometry()
 void plGLPlateManager::IReleaseGeometry()
 {
     if (fBuffers.ARef) {
+#ifdef GL_VERSION_4_5
         glDisableVertexArrayAttrib(fBuffers.ARef, kVtxPosition);
         glDisableVertexArrayAttrib(fBuffers.ARef, kVtxNormal);
         glDisableVertexArrayAttrib(fBuffers.ARef, kVtxColor);
         glDisableVertexArrayAttrib(fBuffers.ARef, kVtxUVWSrc0);
+#endif
 
         glDeleteVertexArrays(1, &fBuffers.ARef);
         fBuffers.ARef = 0;

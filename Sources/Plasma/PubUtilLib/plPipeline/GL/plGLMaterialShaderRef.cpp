@@ -284,7 +284,9 @@ void plGLMaterialShaderRef::ICompile()
 
 #ifdef HS_DEBUGGING
     const char* name = ST::format("hsGMaterial::{}", fMaterial->GetKeyName()).c_str();
+#ifdef GL_VERSION_4_3
     glObjectLabel(GL_PROGRAM, fRef, strlen(name), name);
+#endif
 
     GLenum e_cp;
     if ((e_cp = glGetError()) != GL_NO_ERROR) {

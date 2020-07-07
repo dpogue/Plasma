@@ -523,7 +523,7 @@ bool plNetLinkingMgr::IProcessVaultNotifyMsg(plVaultNotifyMsg* msg)
     // No deferred link? Bye bye.
     if (fDeferredLink == nil)
         return false;
-
+#ifndef MINIMAL_GL_BUILD
     plAgeLinkStruct* cur = GetAgeLink();
     hsRef<RelVaultNode> cVaultLink;
     switch (msg->GetType())
@@ -531,9 +531,9 @@ bool plNetLinkingMgr::IProcessVaultNotifyMsg(plVaultNotifyMsg* msg)
         case plVaultNotifyMsg::kRegisteredChildAgeLink:
         case plVaultNotifyMsg::kRegisteredOwnedAge:
         case plVaultNotifyMsg::kRegisteredSubAgeLink:
-#ifndef MINIMAL_GL_BUILD
+
             cVaultLink = VaultGetNode(msg->GetArgs()->GetInt(plNetCommon::VaultTaskArgs::kAgeLinkNode));
-#endif
+
             break;
         default:
             return false;
@@ -557,7 +557,7 @@ bool plNetLinkingMgr::IProcessVaultNotifyMsg(plVaultNotifyMsg* msg)
         fDeferredLink = nil;
         return true;
     }
-
+#endif
     return false;
 }
 
