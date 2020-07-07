@@ -94,9 +94,11 @@ void plClientLoader::Run()
     fClient = new plClient();
 
     fClient->SetWindowHandle(fWindow);
+#ifndef HS_BUILD_FOR_APPLE
     if (fClient->InitPipeline(fDisplay) || !fClient->StartInit()) {
         fClient->SetDone(true);
     }
+#endif
 
     HandleArguments();
 }
