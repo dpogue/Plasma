@@ -10,7 +10,7 @@ static EGLContext current_context = EGL_NO_CONTEXT;
 
 EGLBoolean eglBindAPI(EGLenum api)
 {
-    if (api != EGL_OPENGL_ES_API)
+    if (api != EGL_OPENGL_ES_API && api != EGL_OPENGL_API)
     {
         fprintf(stderr, "WARNING: Unsupported API requested 0x%x!\n", api);
         return EGL_FALSE;
@@ -86,6 +86,12 @@ EGLBoolean eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor)
     if(major) *major = 1;
     if(minor) *minor = 4;
 
+    return EGL_TRUE;
+}
+
+
+EGLAPI EGLBoolean EGLAPIENTRY eglTerminate(EGLDisplay dpy)
+{
     return EGL_TRUE;
 }
 
@@ -346,6 +352,13 @@ EGLSurface eglCreateWindowSurface(EGLDisplay dpy, EGLConfig config_, EGLNativeWi
     surface->nsview = CreateView(surface, win, &surface->width, &surface->height);
 
     return surface;
+}
+
+EGLAPI EGLBoolean EGLAPIENTRY eglDestroySurface(EGLDisplay dpy, EGLSurface surface)
+{
+    free(surface);
+
+    return EGL_TRUE;
 }
 
 EGLContext eglCreateContext(EGLDisplay dpy, EGLConfig config_, EGLContext share_, const EGLint *attrib_list)

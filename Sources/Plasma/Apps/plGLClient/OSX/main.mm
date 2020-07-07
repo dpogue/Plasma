@@ -49,17 +49,28 @@ plClientLoader gClient;
 
 void PumpMessageQueueProc()
 {
-    NSEvent* event = [NSApp nextEventMatchingMask:NSAnyEventMask
+    NSEvent* event;
+
+    while ((event = [NSApp nextEventMatchingMask:NSEventMaskAny
                             untilDate:[NSDate distantPast]
                             inMode:NSDefaultRunLoopMode
-                            dequeue:YES];
+                            dequeue:YES]) != nil)
+    {
 
-    /*if ([event type] == NSKeyDown) {
-        gClient->SetDone(true);
-    }*/
+        switch ([event type])
+        {
+        case NSEventTypeKeyDown:
+            {
+                gClient->SetDone(true);
+            }
+            break;
+        default:
+            break;
+        }
 
-    [NSApp sendEvent:event];
-    [NSApp updateWindows];
+        [NSApp sendEvent:event];
+        [NSApp updateWindows];
+    }
 }
 
 
@@ -94,7 +105,7 @@ int main(int argc, const char** argv)
     // Window controller
     NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
 
-    gClient.SetWindowHandle((hsWindowHndl)window);
+    gClient.SetClientWindow((hsWindowHndl)window);
     gClient.SetClientDisplay((hsWindowHndl)NULL);
     gClient.Init(argc, argv);
 
@@ -104,6 +115,13 @@ int main(int argc, const char** argv)
     {
         gClient.Wait();
     }
+
+    // Can't do this threaded on mac
+    if (gClient->InitPipeline(NULL) || !gClient->StartInit()) {
+        gClient->SetDone(true);
+    }
+
+    gClient->SetQuitIntro(true);
 
     [window orderFrontRegardless];
 
