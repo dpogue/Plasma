@@ -83,7 +83,7 @@ void plGLPlateManager::ICreateGeometry()
     uint16_t indices[6] = {0, 1, 2, 1, 2, 3};
 
 
-    GLuint vbo, ibo, vao;
+    GLuint vbo, ibo, vao = 0;
 
 #ifdef GL_VERSION_4_5
     glCreateBuffers(1, &vbo);
@@ -114,24 +114,55 @@ void plGLPlateManager::ICreateGeometry()
     glVertexArrayAttribBinding(vao, kVtxNormal, 0);
     glVertexArrayAttribBinding(vao, kVtxColor, 0);
     glVertexArrayAttribBinding(vao, kVtxUVWSrc0, 0);
-#endif
+#else // GL 4.5
+    #if defined(GL_VERSION_3_0) || defined(GL_ES_VERSION_3_0)
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    #endif // GL 3.0
+
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    #if defined(GL_VERSION_3_0) || defined(GL_ES_VERSION_3_0)
+    glEnableVertexAttribArray(kVtxPosition);
+    glVertexAttribPointer(kVtxPosition, 3, GL_FLOAT, GL_FALSE, sizeof(plPlateVertex), 0);
+
+    glEnableVertexAttribArray(kVtxNormal);
+    glVertexAttribPointer(kVtxNormal, 3, GL_FLOAT, GL_FALSE, sizeof(plPlateVertex), (void*)(sizeof(float) * 3));
+
+    glEnableVertexAttribArray(kVtxColor);
+    glVertexAttribPointer(kVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(plPlateVertex), (void*)(sizeof(float) * 3 * 2));
+
+    glEnableVertexAttribArray(kVtxUVWSrc0);
+    glVertexAttribPointer(kVtxUVWSrc0, 3, GL_FLOAT, GL_FALSE, sizeof(plPlateVertex), (void*)((sizeof(float) * 3 * 2) + sizeof(uint32_t)));
+
+    glBindVertexArray(0);
+    #endif // GL 3.0
+#endif // GL 4.5
 
     fBuffers = {vbo, ibo, vao };
 }
 
 void plGLPlateManager::IReleaseGeometry()
 {
+#if defined(GL_VERSION_3_0) || defined(GL_ES_VERSION_3_0)
     if (fBuffers.ARef) {
-#ifdef GL_VERSION_4_5
+        #ifdef GL_VERSION_4_5
         glDisableVertexArrayAttrib(fBuffers.ARef, kVtxPosition);
         glDisableVertexArrayAttrib(fBuffers.ARef, kVtxNormal);
         glDisableVertexArrayAttrib(fBuffers.ARef, kVtxColor);
         glDisableVertexArrayAttrib(fBuffers.ARef, kVtxUVWSrc0);
-#endif
+        #endif // GL 4.5
 
         glDeleteVertexArrays(1, &fBuffers.ARef);
         fBuffers.ARef = 0;
     }
+#endif // GL 3.0
 
     if (fBuffers.VRef) {
         glDeleteBuffers(1, &fBuffers.VRef);
@@ -152,16 +183,35 @@ void plGLPlateManager::IDrawToDevice(plPipeline* pipe)
     uint32_t scrnHeightDiv2 = fOwner->Height() >> 1;
     plPlate* plate = nullptr;
 
-    if (fBuffers.VRef == 0 || fBuffers.IRef == 0 || fBuffers.ARef == 0) {
+    if (fBuffers.VRef == 0 || fBuffers.IRef == 0) {
+        return;
+    }
+
+#if defined(GL_VERSION_3_0) || defined(GL_ES_VERSION_3_0)
+    if (fBuffers.ARef == 0) {
         return;
     }
 
     glBindVertexArray(fBuffers.ARef);
+#else // GL 3.0
+    glBindBuffer(GL_ARRAY_BUFFER, fBuffers.VRef);
 
-    hsMatrix44 c2w;
-    hsVector3 screenspace(-0.5f/scrnWidthDiv2, -0.5f/scrnHeightDiv2, 0.0f);
-    c2w.MakeTranslateMat(&screenspace);
-    glPipe->fDevice.SetWorldToCameraMatrix(c2w);
+    glVertexAttribPointer(kVtxPosition, 3, GL_FLOAT, GL_FALSE, sizeof(plPlateVertex), 0);
+    glEnableVertexAttribArray(kVtxPosition);
+
+    glVertexAttribPointer(kVtxNormal, 3, GL_FLOAT, GL_FALSE, sizeof(plPlateVertex), (void*)(sizeof(float) * 3));
+    glEnableVertexAttribArray(kVtxNormal);
+
+    glVertexAttribPointer(kVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(plPlateVertex), (void*)(sizeof(float) * 3 * 2));
+    glEnableVertexAttribArray(kVtxColor);
+
+    glVertexAttribPointer(kVtxUVWSrc0, 3, GL_FLOAT, GL_FALSE, sizeof(plPlateVertex), (void*)((sizeof(float) * 3 * 2) + sizeof(uint32_t)));
+    glEnableVertexAttribArray(kVtxUVWSrc0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fBuffers.IRef);
+#endif // GL 3.0
+
+    glPipe->fDevice.SetWorldToCameraMatrix(hsMatrix44::IdentityMatrix());
 
     GLboolean cull = glIsEnabled(GL_CULL_FACE);
     if (cull)
