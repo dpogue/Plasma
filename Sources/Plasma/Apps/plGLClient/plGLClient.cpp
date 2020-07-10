@@ -65,6 +65,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plAudio/plAudioSystem.h"
 
+#include "plAvatar/plArmatureMod.h"
+#include "plAvatar/plAvatarClothing.h"
+#include "plAvatar/plAvatarMgr.h"
+
 #include "plDrawable/plAccessGeometry.h"
 #include "plDrawable/plVisLOSMgr.h"
 
@@ -99,6 +103,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plScene/plSceneNode.h"
 #include "plScene/plPageTreeMgr.h"
+#include "plScene/plRelevanceMgr.h"
 #include "plScene/plVisMgr.h"
 
 #include "plSDL/plSDL.h"
@@ -316,10 +321,10 @@ bool plClient::Shutdown()
     {
         plSimulationMgr::Shutdown();
     }
+#endif
 
     plAvatarMgr::ShutDown();
     plRelevanceMgr::DeInit();
-#endif
 
     if (fPageMgr) {
         fPageMgr->Reset();
@@ -332,9 +337,7 @@ bool plClient::Shutdown()
 
     IUnRegisterAs(fLinkEffectsMgr, kLinkEffectsMgr_KEY);
 
-#ifndef MINIMAL_GL_BUILD
     plClothingMgr::DeInit();
-#endif
 
     IUnRegisterAs(fFontCache, kFontCache_KEY);
 
@@ -497,10 +500,8 @@ bool plClient::StartInit()
     plVisLOSMgr::Init(fPipeline, fPageMgr);
 
     // init globals
-#ifndef MINIMAL_GL_BUILD
     plAvatarMgr::GetInstance();
     plRelevanceMgr::Init();
-#endif
 
     gDisp = plgDispatch::Dispatch();
     gTimerMgr = plgTimerCallbackMgr::Mgr();
@@ -893,9 +894,9 @@ void plClient::WindowActivate(bool active)
             fInputManager->Activate(active);
         }
 
-#ifndef MINIMAL_GL_BUILD
         plArmatureMod::WindowActivate(active);
 
+#ifndef MINIMAL_GL_BUILD
         // Remember, we are no longer exclusive fullscreen, so we actually have to toggle the desktop resolution
         // whee? wait. WHEEE!
         if (fPipeline->IsFullScreen())
@@ -1801,11 +1802,11 @@ void plClient::IOnAsyncInitComplete()
     SetHoldLoadRequests(true);
     fProgressBar->SetLength(fProgressBar->GetProgress());
 
-#ifndef MINIMAL_GL_BUILD
     plClothingMgr::Init();
     // Load in any clothing data
     ((plResManager*)hsgResMgr::ResMgr())->PageInAge("GlobalClothing");
 
+#ifndef MINIMAL_GL_BUILD
     pfMarkerMgr::Instance();
 #endif
 

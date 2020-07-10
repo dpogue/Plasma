@@ -53,11 +53,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plMessage/plRenderMsg.h"
 #include "plMessage/plListenerMsg.h"
 #include "plMessage/plAvatarMsg.h"
-
-#ifndef MINIMAL_GL_BUILD
 #include "plAvatar/plAvBrainHuman.h"
 #include "plAvatar/plArmatureMod.h"
-#endif
 
 plViewFaceModifier::plViewFaceModifier()
 :   fFacePoint(0,0,0),
@@ -320,7 +317,6 @@ bool plViewFaceModifier::MsgReceive(plMessage* msg)
         return true;
     }
 
-#ifndef MINIMAL_GL_BUILD
     plArmatureUpdateMsg* armMsg = plArmatureUpdateMsg::ConvertNoRef(msg);
     if( armMsg && armMsg->IsLocal() )
     {
@@ -339,7 +335,6 @@ bool plViewFaceModifier::MsgReceive(plMessage* msg)
 
         return true;
     }
-#endif
 
     plListenerMsg* list = plListenerMsg::ConvertNoRef(msg);
     if (list)

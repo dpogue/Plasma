@@ -60,10 +60,8 @@ REGISTER_CREATABLE(plAxisAnimModifier);
 #include "plCloneSpawnModifier.h"
 REGISTER_CREATABLE(plCloneSpawnModifier);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDecalEnableMod.h"
 REGISTER_CREATABLE(plDecalEnableMod);
-#endif
 
 #ifndef MINIMAL_GL_BUILD
 #include "plExcludeRegionModifier.h"
@@ -88,10 +86,8 @@ REGISTER_CREATABLE(plLayerSDLModifier);
 REGISTER_CREATABLE(plLogicModifier);
 #endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plMaintainersMarkerModifier.h"
 REGISTER_CREATABLE(plMaintainersMarkerModifier);
-#endif
 
 #include "plResponderModifier.h"
 REGISTER_CREATABLE(plResponderEnableMsg);

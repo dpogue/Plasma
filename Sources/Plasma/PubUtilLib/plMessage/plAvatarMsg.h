@@ -340,7 +340,6 @@ public:
 //
 ///////////////////
 
-#ifndef MINIMAL_GL_BUILD
 #ifndef SERVER
 class plAvPushBrainMsg : public plAvTaskMsg
 {
@@ -376,7 +375,6 @@ public:
 };
 
 #endif // SERVER
-#endif // MINIMAL_GL_BUILD
 
 
 // For entering/exiting "stealth mode"

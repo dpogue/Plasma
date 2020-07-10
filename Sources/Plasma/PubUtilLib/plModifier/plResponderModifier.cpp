@@ -356,7 +356,6 @@ bool plResponderModifier::IContinueSending()
                     stateMsg->AddReceiver(fPlayerKey);
                     stateMsg->fAddSurface = fEnter;
                 }
-#ifndef MINIMAL_GL_BUILD
                 else if (plSubWorldMsg* swMsg = plSubWorldMsg::ConvertNoRef(msg))
                 {
                     plArmatureMod *avatar = plAvatarMgr::GetInstance()->GetLocalAvatar();
@@ -365,7 +364,6 @@ bool plResponderModifier::IContinueSending()
                         swMsg->AddReceiver(avatar->GetKey());
                     }
                 }
-#endif
 
                 // If we're in anim debug mode, check if this is an anim play
                 // message so we can put up the cue

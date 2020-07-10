@@ -432,19 +432,21 @@ void plNetLinkingMgr::IDoLink(plLinkToAgeMsg* msg)
     plNetClientMgr* nc = plNetClientMgr::GetInstance();
     GetAgeLink()->SetSpawnPoint(msg->GetAgeLink()->SpawnPoint());
 
-#ifndef MINIMAL_GL_BUILD
     if (fLinkedIn) {
         // Set the link out animation we should use
         if (plSceneObject *localSO = plSceneObject::ConvertNoRef(nc->GetLocalPlayer())) {
             plArmatureMod *avMod = const_cast<plArmatureMod*>(plArmatureMod::ConvertNoRef(localSO->GetModifierByType(plArmatureMod::Index())));
             avMod->SetLinkInAnim(msg->GetLinkInAnimName());
         }
+#ifndef MINIMAL_GL_BUILD
         // Queue leave op
         NlmLeaveAgeOp * leaveAgeOp = new NlmLeaveAgeOp;
         leaveAgeOp->muteSfx = !msg->PlayLinkOutSfx();
         QueueOp(leaveAgeOp);
+#endif
     }
 
+#ifndef MINIMAL_GL_BUILD
     // Queue join op
     NlmJoinAgeOp * joinAgeOp = new NlmJoinAgeOp;
     joinAgeOp->age.ageInstId = *GetAgeLink()->GetAgeInfo()->GetAgeInstanceGuid();
@@ -746,9 +748,7 @@ void plNetLinkingMgr::OfferLinkToPlayer( const plAgeLinkStruct * inInfo, uint32_
 
         plKey host = mgr->GetLocalPlayerKey();
         plKey guest = guestMem->GetAvatarKey();
-#ifndef MINIMAL_GL_BUILD
         plAvatarMgr::OfferLinkingBook(host, guest, linkM, host);
-#endif
     }
 }
 // my special version - cjp
@@ -766,9 +766,7 @@ void plNetLinkingMgr::OfferLinkToPlayer( const plAgeLinkStruct * inInfo, uint32_
 
         plKey guest = guestMem->GetAvatarKey();
         plKey host = mgr->GetLocalPlayerKey();
-#ifndef MINIMAL_GL_BUILD
         plAvatarMgr::OfferLinkingBook(host, guest, linkM, replyKey);
-#endif
     }
 }
 

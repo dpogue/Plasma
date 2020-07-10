@@ -92,11 +92,7 @@ void plLoadAvatarMsg::Read(hsStream* stream, hsResMgr* mgr)
     fSpawnPoint = mgr->ReadKey(stream);
     if(stream->ReadBool())
     {
-#ifndef MINIMAL_GL_BUILD
         fInitialTask = plAvTask::ConvertNoRef(mgr->ReadCreatable(stream));
-#else
-        mgr->ReadCreatable(stream);
-#endif
     }
     fUserStr = stream->ReadSafeString();
 }

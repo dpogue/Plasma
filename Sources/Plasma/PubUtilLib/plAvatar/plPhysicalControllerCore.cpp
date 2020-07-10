@@ -127,8 +127,10 @@ void plPhysicalControllerCore::IApply(float delSecs)
     // Match controller to owner if transform has changed since the last frame
     plSceneObject* so = plSceneObject::ConvertNoRef(fOwner->ObjectIsLoaded());
     const hsMatrix44& l2w = so->GetCoordinateInterface()->GetLocalToWorld();
+#ifndef MINIMAL_GL_BUILD
     if (!CompareMatrices(fLastGlobalLoc, l2w, 0.0001f))
         SetGlobalLoc(l2w);
+#endif
 
     if (fEnabled)
     {
@@ -198,6 +200,7 @@ void plPhysicalControllerCore::IUpdateNonPhysical(float alpha)
     // Update global location if owner transform hasn't changed.
     plSceneObject* so = plSceneObject::ConvertNoRef(fOwner->ObjectIsLoaded());
     const hsMatrix44& l2w = so->GetCoordinateInterface()->GetLocalToWorld();
+#ifndef MINIMAL_GL_BUILD
     if (CompareMatrices(fLastGlobalLoc, l2w, 0.0001f))
     {
         if (fEnabled)
@@ -233,6 +236,7 @@ void plPhysicalControllerCore::IUpdateNonPhysical(float alpha)
             }
         }
     }
+#endif
 }
 
 void plPhysicalControllerCore::ISendCorrectionMessages(bool dirtySynch)

@@ -487,7 +487,6 @@ void plAvBrainGenericMsg::ReadVersion(hsStream* s, hsResMgr* mgr)
 ///////////////////
 
 #ifndef SERVER
-#ifndef MINIMAL_GL_BUILD
 
 // default ctor
 plAvPushBrainMsg::plAvPushBrainMsg()
@@ -518,7 +517,6 @@ void plAvPushBrainMsg::Write(hsStream *stream, hsResMgr *mgr)
     mgr->WriteCreatable(stream, fBrain);
 }
 
-#endif // MINIMAL_GL_BUILD
 #endif // SERVER
 
 

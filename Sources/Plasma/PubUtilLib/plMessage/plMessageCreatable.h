@@ -85,12 +85,10 @@ REGISTER_CREATABLE(plAvatarFootMsg);
     REGISTER_CREATABLE(plAvTaskMsg);
     REGISTER_CREATABLE(plAvTaskSeekDoneMsg);
 
-    #ifndef MINIMAL_GL_BUILD
     #ifndef SERVER
         REGISTER_CREATABLE(plAvPopBrainMsg);
         REGISTER_CREATABLE(plAvPushBrainMsg);
     #endif // ndef SERVER
-    #endif
 #endif // ndef NO_AV_MSGS
 
 #include "plBulletMsg.h"
@@ -309,7 +307,6 @@ REGISTER_CREATABLE(plTriggerMsg);
 #include "plVaultNotifyMsg.h"
 REGISTER_CREATABLE(plVaultNotifyMsg);
 
-#ifndef MINIMAL_GL_BUILD
 #ifndef SERVER
     #ifndef NO_AV_MSGS
         #include "plAIMsg.h"
@@ -318,7 +315,6 @@ REGISTER_CREATABLE(plVaultNotifyMsg);
         REGISTER_CREATABLE(plAIMsg);
     #endif // NO_AV_MSGS
 #endif // SERVER
-#endif
 
 /*****************************************************************************
 *
@@ -328,10 +324,8 @@ REGISTER_CREATABLE(plVaultNotifyMsg);
 
 #ifndef NO_AV_MSGS
     #ifndef SERVER
-#ifndef MINIMAL_GL_BUILD
         #include "plAvCoopMsg.h"
         REGISTER_CREATABLE(plAvCoopMsg);
-#endif
 
         #include "plLoadAvatarMsg.h"
         REGISTER_CREATABLE(plLoadAvatarMsg);
@@ -339,10 +333,8 @@ REGISTER_CREATABLE(plVaultNotifyMsg);
         #include "plLoadCloneMsg.h"
         REGISTER_CREATABLE(plLoadCloneMsg);
 
-#ifndef MINIMAL_GL_BUILD
         #include "plLoadClothingMsg.h"
         REGISTER_CREATABLE(plLoadClothingMsg);
-#endif
     #endif // ndef SERVER
 #endif // ndef NO_AV_MSGS
 
