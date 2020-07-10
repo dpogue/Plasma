@@ -203,7 +203,6 @@ void plNetClientMgr::SendLocalPlayerAvatarCustomizations()
 {
     plSynchEnabler ps(true);    // make sure synching is enabled, since this happens during load
 
-#ifndef MINIMAL_GL_BUILD
     const plArmatureMod * avMod = plAvatarMgr::GetInstance()->GetLocalAvatar();
     hsAssert(avMod,"Failed to get local avatar armature modifier.");
     avMod->GetClothingOutfit()->DirtySynchState(kSDLClothing, plSynchedObject::kBCastToClients | plSynchedObject::kForceFullSend);
@@ -227,7 +226,6 @@ void plNetClientMgr::SendLocalPlayerAvatarCustomizations()
     for (i = 0; i < morphs.GetCount(); i++)
         if (morphs[i]->GetTarget(0))
             morphs[i]->GetTarget(0)->DirtySynchState(kSDLMorphSequence, plSynchedObject::kBCastToClients);
-#endif
 
 }
 

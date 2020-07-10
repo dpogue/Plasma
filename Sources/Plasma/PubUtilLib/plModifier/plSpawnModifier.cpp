@@ -78,9 +78,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 void plSpawnModifier::AddTarget(plSceneObject* so)
 {
     plMultiModifier::AddTarget(so);
-#ifndef MINIMAL_GL_BUILD
     plAvatarMgr::GetInstance()->AddSpawnPoint(this);
-#endif
 //  plgDispatch::Dispatch()->RegisterForExactType(plSpawnRequestMsg::Index(), GetKey());
 }
 
@@ -89,9 +87,7 @@ void plSpawnModifier::RemoveTarget(plSceneObject* so)
     plMultiModifier::RemoveTarget(so);
     hsAssert(fTargets.GetCount() == 0, "Spawn modifier has multiple targets. Matt.");
 
-#ifndef MINIMAL_GL_BUILD
     plAvatarMgr::GetInstance()->RemoveSpawnPoint(this);
-#endif
 }
 
 void plSpawnModifier::Read(hsStream *stream, hsResMgr *mgr)

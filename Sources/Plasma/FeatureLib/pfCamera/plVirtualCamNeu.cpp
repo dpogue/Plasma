@@ -914,7 +914,6 @@ void plVirtualCam1::FirstPersonOverride()
 
 bool plVirtualCam1::MsgReceive(plMessage* msg)
 {
-#ifndef MINIMAL_GL_BUILD
     plPlayerPageMsg* pPMsg = plPlayerPageMsg::ConvertNoRef(msg);
     if (pPMsg)
     {
@@ -936,7 +935,6 @@ bool plVirtualCam1::MsgReceive(plMessage* msg)
         }
         return true;
     }
-#endif
 
     plAvatarBehaviorNotifyMsg *behNotifymsg = plAvatarBehaviorNotifyMsg::ConvertNoRef(msg);
     if (behNotifymsg)

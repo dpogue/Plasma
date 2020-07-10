@@ -57,48 +57,32 @@ REGISTER_CREATABLE(plCutter);
 #include "plDrawableSpans.h"
 REGISTER_CREATABLE(plDrawableSpans);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaBulletMgr.h"
 REGISTER_CREATABLE(plDynaBulletMgr);
-#endif
 
 #include "plDynaDecalMgr.h"
 REGISTER_NONCREATABLE(plDynaDecalMgr);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaFootMgr.h"
 REGISTER_CREATABLE(plDynaFootMgr);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaPuddleMgr.h"
 REGISTER_CREATABLE(plDynaPuddleMgr);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaRippleMgr.h"
 REGISTER_CREATABLE(plDynaRippleMgr);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaRippleVSMgr.h"
 REGISTER_CREATABLE(plDynaRippleVSMgr);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaTorpedoMgr.h"
 REGISTER_CREATABLE(plDynaTorpedoMgr);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaTorpedoVSMgr.h"
 REGISTER_CREATABLE(plDynaTorpedoVSMgr);
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynaWakeMgr.h"
 REGISTER_CREATABLE(plDynaWakeMgr);
-#endif
 
 #include "plInstanceDrawInterface.h"
 REGISTER_CREATABLE(plInstanceDrawInterface);

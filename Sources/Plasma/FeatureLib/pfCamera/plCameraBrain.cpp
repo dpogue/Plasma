@@ -1231,7 +1231,6 @@ bool plCameraBrain1_Avatar::MsgReceive(plMessage* msg)
             {
                 SetSubject((plSceneObject*)pRefMsg->GetRef());
                 plSceneObject* avSO = nil;
-#ifndef MINIMAL_GL_BUILD
                 if (plNetClientMgr::GetInstance())
                     avSO = plSceneObject::ConvertNoRef(plNetClientMgr::GetInstance()->GetLocalPlayer());
 
@@ -1241,7 +1240,6 @@ bool plCameraBrain1_Avatar::MsgReceive(plMessage* msg)
                     if (avMod)
                         avMod->RegisterForBehaviorNotify(GetKey());
                 }
-#endif
             }
             else
                 SetSubject(nil);
@@ -1293,7 +1291,6 @@ void plCameraBrain1_Avatar::Read(hsStream* stream, hsResMgr* mgr)
     
     if (fFlags.IsBitSet(kFollowLocalAvatar) && GetSubject())
     {
-#ifndef MINIMAL_GL_BUILD
         plSceneObject* avSO = plSceneObject::ConvertNoRef(plNetClientMgr::GetInstance()->GetLocalPlayer());
         if (GetSubject() == avSO)
         {
@@ -1301,7 +1298,6 @@ void plCameraBrain1_Avatar::Read(hsStream* stream, hsResMgr* mgr)
             if (avMod)
                 avMod->RegisterForBehaviorNotify(GetKey());
         }
-#endif
     }
 
 }

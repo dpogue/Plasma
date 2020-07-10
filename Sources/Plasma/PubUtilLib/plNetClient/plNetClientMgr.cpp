@@ -434,11 +434,9 @@ int plNetClientMgr::IPrepMsg(plNetMessage* msg)
 //
 void plNetClientMgr::IUnloadRemotePlayers()
 {
-#ifndef MINIMAL_GL_BUILD
     for (size_t i = fRemotePlayerKeys.size(); i > 0; --i)
         plAvatarMgr::GetInstance()->UnLoadAvatar(fRemotePlayerKeys[i-1], true);
     hsAssert(fRemotePlayerKeys.empty(), "Still remote players left when linking out");
-#endif
 }
 
 //
@@ -446,11 +444,9 @@ void plNetClientMgr::IUnloadRemotePlayers()
 //
 void plNetClientMgr::IUnloadNPCs()
 {
-#ifndef MINIMAL_GL_BUILD
     for (size_t i = fNPCKeys.size(); i > 0; --i)
         plAvatarMgr::GetInstance()->UnLoadAvatar(fNPCKeys[i-1], false);
     hsAssert(fNPCKeys.empty(), "Still npcs left when linking out");
-#endif
 }
 
 //
@@ -678,11 +674,7 @@ plNetGroupId plNetClientMgr::GetEffectiveNetGroup(const plSynchedObject*& obj) c
         else
         {
             const plLayerInterface* li = plLayerInterface::ConvertNoRef(obj);
-#ifndef MINIMAL_GL_BUILD
             const plClothingOutfit* cl = plClothingOutfit::ConvertNoRef(obj);
-#else
-            const plClothingOutfit* cl = nullptr;
-#endif
             if (li || cl)
             {
                 // the object is a layer interface or clothing object

@@ -798,6 +798,7 @@ bool plClothingOutfit::ReadClothing()
 
 bool plClothingOutfit::IReadFromVault()
 {
+#ifndef MINIMAL_GL_BUILD
     SetupMorphSDL();
 
     WearDefaultClothing();
@@ -835,6 +836,7 @@ bool plClothingOutfit::IReadFromVault()
     
     fSynchClients = true; // set true if the next synch should be bcast
     ForceUpdate(true);
+#endif
     
     return true;
 }
@@ -855,6 +857,7 @@ void plClothingOutfit::WriteToVault()
     if (!fVaultSaveEnabled)
         return;
 
+#ifndef MINIMAL_GL_BUILD
     hsRef<RelVaultNode> rvn = VaultGetAvatarOutfitFolder();
     if (!rvn)
         return;
@@ -872,6 +875,7 @@ void plClothingOutfit::WriteToVault()
     SDRs.Add(appearanceStateDesc->GetStateDataRecord(0));
     
     WriteToVault(SDRs);
+#endif
 }
 
 void plClothingOutfit::WriteToVault(const TArray<plStateDataRecord*> & SDRs)
@@ -880,6 +884,7 @@ void plClothingOutfit::WriteToVault(const TArray<plStateDataRecord*> & SDRs)
     if (fAvatar->GetTarget(0) != plNetClientApp::GetInstance()->GetLocalPlayer())
         return;
 
+#ifndef MINIMAL_GL_BUILD
     hsRef<RelVaultNode> rvn = VaultGetAvatarOutfitFolder();
     if (!rvn)
         return;
@@ -954,6 +959,7 @@ void plClothingOutfit::WriteToVault(const TArray<plStateDataRecord*> & SDRs)
     for (unsigned i = 0; i < morphs.Count(); ++i) {
         delete morphs[i];
     }
+#endif
 }
 
 // XXX HACK. DON'T USE (this function exists for the temp console command Clothing.SwapClothTexHACK)
@@ -1466,6 +1472,7 @@ bool plClothingOutfit::WriteToFile(const plFileName &filename)
     if (!filename.IsValid())
         return false;
 
+#ifndef MINIMAL_GL_BUILD
     hsRef<RelVaultNode> rvn = VaultGetAvatarOutfitFolder();
     if (!rvn)
         return false;
@@ -1487,6 +1494,7 @@ bool plClothingOutfit::WriteToFile(const plFileName &filename)
     }
 
     S.Close();
+#endif
     return true;
 }
 
@@ -1605,6 +1613,7 @@ plClothingElement *plClothingMgr::FindElementByName(const ST::string &name) cons
 
 void plClothingMgr::AddItemsToCloset(hsTArray<plClosetItem> &items)
 {
+#ifndef MINIMAL_GL_BUILD
     hsRef<RelVaultNode> rvn = VaultGetAvatarClosetFolder();
     if (!rvn)
         return;
@@ -1649,10 +1658,12 @@ void plClothingMgr::AddItemsToCloset(hsTArray<plClosetItem> &items)
             );
         }
     }
+#endif
 }
 
 void plClothingMgr::GetClosetItems(hsTArray<plClosetItem> &out)
 {
+#ifndef MINIMAL_GL_BUILD
     hsRef<RelVaultNode> rvn = VaultGetAvatarClosetFolder();
     if (!rvn)
         return;
@@ -1676,6 +1687,7 @@ void plClothingMgr::GetClosetItems(hsTArray<plClosetItem> &out)
                 out.Remove(i);
         }
     }
+#endif
 }
 
 void plClothingMgr::GetAllWithSameMesh(plClothingItem *item, hsTArray<plClothingItem*> &out)

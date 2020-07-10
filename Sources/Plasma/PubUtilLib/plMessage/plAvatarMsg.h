@@ -333,7 +333,6 @@ public:
     virtual void WriteVersion(hsStream* s, hsResMgr* mgr);
 };
 
-#ifndef MINIMAL_GL_BUILD
 ///////////////////
 //
 // PLAVPUSHBRAINMSG
@@ -355,9 +354,7 @@ public:
 
     plArmatureBrain *fBrain;
 };
-#endif
 
-#ifndef MINIMAL_GL_BUILD
 //////////////////
 //
 // PLAVPOPBRAINMSG
@@ -374,7 +371,6 @@ public:
     CLASSNAME_REGISTER( plAvPopBrainMsg );
     GETINTERFACE_ANY( plAvPopBrainMsg, plAvTaskMsg);
 };
-#endif
 
 
 // For entering/exiting "stealth mode"

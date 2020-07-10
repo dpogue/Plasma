@@ -53,6 +53,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plAvatarMgr.h"
 #include "plAvTaskBrain.h"
 #include "plAvTaskSeek.h"
+#include "plArmatureMod.h"
 
 // global
 

@@ -1990,6 +1990,7 @@ bool plArmatureMod::ValidatePhysics()
     if (!fTarget)
         return false;
 
+#ifndef MINIMAL_GL_BUILD
     if (!fController)
         fController = plPhysicalControllerCore::Create(GetTarget(0)->GetKey(), fPhysHeight, fPhysWidth);
 
@@ -2013,6 +2014,9 @@ bool plArmatureMod::ValidatePhysics()
     {
         return false;
     }
+#else
+    return false;
+#endif
     
 }
 
@@ -2545,7 +2549,11 @@ bool plArmatureMod::IsKILowestLevel()
 
 int  plArmatureMod::GetKILevel()
 {
+#ifndef MINIMAL_GL_BUILD
     return VaultGetKILevel();
+#else
+    return 3;
+#endif
 }
 
 void plArmatureMod::SetLinkInAnim(const ST::string &animName)

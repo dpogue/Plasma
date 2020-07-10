@@ -412,7 +412,6 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
         {
             plATCAnim *linkInAnim = nil;
             plKey linkInAnimKey = nil;
-#ifndef MINIMAL_GL_BUILD
             const plArmatureMod *avMod = plArmatureMod::ConvertNoRef(avatar->GetModifierByType(plArmatureMod::Index()));
             if (pTriggerMsg->HasBCastFlag(plMessage::kNetNonLocal))
             {
@@ -434,7 +433,6 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
                 task->fDisablePhysics = false;
                 (new plAvTaskMsg(GetKey(), avMod->GetKey(), task))->Send();
             }
-#endif
                 
         }
         
