@@ -53,7 +53,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plProgressMgr.h"
 #include "hsTimer.h"
 
-#include "plPipeline/plPlates.h"
 #include "plClientResMgr/plClientResMgr.h"
 
 #include <regex>
