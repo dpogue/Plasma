@@ -514,8 +514,10 @@ bool plClient::StartInit()
     fConsole->RegisterAs(kConsoleObject_KEY);     // fixedKey from plFixedKey.h
     fConsole->Init(fConsoleEngine);
 
-    /// Init the font cache
+    // Init the font cache and load our custom fonts from our current dat directory
+    // (This needs to happen before the loading screen is rendered)
     fFontCache = new plFontCache();
+    fFontCache->LoadCustomFonts("dat");
 
     /// Init the transition manager
     fTransitionMgr = new plTransitionMgr();
@@ -1764,9 +1766,6 @@ void plClient::IOnAsyncInitComplete()
     // set the pipeline for the python cyMisc module so that it can do a screen capture
     cyMisc::SetPipeline(fPipeline);
 #endif
-
-    // Load our custom fonts from our current dat directory
-    fFontCache->LoadCustomFonts("dat");
 
     // We'd like to do a SetHoldLoadRequests here, but the GUI stuff doesn't draw right
     // if you try to delay the loading for it.  To work around that, we allocate a

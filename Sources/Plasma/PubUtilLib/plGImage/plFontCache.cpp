@@ -62,6 +62,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsResMgr.h"
 #include "pnKeyedObject/plUoid.h"
 
+#define FONT_CACHE_DEBUGGING 0
 
 const char* plFontCache::kCustFontExtension = ".prf";
 
@@ -113,9 +114,13 @@ plFont  *plFontCache::GetFont( const ST::string &face, uint8_t size, uint32_t fo
 
     if( currIdx != (uint32_t)-1 )
     {
-        //if( currDeltaSize > 0 )
-        //  plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache is matching {} {} (requested {} {})", fCache[ currIdx ]->GetFace(), fCache[ currIdx ]->GetSize(), face, size );
-        return fCache[ currIdx ];
+#if FONT_CACHE_DEBUGGING
+        if (currDeltaSize > 0)
+        {
+            plStatusLog::AddLineSF("pipeline.log", "Warning: plFontCache is matching {} {} (requested {} {})", fCache[ currIdx ]->GetFace(), fCache[ currIdx ]->GetSize(), face, size);
+        }
+#endif
+        return fCache[currIdx];
     }
 
     // If we failed, it's possible we have a face saved as "Times", for example, and someone's
@@ -125,19 +130,23 @@ plFont  *plFontCache::GetFont( const ST::string &face, uint8_t size, uint32_t fo
     {
         return GetFont(face.left(sp), size, fontFlags);
     }
-    else if( fontFlags != 0 )
+    else if (fontFlags != 0)
     {
         // Hmm, well ok, just to be nice, try without our flags
         plFont *f = GetFont( face, size, 0 );
-        if( f != nil )
+        if (f != nullptr)
         {
-            //plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache is substituting {} {} regular (flags 0x{x} could not be matched)", f->GetFace(), f->GetSize(), fontFlags );
+#if FONT_CACHE_DEBUGGING
+            plStatusLog::AddLineSF("pipeline.log", "Warning: plFontCache is substituting {} {} regular (flags 0x{x} could not be matched)", f->GetFace(), f->GetSize(), fontFlags);
+#endif
             return f;
         }
     }
 
-    //plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache was unable to match {} {} (0x{x})", face, size, fontFlags );
-    return nil;
+#if FONT_CACHE_DEBUGGING
+    plStatusLog::AddLineSF("pipeline.log", "Warning: plFontCache was unable to match {} {} (0x{x})", face, size, fontFlags);
+#endif
+    return nullptr;
 }
 
 void plFontCache::LoadCustomFonts( const plFileName &dir )
@@ -171,7 +180,9 @@ void plFontCache::ILoadCustomFonts()
                                                new plGenRefMsg( GetKey(), plRefMsg::kOnCreate, 0, -1 ),
                                                plRefFlags::kActiveRef );
 
-            //plStatusLog::AddLineS( "pipeline.log", "FontCache: Added custom font %s", keyName.c_str() );
+#if FONT_CACHE_DEBUGGING
+            plStatusLog::AddLineSF("pipeline.log", "FontCache: Added custom font {}", keyName);
+#endif
 
         }
     }
