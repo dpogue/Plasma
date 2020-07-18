@@ -44,9 +44,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plPlateProgressMgr.h"
 #include "plPipeline.h"
 #include "plPlates.h"
+#include "hsResMgr.h"
 #include "hsTimer.h"
 
 #include "plClientResMgr/plClientResMgr.h"
+#include "plGImage/plDynamicTextMap.h"
+#include "pnKeyedObject/plUoid.h"
+#include "plSurface/hsGMaterial.h"
+#include "plSurface/plLayer.h"
 
 #include <regex>
 
@@ -56,6 +61,7 @@ enum
     kTitleColor = 0xccb0b0b0,
     kProgressBarColor = 0xff302b3a,
     kInfoColor = 0xff635e6d,
+    kGlobalColor = 0xff353a2b,
 };
 
 std::vector<ST::string> plPlateProgressMgr::fImageRotation;
@@ -96,6 +102,40 @@ void plPlateProgressMgr::DeclareThyself()
 
 void plPlateProgressMgr::Activate()
 {
+    if (fProgressPlate == nullptr)
+    {
+        uint32_t width = plPlateManager::Instance().GetPipeWidth();
+        uint32_t height = plPlateManager::Instance().GetPipeHeight();
+
+        if (fProgressMap == nullptr)
+        {
+            plDynamicTextMap* map = new plDynamicTextMap(width, uint32_t(height/2.0), false);
+            hsgResMgr::ResMgr()->NewKey("PlateProgressMap#0", map, plLocation::kGlobalFixedLoc);
+
+#ifdef PLASMA_EXTERNAL_RELEASE
+            map->SetFont("Tahoma", 8);
+#else
+            map->SetFont("Courier", 8);
+#endif
+
+            hsRefCnt_SafeAssign(fProgressMap, map);
+        }
+
+        plPlateManager::Instance().CreatePlate(&fProgressPlate);
+
+        fProgressPlate->CreateMaterial(width, uint32_t(height/2.0), false, fProgressMap);
+        fProgressPlate->SetVisible(true);
+        fProgressPlate->SetOpacity(1.0f);
+        fProgressPlate->SetSize(2.0f, 1.0f, false);
+        fProgressPlate->SetPosition(0, 0.5, 0);
+
+        // Set the layer transform to match the intended size of the DTM
+        if (plLayer* lay = plLayer::ConvertNoRef(fProgressPlate->GetMaterial()->GetLayer(0)))
+        {
+            lay->SetTransform(fProgressMap->GetLayerTransform());
+        }
+    }
+
     if (fStaticTextPlate == nullptr && fCurrentStaticText != plProgressMgr::kNone)
     {
         plPlateManager::Instance().CreatePlate(&fStaticTextPlate);
@@ -134,6 +174,19 @@ void plPlateProgressMgr::Deactivate()
         plPlateManager::Instance().DestroyPlate(fActivePlate);
         fActivePlate = nullptr;
     }
+
+    if (fProgressPlate)
+    {
+        fProgressPlate->SetVisible(false);
+        plPlateManager::Instance().DestroyPlate(fProgressPlate);
+        fProgressPlate = nullptr;
+    }
+
+    if (fProgressMap)
+    {
+        hsRefCnt_SafeUnRef(fProgressMap);
+        fProgressMap = nullptr;
+    }
 }
 
 //// Draw ////////////////////////////////////////////////////////////////////
@@ -152,11 +205,11 @@ void plPlateProgressMgr::Draw(plPipeline* pipe)
     scrnWidth = (uint16_t)pipe->Width();
     scrnHeight = (uint16_t)pipe->Height();
 
-    fontSize = 16;
+    fontSize = fProgressMap->GetFontSize();
     width = scrnWidth - 64;
     height = 16;
     x = ( scrnWidth - width ) >> 1;
-    y = scrnHeight - 44 - (2 * height) - fontSize;
+    y = uint32_t(scrnHeight/2.0) - 44 - (2 * height) - fontSize;
 
 
     if (fActivePlate)
@@ -191,7 +244,77 @@ void plPlateProgressMgr::Draw(plPipeline* pipe)
 
 bool plPlateProgressMgr::IDrawTheStupidThing(plPipeline *p, plOperationProgress *prog, uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
-    return false;
+    if (!fProgressMap)
+    {
+        return false;
+    }
+
+    hsColorRGBA clearColor;
+    hsColorRGBA barColor;
+
+    clearColor.Set(0.0f, 0.0f, 0.0f, 1.0f);
+    barColor.FromARGB32(kProgressBarColor);
+
+    fProgressMap->ClearToColor(clearColor);
+
+    bool drew_something = false;
+    uint16_t downsz = (fProgressMap->GetFontSize() << 1) + 4;
+
+    // draw the title
+    if (!prog->GetTitle().empty()) {
+        hsColorRGBA textColor;
+        textColor.FromARGB32(kTitleColor);
+        fProgressMap->SetTextColor(textColor);
+        y -= downsz;
+        fProgressMap->DrawString(x, y, prog->GetTitle());
+        y += downsz;
+        drew_something = true;
+    }
+
+    // draw a progress bar
+    if (prog->GetMax() > 0.f) {
+        fProgressMap->FrameRect(x, y, width, height, barColor);
+
+        x += 2;
+        y += 2;
+        width -= 4;
+        height -= 4;
+
+        uint16_t drawWidth = width;
+
+        if (prog->GetProgress() <= prog->GetMax())
+        {
+            drawWidth = (uint16_t)((float)width * prog->GetProgress() / prog->GetMax());
+        }
+
+        if (drawWidth > 0)
+        {
+            fProgressMap->FillRect(x, y, drawWidth, height, barColor);
+        }
+
+        y += height + 2;
+
+        drew_something = true;
+    }
+
+    hsColorRGBA infoColor;
+    infoColor.FromARGB32(kInfoColor);
+    fProgressMap->SetTextColor(infoColor);
+
+    //  draw the left justified status text
+    if (!prog->GetStatusText().empty()) {
+        fProgressMap->DrawString(x, y, prog->GetStatusText());
+        drew_something = true;
+    }
+
+    // draw the right justified info text
+    if (!prog->GetInfoText().empty()) {
+        uint16_t right_x = 2 + x + width - fProgressMap->CalcStringWidth(prog->GetInfoText());
+        fProgressMap->DrawString(right_x, y, prog->GetInfoText());
+        drew_something = true;
+    }
+
+    return drew_something;
 }
 
 
