@@ -53,7 +53,9 @@ class plArmatureMod;
 class plActivatorMsg;
 class plEvalMsg;
 
+#ifndef MINIMAL_GL_BUILD
 #define USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+#endif
 
 class plCollisionDetector : public plDetectorModifier
 {
