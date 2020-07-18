@@ -81,10 +81,8 @@ REGISTER_CREATABLE(plInterfaceInfoModifier);
 #include "plLayerSDLModifier.h"
 REGISTER_CREATABLE(plLayerSDLModifier);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plLogicModifier.h"
 REGISTER_CREATABLE(plLogicModifier);
-#endif
 
 #include "plMaintainersMarkerModifier.h"
 REGISTER_CREATABLE(plMaintainersMarkerModifier);
