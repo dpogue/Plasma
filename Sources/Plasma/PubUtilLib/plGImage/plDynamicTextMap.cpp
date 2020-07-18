@@ -497,6 +497,12 @@ void    plDynamicTextMap::SetTextColor( hsColorRGBA &color, bool blockRGB )
 
 //// DrawString ///////////////////////////////////////////////////////////////
 
+void    plDynamicTextMap::DrawString( uint16_t x, uint16_t y, const ST::string &text )
+{
+    // TEMP
+    DrawString(x, y, text.to_wchar().data());
+}
+
 void    plDynamicTextMap::DrawString( uint16_t x, uint16_t y, const char *text )
 {
     wchar_t *wText = hsStringToWString(text);

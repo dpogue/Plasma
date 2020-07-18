@@ -157,6 +157,7 @@ class plDynamicTextMap : public plMipmap
         void    SetTextColor( hsColorRGBA &color, bool blockRGB = false );
         void    SetJustify( Justify j );
 
+        void    DrawString( uint16_t x, uint16_t y, const ST::string &text );
         void    DrawString( uint16_t x, uint16_t y, const char *text );
         void    DrawString( uint16_t x, uint16_t y, const wchar_t *text );
         void    DrawClippedString( int16_t x, int16_t y, const ST::string &text, uint16_t width, uint16_t height );
