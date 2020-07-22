@@ -147,11 +147,15 @@ NORETURN void ErrorAssert(int line, const char* file, const char* fmt, ...)
     }
 #endif // HS_DEBUGGING
 #else
+#ifndef MINIMAL_GL_BUILD
     DebugBreakIfDebuggerPresent();
+#endif
 #endif // defined(HS_DEBUGGING) || !defined(PLASMA_EXTERNAL_RELEASE)
 
+#ifndef MINIMAL_GL_BUILD
     // If no debugger break occurred, just crash.
     std::abort();
+#endif
 }
 
 bool DebugIsDebuggerPresent()
