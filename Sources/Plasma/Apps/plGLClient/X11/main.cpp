@@ -291,7 +291,9 @@ int main(int argc, const char** argv)
         xcb_xfixes_query_version_cookie_t qv_cookie = xcb_xfixes_query_version(gXConn, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
         xcb_xfixes_query_version_reply_t* qv_reply = xcb_xfixes_query_version_reply(gXConn, qv_cookie, nullptr);
 
+#ifndef HS_DEBUGGING // Don't hide the cursor when debugging
         gHasXFixes = qv_reply->major_version >= 4;
+#endif
 
         free(qv_reply);
     }
