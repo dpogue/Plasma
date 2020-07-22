@@ -117,6 +117,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pfConsole/pfConsole.h"
 #include "pfConsole/pfConsoleDirSrc.h"
 
+#include "pfGameGUIMgr/pfGameGUIMgr.h"
+#include "pfGameGUIMgr/pfGUICtrlGenerator.h"
+
 #include "pfLocalizationMgr/pfLocalizationMgr.h"
 
 #include "pfMoviePlayer/plMoviePlayer.h"
@@ -170,6 +173,7 @@ plClient::plClient()
     fDone(false),
     fWindowActive(false),
     fProgressBar(nullptr),
+    fGameGUIMgr(nullptr),
     fHoldLoadRequests(false),
     fNumLoadingRooms(0),
     fNumPostLoadMsgs(0),
@@ -269,15 +273,17 @@ bool plClient::Shutdown()
 
     // Shutdown the journalBook API
     pfJournalBook::SingletonShutdown();
+#endif
 
     /// Take down the KI
-    pfGameGUIMgr* mgr = pfGameGUIMgr::GetInstance();
-    if (mgr)
+    if (fGameGUIMgr)
     {
         // unload the blackbar which will bootstrap in the rest of the KI dialogs
-        mgr->UnloadDialog("KIBlackBar");
+        fGameGUIMgr->UnloadDialog("KIBlackBar");
     }
-#endif
+
+    // Take down our GUI control generator
+    pfGUICtrlGenerator::Instance().Shutdown();
 
     if (plNetClientMgr* nc = plNetClientMgr::GetInstance())
     {
@@ -290,9 +296,7 @@ bool plClient::Shutdown()
     }
 
     IUnRegisterAs(fInputManager, kInput_KEY);
-#ifndef MINIMAL_GL_BUILD
     IUnRegisterAs(fGameGUIMgr, kGameGUIMgr_KEY);
-#endif
 
     for (int i = 0; i < fRooms.Count(); i++)
     {
@@ -511,7 +515,7 @@ bool plClient::StartInit()
     /// everything in code that works with the console does so through the console engine
     fConsole = new pfConsole();
     pfConsole::SetPipeline(fPipeline);
-    fConsole->RegisterAs(kConsoleObject_KEY);     // fixedKey from plFixedKey.h
+    fConsole->RegisterAs(kConsoleObject_KEY);
     fConsole->Init(fConsoleEngine);
 
     // Init the font cache and load our custom fonts from our current dat directory
@@ -521,20 +525,18 @@ bool plClient::StartInit()
 
     /// Init the transition manager
     fTransitionMgr = new plTransitionMgr();
-    fTransitionMgr->RegisterAs(kTransitionMgr_KEY);       // fixedKey from plFixedKey.h
+    fTransitionMgr->RegisterAs(kTransitionMgr_KEY);
     fTransitionMgr->Init();
 
     // Init the Age Linking effects manager
     fLinkEffectsMgr = new plLinkEffectsMgr();
-    fLinkEffectsMgr->RegisterAs( kLinkEffectsMgr_KEY ); // fixedKey from plFixedKey.h
+    fLinkEffectsMgr->RegisterAs(kLinkEffectsMgr_KEY);
     fLinkEffectsMgr->Init();
 
-#ifndef MINIMAL_GL_BUILD
     /// Init the in-game GUI manager
     fGameGUIMgr = new pfGameGUIMgr();
-    fGameGUIMgr->RegisterAs( kGameGUIMgr_KEY );
+    fGameGUIMgr->RegisterAs(kGameGUIMgr_KEY);
     fGameGUIMgr->Init();
-#endif
 
     plgAudioSys::Activate(true);
 
@@ -556,9 +558,7 @@ bool plClient::StartInit()
     fCamera->SetPipeline(GetPipeline());
 
     plVirtualCam1::Refresh();
-#ifndef MINIMAL_GL_BUILD
-    pfGameGUIMgr::GetInstance()->SetAspectRatio( (float)fPipeline->Width() / (float)fPipeline->Height() );
-#endif
+    fGameGUIMgr->SetAspectRatio((float)fPipeline->Width() / (float)fPipeline->Height());
     plMouseDevice::Instance()->SetDisplayResolution((float)fPipeline->Width(), (float)fPipeline->Height());
     plInputManager::SetRecenterMouse(false);
 
@@ -571,7 +571,7 @@ bool plClient::StartInit()
     plgDispatch::Dispatch()->RegisterForExactType(plEvalMsg::Index(), pLMod->GetKey());
     plgDispatch::Dispatch()->RegisterForExactType(plAudioSysMsg::Index(), pLMod->GetKey());
 
-    plSynchedObject::PushSynchDisabled(false);      // enable dirty tracking
+    plSynchedObject::PushSynchDisabled(false); // enable dirty tracking
     return true;
 }
 
@@ -1307,11 +1307,11 @@ bool plClient::IDraw()
     plPreResourceMsg* preMsg = new plPreResourceMsg(fPipeline);
     plgDispatch::MsgSend(preMsg);
 
-    // This might not be the ideal place for this, but it 
+    // This might not be the ideal place for this, but it
     // needs to be AFTER the plRenderMsg is sent, and
     // BEFORE BeginRender. (plRenderMsg causes construction of
     // Dynamic objects (e.g. RT's), BeginRender uses them (e.g. shadows).
-    if( plPipeResReq::Check() || fPipeline->CheckResources() )
+    if (plPipeResReq::Check() || fPipeline->CheckResources())
     {
         fPipeline->LoadResources();
     }
@@ -1357,6 +1357,14 @@ bool plClient::IDraw()
     IServiceMovies();
     plProfile_EndTiming(Movies);
 
+#ifndef MINIMAL_GL_BUILD
+#ifndef PLASMA_EXTERNAL_RELEASE
+    plProfile_BeginTiming(Console);
+    fConsole->Draw(fPipeline);
+    plProfile_EndTiming(Console);
+#endif
+#endif
+
     plProfile_BeginTiming(ProgressMgr);
     plProgressMgr::GetInstance()->Draw(fPipeline);
     plProfile_EndTiming(ProgressMgr);
@@ -1390,6 +1398,13 @@ bool plClient::IDrawProgress()
     // Override the clear color to black.
     fPipeline->ClearRenderTarget(&hsColorRGBA().Set(0.f, 0.f, 0.f, 1.f));
 
+#ifndef MINIMAL_GL_BUILD
+#ifndef PLASMA_EXTERNAL_RELEASE
+    fConsole->Draw(fPipeline);
+#endif
+
+    plStatusLogMgr::GetInstance().Draw();
+#endif
     plProgressMgr::GetInstance()->Draw(fPipeline);
     fPipeline->RenderScreenElements();
     fPipeline->EndRender();
@@ -1774,11 +1789,11 @@ void plClient::IOnAsyncInitComplete()
     fNumLoadingRooms++;
     IStartProgress("Loading Global...", 0);
 
-#ifndef MINIMAL_GL_BUILD
     /// Init the KI
-    pfGameGUIMgr    *mgr = pfGameGUIMgr::GetInstance();
-    mgr->LoadDialog( "KIBlackBar" );    // load the blackbar which will bootstrap in the rest of the KI dialogs
+    // load the blackbar which will bootstrap in the rest of the KI dialogs
+    fGameGUIMgr->LoadDialog("KIBlackBar");
 
+#ifndef MINIMAL_GL_BUILD
     // Init the journal book API
     pfJournalBook::SingletonInit();
 #endif

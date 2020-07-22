@@ -188,6 +188,7 @@ hsGMaterial *pfGUICtrlGenerator::ICreateTextMaterial( const char *text, hsColorR
     plMipmap *bitmap = new plMipmap( 1, 1, plMipmap::kRGB32Config, 1 );
     IAddKey( bitmap, "GUIMipmap" );
 
+#ifndef MINIMAL_GL_BUILD
     // Create textGen to write string with
     plTextGenerator *textGen = new plTextGenerator( bitmap, pixWidth, pixHeight );
     textGen->SetFont( fFontFace, (uint16_t)fFontSize );
@@ -197,6 +198,7 @@ hsGMaterial *pfGUICtrlGenerator::ICreateTextMaterial( const char *text, hsColorR
     textGen->DrawString( ( pixWidth - strWidth ) >> 1, ( pixHeight - strHeight ) >> 1, text );
     textGen->FlushToHost();
     fTextGens.Append( textGen );
+#endif
 
     // Create a material with a simple blank layer, fully ambient
     hsGMaterial *material = new hsGMaterial;
@@ -212,7 +214,9 @@ hsGMaterial *pfGUICtrlGenerator::ICreateTextMaterial( const char *text, hsColorR
 
     hsgResMgr::ResMgr()->AddViaNotify( bitmap->GetKey(), new plLayRefMsg( lay->GetKey(), plRefMsg::kOnCreate, 0, plLayRefMsg::kTexture ), plRefFlags::kActiveRef );
 //  lay->SetTexture( bitmap );
+#ifndef MINIMAL_GL_BUILD
     lay->SetTransform( textGen->GetLayerTransform() );
+#endif
 
     return material;
 }
