@@ -83,7 +83,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //#include "pfCharacter/pfCharacterCreatable.h"
 //#include "pfConditional/plConditionalObjectCreatable.h"
 #include "pfConsole/pfConsoleCreatable.h"
-//#include "pfGameGUIMgr/pfGameGUIMgrCreatable.h"
+#include "pfGameGUIMgr/pfGameGUIMgrCreatable.h"
 //#include "pfJournalBook/pfJournalBookCreatable.h"
 #include "pfMessage/pfMessageCreatable.h"
 //#include "pfPython/pfPythonCreatable.h"

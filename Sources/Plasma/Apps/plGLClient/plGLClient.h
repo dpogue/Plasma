@@ -54,6 +54,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 class pfConsoleEngine;
 class pfConsole;
 class plFontCache;
+class pfGameGUIMgr;
 class plInputManager;
 class plLinkEffectsMgr;
 class plMovieMsg;
@@ -125,6 +126,8 @@ protected:
     bool                        fWindowActive;
     double                      fLastProgressUpdate;
     plOperationProgress*        fProgressBar;
+
+    pfGameGUIMgr*               fGameGUIMgr;
 
     bool                        fHoldLoadRequests;
     std::list<LoadRequest*>     fLoadRooms;
