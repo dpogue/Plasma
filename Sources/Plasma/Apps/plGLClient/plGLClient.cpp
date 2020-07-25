@@ -74,6 +74,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plFile/plEncryptedStream.h"
 
+#include "plGImage/plAVIWriter.h"
 #include "plGImage/plFontCache.h"
 
 #include "plInputCore/plInputManager.h"
@@ -118,12 +119,16 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pfCamera/plVirtualCamNeu.h"
 
+#include "pfCharacter/pfMarkerMgr.h"
+
 #include "pfConsoleCore/pfConsoleEngine.h"
 #include "pfConsole/pfConsole.h"
 #include "pfConsole/pfConsoleDirSrc.h"
 
 #include "pfGameGUIMgr/pfGameGUIMgr.h"
 #include "pfGameGUIMgr/pfGUICtrlGenerator.h"
+
+#include "pfJournalBook/pfJournalBook.h"
 
 #include "pfLocalizationMgr/pfLocalizationMgr.h"
 
@@ -257,12 +262,10 @@ bool plClient::Shutdown()
     plProxyDrawMsg* nuke = new plProxyDrawMsg(plProxyDrawMsg::kAllTypes | plProxyDrawMsg::kDestroy);
     plgDispatch::MsgSend(nuke);
 
-#ifndef MINIMAL_GL_BUILD
     if (plAVIWriter::IsInitialized())
     {
         plAVIWriter::Instance().Shutdown();
     }
-#endif
 
     hsStatusMessage("Shutting down client...\n");
 
@@ -275,10 +278,10 @@ bool plClient::Shutdown()
 #ifndef MINIMAL_GL_BUILD
     // tell Python that its ok to shutdown
     PythonInterface::WeAreInShutdown(); 
+#endif
 
     // Shutdown the journalBook API
     pfJournalBook::SingletonShutdown();
-#endif
 
     /// Take down the KI
     if (fGameGUIMgr)
@@ -341,9 +344,7 @@ bool plClient::Shutdown()
 
     IUnRegisterAs(fFontCache, kFontCache_KEY);
 
-#ifndef MINIMAL_GL_BUILD
     pfMarkerMgr::Shutdown();
-#endif
 
     IUnRegisterAs(fConsole, kConsoleObject_KEY);
 
@@ -1794,10 +1795,8 @@ void plClient::IOnAsyncInitComplete()
     // load the blackbar which will bootstrap in the rest of the KI dialogs
     fGameGUIMgr->LoadDialog("KIBlackBar");
 
-#ifndef MINIMAL_GL_BUILD
     // Init the journal book API
     pfJournalBook::SingletonInit();
-#endif
 
     SetHoldLoadRequests(true);
     fProgressBar->SetLength(fProgressBar->GetProgress());
@@ -1806,9 +1805,7 @@ void plClient::IOnAsyncInitComplete()
     // Load in any clothing data
     ((plResManager*)hsgResMgr::ResMgr())->PageInAge("GlobalClothing");
 
-#ifndef MINIMAL_GL_BUILD
     pfMarkerMgr::Instance();
-#endif
 
     /// Now parse final init files (*.fni). These are files just like ini files, only to be run
     /// after all hell has broken loose in the client.
