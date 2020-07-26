@@ -1251,6 +1251,12 @@ bool plClient::IUpdate()
 
     plCoordinateInterface::SetTransformPhase(plCoordinateInterface::kTransformPhaseDelayed);
 
+#ifndef MINIMAL_GL_BUILD
+    plProfile_BeginTiming(Simulation);
+    plSimulationMgr::GetInstance()->Advance(delSecs);
+    plProfile_EndTiming(Simulation);
+#endif
+
     // At this point, we just register for a plDelayedTransformMsg when dirtied.
     if (!plCoordinateInterface::GetDelayedTransformsEnabled())
     {
