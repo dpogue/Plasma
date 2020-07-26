@@ -94,6 +94,17 @@ void plClientLoader::Run()
     fClient = new plClient();
 
     fClient->SetWindowHandle(fWindow);
+
+#ifndef MINIMAL_GL_BUILD
+    plSimulationMgr::Init();
+    if (plSimulationMgr::GetInstance()) {
+        plSimulationMgr::GetInstance()->Suspend();
+    } else {
+        hsMessageBox("PhysX install failed. You will not be able to play URU.", "Error", hsMessageBoxNormal, hsMessageBoxIconError);
+        return;
+    }
+#endif
+
 #ifndef HS_BUILD_FOR_APPLE
     if (fClient->InitPipeline(fDisplay) || !fClient->StartInit()) {
         fClient->SetDone(true);
