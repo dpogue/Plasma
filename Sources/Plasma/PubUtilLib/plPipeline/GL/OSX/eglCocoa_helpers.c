@@ -118,6 +118,12 @@ static void helperAddRendererConfigs(OSX_EGLDisplay* display, CGLRendererInfoObj
                         c.surface_type = 0;
                         PFINFO(kCGLPFASampleBuffers, c.sample_buffers);
                         PFINFO(kCGLPFASamples, c.samples);
+                        
+                        //macOS doesn't seem to want to report sample buffers or samples
+                        //this might be a request only property and not queryable?
+                        //For now just make up an answer. Needs to be revisited.
+                        c.sample_buffers = 1;
+                        c.samples = 4;
 
                         fprintf(stderr, "\t0x%02x: %dbpp (%d-%d-%d-%d) depth %-2d stencil %d GL %d\n",
                             c.id, c.buffer_bits, c.red_bits,
