@@ -47,8 +47,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #   include <crtdbg.h>
 #endif
 
-#if __APPLE__
-#include "hsMac.hpp"
+#if HS_BUILD_FOR_APPLE
+#include "hsMac.h"
 #endif
 
 #pragma hdrstop

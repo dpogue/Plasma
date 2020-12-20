@@ -78,7 +78,7 @@ set(CoreLib_HEADERS
     hsThread.h
     hsWide.h
     hsWindows.h
-    hsMac.hpp
+    hsMac.h
     pcSmallRect.h
     plCmdParser.h
     plFileSystem.h
