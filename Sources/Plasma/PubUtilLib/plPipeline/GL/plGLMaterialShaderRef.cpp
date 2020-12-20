@@ -373,6 +373,23 @@ void plGLMaterialShaderRef::ISetShaderVariableLocs()
     glBindAttribLocation(fRef, kVtxUVWSrc12, "aVtxUVWSrc12");
 
     glLinkProgram(fRef);
+    
+#ifdef HS_DEBUGGING
+    {
+        GLint compiled = 0;
+        glGetProgramiv(fRef, GL_LINK_STATUS, &compiled);
+        if (compiled == 0) {
+            hsStatusMessage("Not linked Vtx");
+            GLint length = 0;
+            glGetProgramiv(fRef, GL_INFO_LOG_LENGTH, &length);
+            if (length) {
+                char* log = new char[length];
+                glGetProgramInfoLog(fRef, length, &length, log);
+                hsStatusMessage(log);
+            }
+        }
+    }
+#endif
 
 #ifdef HS_DEBUGGING
     GLenum e;
