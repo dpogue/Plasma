@@ -40,8 +40,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#ifndef HeadSpinMac_hpp
-#define HeadSpinMac_hpp
+#ifndef HeadSpinMac_h
+#define HeadSpinMac_h
 
 #if HS_BUILD_FOR_MACOS
 

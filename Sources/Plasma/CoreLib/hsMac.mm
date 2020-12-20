@@ -43,7 +43,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #if HS_BUILD_FOR_MACOS
 
 #include <AppKit/AppKit.h>
-#include "hsMac.hpp"
+#include "hsMac.h"
 
 int hsMessageBoxWithOwnerMac(hsWindowHndl owner, const char* message, const char* caption, int kind, int icon)
 {
