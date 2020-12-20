@@ -47,6 +47,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #   include <crtdbg.h>
 #endif
 
+#if __APPLE__
+#include "hsMac.hpp"
+#endif
+
 #pragma hdrstop
 
 #if defined(HS_BUILD_FOR_UNIX)
@@ -348,7 +352,8 @@ int hsMessageBoxWithOwner(hsWindowHndl owner, const char* message, const char* c
     case IDNO:          return hsMBoxNo;
     default:            return hsMBoxCancel;
     }
-
+#elseif HS_BUILD_FOR_APPLE
+    hsMessageBoxWithOwnerMac(owner, message, caption, kind, icon);
 #endif
     return hsMBoxCancel;
 }
@@ -401,7 +406,9 @@ int hsMessageBoxWithOwner(hsWindowHndl owner, const wchar_t* message, const wcha
     case IDNO:          return hsMBoxNo;
     default:            return hsMBoxCancel;
     }
-
+    
+#elseif HS_BUILD_FOR_APPLE
+    hsMessageBoxWithOwnerMac(owner, message, caption, kind, icon);
 #endif
     return hsMBoxCancel;
 }

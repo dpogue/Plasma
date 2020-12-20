@@ -36,6 +36,11 @@ set(CoreLib_SOURCES
     hsWindows.cpp
 )
 
+# Other platforms may not be friendly to Obj-C mm files, only add them for Apple targets
+if(APPLE)
+    list(APPEND CoreLib_SOURCES hsMac.mm)
+endif(APPLE)
+
 if(WIN32 AND NOT CYGWIN)
     set(CoreLib_SOURCES ${CoreLib_SOURCES}
         hsThread_Win.cpp
@@ -73,6 +78,7 @@ set(CoreLib_HEADERS
     hsThread.h
     hsWide.h
     hsWindows.h
+    hsMac.hpp
     pcSmallRect.h
     plCmdParser.h
     plFileSystem.h
