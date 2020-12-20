@@ -77,7 +77,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
     typedef long HRESULT;
     typedef void* HANDLE;
 #else
-    typedef int32_t* hsWindowHndl;
+    typedef size_t* hsWindowHndl;
     typedef int32_t* hsWindowInst;
 #endif // HS_BUILD_FOR_WIN32
 
@@ -389,7 +389,13 @@ extern hsDebugMessageProc gHSStatusProc;
 hsDebugMessageProc hsSetStatusMessageProc(hsDebugMessageProc newProc);
 
 void ErrorEnableGui (bool enabled);
-NORETURN void ErrorAssert (int line, const char* file, const char* fmt, ...);
+
+#ifndef MINIMAL_GL_BUILD
+#define NORETURN_IF_NOT_MINIMAL_GL_BUILD NORETURN
+#else
+#define NORETURN_IF_NOT_MINIMAL_GL_BUILD
+#endif
+NORETURN_IF_NOT_MINIMAL_GL_BUILD void ErrorAssert (int line, const char* file, const char* fmt, ...);
 
 bool DebugIsDebuggerPresent();
 void DebugBreakIfDebuggerPresent();

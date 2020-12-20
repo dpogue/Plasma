@@ -125,7 +125,7 @@ void ErrorEnableGui(bool enabled)
     s_GuiAsserts = enabled;
 }
 
-NORETURN void ErrorAssert(int line, const char* file, const char* fmt, ...)
+NORETURN_IF_NOT_MINIMAL_GL_BUILD void ErrorAssert(int line, const char* file, const char* fmt, ...)
 {
 #if defined(HS_DEBUGGING) || !defined(PLASMA_EXTERNAL_RELEASE)
     char msg[1024];
