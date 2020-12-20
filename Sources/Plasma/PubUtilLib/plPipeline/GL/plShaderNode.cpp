@@ -218,6 +218,7 @@ ST::string plShaderContext::Render()
     if (this->type == kFragment) {
         out << "precision mediump float;\n";
     }
+    out << "precision lowp int;\n";
 
     for (std::shared_ptr<plShaderStruct> st : this->structs) {
         out << ST::format("struct {} {{\n", st->name);
