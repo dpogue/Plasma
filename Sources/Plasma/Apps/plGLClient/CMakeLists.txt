@@ -58,6 +58,8 @@ elseif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(plGLClient_SOURCES ${plGLClient_SOURCES}
         OSX/main.mm
     )
+    #we know OpenGL is deprecated, but silence the warnings for now
+    add_compile_definitions(GL_SILENCE_DEPRECATION)
 elseif(UNIX)
     set(plGLClient_SOURCES ${plGLClient_SOURCES}
         X11/main.cpp
