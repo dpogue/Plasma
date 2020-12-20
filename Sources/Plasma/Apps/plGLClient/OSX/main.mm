@@ -55,6 +55,8 @@ void PumpMessageQueueProc();
 }
 
 @property (retain) NSTimer *drawTimer;
+@property const char **argv;
+@property int argc;
 
 @end
 
@@ -81,13 +83,13 @@ void PumpMessageQueueProc();
     // Window controller
     NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
 
-    gClient.SetClientWindow((hsWindowHndl)window);
-    gClient.SetClientDisplay((hsWindowHndl)NULL);
     [window setTitle:@"Uru"];
     [window setContentSize:NSMakeSize(800, 600)];
     [window orderFrontRegardless];
     
-    gClient.SetClientWindow((size_t *)window);
+    gClient.SetClientWindow((hsWindowHndl)window);
+    gClient.SetClientDisplay((hsWindowHndl)NULL);
+    gClient.Init(_argc, _argv);
     //NSApp.mainWindow = window;
     //[NSApp run];
     
@@ -174,8 +176,9 @@ int main(int argc, const char** argv)
     // 'NSApp' with the application instance.
         //[application setDelegate:delegate];
     
-    gClient.Init(argc, argv);
     AppDelegate *delegate = [AppDelegate new];
+    delegate.argv = argv;
+    delegate.argc = argc;
     
     NSMenu *mainMenu = [[NSMenu alloc] init];
     NSApplication * application = [NSApplication sharedApplication];
