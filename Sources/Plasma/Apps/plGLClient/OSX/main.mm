@@ -44,8 +44,96 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLClient/plClientLoader.h"
 
 #import "Cocoa/Cocoa.h"
+#import <OpenGL/gl.h>
 
-plClientLoader gClient;
+plClientLoader gClient = plClientLoader();
+
+void PumpMessageQueueProc();
+
+@interface AppDelegate: NSObject <NSApplicationDelegate> {
+    
+}
+
+@property (retain) NSTimer *drawTimer;
+
+@end
+
+@implementation AppDelegate
+
+- (void)applicationDidFinishLaunching:(NSNotification *)notification
+{
+    // Create a window:
+
+    // Style flags
+    NSUInteger windowStyle =
+        (NSTitledWindowMask  |
+        NSClosableWindowMask |
+        NSResizableWindowMask);
+
+    // Window bounds (x, y, width, height)
+    NSRect windowRect = NSMakeRect(100, 100, 800, 600);
+
+    NSWindow * window = [[[NSWindow alloc] initWithContentRect:windowRect
+                        styleMask:windowStyle
+                        backing:NSBackingStoreBuffered
+                        defer:NO] autorelease];
+
+    // Window controller
+    NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
+
+    gClient.SetClientWindow((hsWindowHndl)window);
+    gClient.SetClientDisplay((hsWindowHndl)NULL);
+    [window setTitle:@"Uru"];
+    [window setContentSize:NSMakeSize(800, 600)];
+    [window orderFrontRegardless];
+    
+    gClient.SetClientWindow((size_t *)window);
+    //NSApp.mainWindow = window;
+    //[NSApp run];
+    
+    // We should quite frankly be done initing the client by now. But, if not, spawn the good old
+    // "Starting URU, please wait..." dialog (not so yay)
+    while (!gClient.IsInited())
+    {
+        [[NSRunLoop mainRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate now]];
+    }
+    
+    if(!gClient) {
+        exit(0);
+    }
+
+    // Can't do this threaded on mac
+    if (gClient->InitPipeline(NULL) ||
+        !gClient->StartInit()) {
+        gClient->SetDone(true);
+    }
+
+    gClient->SetQuitIntro(true);
+
+
+    // Main loop
+    if (gClient && !gClient->GetDone())
+    {
+        gClient->SetMessagePumpProc(PumpMessageQueueProc);
+        gClient.Start();
+        self.drawTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/60.0 repeats:true block:^(NSTimer * _Nonnull timer) {
+            gClient->MainLoop();
+            PumpMessageQueueProc();
+
+            if (gClient->GetDone()) {
+                gClient.ShutdownEnd();
+                [NSApp terminate:self];
+            }
+        }];
+        
+    }
+
+
+
+    //[pool drain];
+}
+
+@end
 
 void PumpMessageQueueProc()
 {
@@ -84,72 +172,21 @@ int main(int argc, const char** argv)
     // Create a shared app instance.
     // This will initialize the global variable
     // 'NSApp' with the application instance.
-    [NSApplication sharedApplication];
-
-    // Create a window:
-
-    // Style flags
-    NSUInteger windowStyle =
-        (NSTitledWindowMask  |
-        NSClosableWindowMask |
-        NSResizableWindowMask);
-
-    // Window bounds (x, y, width, height)
-    NSRect windowRect = NSMakeRect(100, 100, 800, 600);
-
-    NSWindow * window = [[[NSWindow alloc] initWithContentRect:windowRect
-                        styleMask:windowStyle
-                        backing:NSBackingStoreBuffered
-                        defer:NO] autorelease];
-
-    // Window controller
-    NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
-
-    gClient.SetClientWindow((hsWindowHndl)window);
-    gClient.SetClientDisplay((hsWindowHndl)NULL);
+        //[application setDelegate:delegate];
+    
     gClient.Init(argc, argv);
+    AppDelegate *delegate = [AppDelegate new];
+    
+    NSMenu *mainMenu = [[NSMenu alloc] init];
+    NSApplication * application = [NSApplication sharedApplication];
+    
+    
+    [application setActivationPolicy:NSApplicationActivationPolicyRegular];
+    application.mainMenu = mainMenu;
+    application.delegate = delegate;
+    [application run];
 
-    // We should quite frankly be done initing the client by now. But, if not, spawn the good old
-    // "Starting URU, please wait..." dialog (not so yay)
-    if (!gClient.IsInited())
-    {
-        gClient.Wait();
-    }
-
-    // Can't do this threaded on mac
-    if (gClient->InitPipeline(NULL) || !gClient->StartInit()) {
-        gClient->SetDone(true);
-    }
-
-    gClient->SetQuitIntro(true);
-
-    [window orderFrontRegardless];
-
-    [NSApp finishLaunching];
-
-    // Main loop
-    if (gClient && !gClient->GetDone())
-    {
-        gClient->SetMessagePumpProc(PumpMessageQueueProc);
-        gClient.Start();
-
-        do
-        {
-            gClient->MainLoop();
-
-            if (gClient->GetDone()) {
-                break;
-            }
-
-            PumpMessageQueueProc();
-
-        } while (true);
-    }
-
-
-    gClient.ShutdownEnd();
-
-    [pool drain];
+    
 
     return 0;
 }
