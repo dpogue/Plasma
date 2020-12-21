@@ -41,12 +41,14 @@ endif(PYTHONINTERP_FOUND)
 set(plGLClient_HEADERS
     plClientLoader.h
     plGLClient.h
+    plPythonFileModStub.h
 )
 
 set(plGLClient_SOURCES
     plClientLoader.cpp
     plCreatables.cpp
     plGLClient.cpp
+    plPythonFileModStub.cpp
 )
 
 if(WIN32)

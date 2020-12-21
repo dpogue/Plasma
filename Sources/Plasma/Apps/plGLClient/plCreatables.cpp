@@ -89,6 +89,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //#include "pfPython/pfPythonCreatable.h"
 #include "pfSurface/pfSurfaceCreatable.h"
 
+#include "plPythonFileModStub.h"
+REGISTER_CREATABLE(plPythonFileMod);
+
 #include "plGLClient.h"
 REGISTER_NONCREATABLE(plClient);
 
