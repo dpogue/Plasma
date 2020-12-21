@@ -650,7 +650,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
     if (!vRef->fRef || !iRef->fRef) {
         plProfile_EndTiming(RenderBuff);
 
-        hsAssert( false, "Trying to render a nil buffer pair!" );
+        hsAssert( false, ST::format("Trying to render a nil buffer pair! (Mat: {})", material->GetKeyName()).c_str() );
         return;
     }
 
