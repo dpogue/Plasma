@@ -1031,18 +1031,26 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
         }
 
         // if we're linking to startup we don't need (or want) a player set
+        ST::string ageName = fIniStartupAge;
 #ifndef MINIMAL_GL_BUILD
-        ST::string ageName = NetCommGetStartupAge()->ageDatasetName;
+        ageName = NetCommGetStartupAge()->ageDatasetName;
         if (ageName.empty())
             ageName = ST_LITERAL("StartUp");
         if (ageName.compare_i("StartUp") == 0)
             NetCommSetActivePlayer(0, nullptr);
+#else
+        if (ageName.empty())
+            ageName = ST_LITERAL("GuildPub-Writers");
+#endif
 
         plAgeLinkStruct link;
-        link.GetAgeInfo()->SetAgeFilename(NetCommGetStartupAge()->ageDatasetName);
+        link.GetAgeInfo()->SetAgeFilename(ageName);
+#ifdef MINIMAL_GL_BUILD
+        link.SetLinkingRules(plNetCommon::LinkingRules::kBasicLink);
+#else
         link.SetLinkingRules(plNetCommon::LinkingRules::kOriginalBook);
-        plNetLinkingMgr::GetInstance()->LinkToAge(&link);
 #endif
+        plNetLinkingMgr::GetInstance()->LinkToAge(&link);
 
         return true;
     }

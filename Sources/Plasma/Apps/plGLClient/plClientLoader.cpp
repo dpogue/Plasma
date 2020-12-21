@@ -120,8 +120,11 @@ void plClientLoader::HandleArguments()
 
     if (fArguments.IsSpecified(kArgStartUpAgeName))
     {
+        if (plNetClientMgr* mgr = plNetClientMgr::GetInstance()) {
+            mgr->SetIniStartupAge(fArguments.GetString(kArgStartUpAgeName));
+        }
+
         gDataServerLocal = true;
-        fClient->SetInitialAgeName(fArguments.GetString(kArgStartUpAgeName));
         fClient->SetQuitIntro(true);
     }
 }

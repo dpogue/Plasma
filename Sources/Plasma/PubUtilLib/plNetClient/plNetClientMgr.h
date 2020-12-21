@@ -159,6 +159,8 @@ private:
     std::string         fIniAuthServer;
     uint32_t              fIniPlayerID;   // the player we want to load from vault.
     std::string         fSPDesiredPlayerName;   // SP: the player we want to load from vault.
+    /** The initial starting Age to load. */
+    ST::string          fIniStartupAge;
     
     // server info
     double              fServerTimeOffset;      // diff between our unified time and server's unified time
@@ -275,6 +277,8 @@ public:
     void SetSPDesiredPlayerName( const char * value ) { fSPDesiredPlayerName=value;}
     const char * GetSPDesiredPlayerName() const { return fSPDesiredPlayerName.c_str(); }
 
+    void SetIniStartupAge(const ST::string& age) { fIniStartupAge = age; }
+
     void SetLocalPlayerKey(plKey l, bool pageOut=false);
     void SetNullSend(bool on);        // turn null send on/off
     void SetPingServer(uint8_t serverType) { fPingServerType = serverType; }
@@ -389,6 +393,10 @@ private:
     int IDeInitNetClientComm();
     void INetClientCommOpStarted(uint32_t context);
     void INetClientCommOpComplete(uint32_t context, int resultCode);
+
+#ifdef MINIMAL_GL_BUILD
+    friend class plNetLinkingMgr;
+#endif
 
     friend struct plNCAgeJoiner;
     friend struct plNCAgeLeaver;

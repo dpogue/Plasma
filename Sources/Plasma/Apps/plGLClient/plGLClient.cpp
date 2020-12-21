@@ -1865,13 +1865,6 @@ void plClient::ICompleteInit () {
     plClientMsg* clientMsg = new plClientMsg(plClientMsg::kInitComplete);
     clientMsg->SetBCastFlag(plMessage::kBCastByType);
     clientMsg->Send();
-
-    if (fInitialAgeName.empty())
-    {
-        fInitialAgeName = "GuildPub-Writers";
-    }
-
-    plAgeLoader::GetInstance()->LoadAge(fInitialAgeName);
 }
 
 void plClient::IHandlePatcherMsg(plResPatcherMsg* msg)

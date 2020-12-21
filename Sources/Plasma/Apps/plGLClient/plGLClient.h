@@ -149,8 +149,6 @@ protected:
     hsTArray<plRenderRequest*>  fPreRenderRequests;
     hsTArray<plRenderRequest*>  fPostRenderRequests;
 
-    ST::string                  fInitialAgeName;
-
 public:
     enum
     {
@@ -208,8 +206,6 @@ public:
     bool BeginGame();
 
     void SetMessagePumpProc(plMessagePumpProc proc) { fMessagePumpProc = proc; }
-
-    void SetInitialAgeName(ST::string ageName) { fInitialAgeName = ageName; }
 
 protected:
     /**

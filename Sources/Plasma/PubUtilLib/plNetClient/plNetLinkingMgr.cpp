@@ -64,6 +64,18 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plAvatar/plAvatarMgr.h"
 #include "plAvatar/plArmatureMod.h"
 
+#ifdef MINIMAL_GL_BUILD
+#include "pnDispatch/plDispatch.h"
+#include "pnMessage/plPlayerPageMsg.h"
+#include "plAgeLoader/plAgeLoader.h"
+#include "plAvatar/plAvatarMgr.h"
+#include "plMessage/plAgeLoadedMsg.h"
+#include "plMessage/plInputIfaceMgrMsg.h"
+#include "plMessage/plResPatcherMsg.h"
+#include "plNetCommon/plNetObjectDebugger.h"
+#include "plProgressMgr/plProgressMgr.h"
+#include "plResMgr/plResManager.h"
+#endif
 
 /*****************************************************************************
 *
@@ -338,7 +350,60 @@ ST::string plNetLinkingMgr::GetProperAgeName( const ST::string & ageName )
 
 bool plNetLinkingMgr::MsgReceive( plMessage *msg )
 {
-#ifndef MINIMAL_GL_BUILD
+#ifdef MINIMAL_GL_BUILD
+    if (plAgeLoaded2Msg * ageLoaded2Msg = plAgeLoaded2Msg::ConvertNoRef(msg)) {
+        // Exec custom age settings
+        plAgeLoader::GetInstance()->ExecPendingAgeFniFiles();
+        plAgeLoader::GetInstance()->ExecPendingAgeCsvFiles();
+
+        ST::string avatarName = "Male";
+        ST::string linkInName = GetAgeLink()->SpawnPoint().GetName();
+        plAvatarMgr::GetInstance()->LoadPlayer(avatarName, "", linkInName);
+
+        return true;
+    }
+
+    plPlayerPageMsg* playerPageMsg = plPlayerPageMsg::ConvertNoRef(msg);
+    if (playerPageMsg && !playerPageMsg->fUnload && playerPageMsg->fPlayer && playerPageMsg->fLocallyOriginated) {
+        // Add our avatar to the scene
+        ST::string linkInName = GetAgeLink()->SpawnPoint().GetName();
+        int spawnPt = plAvatarMgr::GetInstance()->FindSpawnPoint(linkInName.c_str());
+        plNetClientMgr::GetInstance()->IPlayerChangeAge(false /*not exiting*/, spawnPt);
+
+        plAvatarMgr::GetInstance()->PropagateLocalPlayer(spawnPt);
+
+        // Send our avatar settings
+        plNetClientMgr::GetInstance()->SendLocalPlayerAvatarCustomizations();
+
+        plNetClientMgr::GetInstance()->NotifyRcvdAllSDLStates();
+
+        (void)(new plInputIfaceMgrMsg(plInputIfaceMgrMsg::kEnableClickables))->Send();
+
+        plNetClientMgr::GetInstance()->SetFlagsBit(plNetClientApp::kPlayingGame);
+        plNetClientMgr::GetInstance()->SetFlagsBit(plNetClientApp::kNeedToSendInitialAgeStateLoadedMsg);
+        plAgeLoader::GetInstance()->NotifyAgeLoaded(true);
+
+        plNetObjectDebugger::GetInstance()->LogMsg("OnServerInitComplete");
+        plNetClientMgr::GetInstance()->SetFlagsBit(plNetClientApp::kLoadingInitialAgeState, false);
+
+        const plArmatureMod *avMod = plAvatarMgr::GetInstance()->GetLocalAvatar();
+
+        plLinkEffectsTriggerMsg* lem = new plLinkEffectsTriggerMsg();
+        lem->SetLeavingAge(false);  // linking in
+        lem->SetLinkKey(plNetClientMgr::GetInstance()->GetLocalPlayerKey());
+
+        plKey animKey = avMod->GetLinkInAnimKey();
+        lem->SetLinkInAnimKey(animKey);
+
+        lem->SetBCastFlag(plMessage::kNetPropagate);
+        lem->MuteLinkSfx(false);
+        lem->AddReceiver(hsgResMgr::ResMgr()->FindKey(plUoid(kLinkEffectsMgr_KEY)));
+        lem->AddReceiver(hsgResMgr::ResMgr()->FindKey(plUoid(kClient_KEY)));
+        lem->Send();
+
+        return false;   // NetClientMgr must also handle this message
+    }
+#else
     if (s_ageLeaver && NCAgeLeaverMsgReceive(s_ageLeaver, msg))
         return true;
 
@@ -446,7 +511,23 @@ void plNetLinkingMgr::IDoLink(plLinkToAgeMsg* msg)
 #endif
     }
 
-#ifndef MINIMAL_GL_BUILD
+#ifdef MINIMAL_GL_BUILD
+    nc->SetFlagsBit(plNetClientMgr::kPlayingGame, false);
+    nc->SetFlagsBit(plNetClientApp::kNeedInitialAgeStateCount);
+    nc->SetFlagsBit(plNetClientApp::kLoadingInitialAgeState);
+    nc->SetFlagsBit(plNetClientApp::kLinkingToOfflineAge);
+
+    // no need to update if we're not using a GameSrv
+    plgDispatch::MsgSend(new plResPatcherMsg());
+
+    //ST::string str = ST::format("Loading age... {}", GetAgeLink()->GetAgeInfo()->GetAgeFilename());
+    //plOperationProgress* progressBar = plProgressMgr::GetInstance()->RegisterOperation(0, str.c_str(), plProgressMgr::kNone, false, true);
+    //plDispatch::SetMsgRecieveCallback(IDispatchMsgReceiveCallback);
+    //((plResManager*)hsgResMgr::ResMgr())->SetProgressBarProc(IResMgrProgressBarCallback);
+
+    // Start loading age data
+    plAgeLoader::GetInstance()->LoadAge(GetAgeLink()->GetAgeInfo()->GetAgeFilename());
+#else
     // Queue join op
     NlmJoinAgeOp * joinAgeOp = new NlmJoinAgeOp;
     joinAgeOp->age.ageInstId = *GetAgeLink()->GetAgeInfo()->GetAgeInstanceGuid();
