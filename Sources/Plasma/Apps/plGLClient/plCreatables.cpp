@@ -69,7 +69,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plNetMessage/plNetMessageCreatable.h"
 #include "plParticleSystem/plParticleCreatable.h"
 #include "plPhysical/plPhysicalCreatable.h"
-//#include "plPhysX/plPhysXCreatable.h"
+#include "plPhysX/plPhysXCreatable.h"
 #include "plPipeline/plPipelineCreatable.h"
 #include "plScene/plSceneCreatable.h"
 #include "plSDL/plSDLCreatable.h"

@@ -995,7 +995,6 @@ bool plSceneInputInterface::InterpretInputEvent( plInputEventMsg *pMsg )
                 if (!pArm)
                     continue;
 
-#ifndef MINIMAL_GL_BUILD
                 plPhysicalControllerCore* controller = pArm->GetController();
                 if (controller)
                 {
@@ -1004,7 +1003,6 @@ bool plSceneInputInterface::InterpretInputEvent( plInputEventMsg *pMsg )
                     else
                         controller->SetLOSDB(plSimDefs::kLOSDBUIItems);
                 }
-#endif
             }
             return true;
         }

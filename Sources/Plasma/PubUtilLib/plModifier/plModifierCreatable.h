@@ -63,11 +63,9 @@ REGISTER_CREATABLE(plCloneSpawnModifier);
 #include "plDecalEnableMod.h"
 REGISTER_CREATABLE(plDecalEnableMod);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plExcludeRegionModifier.h"
 REGISTER_CREATABLE(plExcludeRegionModifier);
 REGISTER_CREATABLE(plExcludeRegionSDLModifier);
-#endif
 
 #include "plGameMarkerModifier.h"
 REGISTER_CREATABLE(plGameMarkerModifier);

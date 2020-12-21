@@ -183,7 +183,6 @@ plKey plNetClientMgr::ILoadClone(plLoadCloneMsg *pCloneMsg)
 //
 void plNetClientMgr::IPlayerChangeAge(bool exitAge, int32_t spawnPt)
 {
-#ifndef MINIMAL_GL_BUILD
     plArmatureMod *avatar = plAvatarMgr::GetInstance()->GetLocalAvatar();
     
     if (avatar)
@@ -203,6 +202,5 @@ void plNetClientMgr::IPlayerChangeAge(bool exitAge, int32_t spawnPt)
     {
         ErrorMsg("Can't find avatarMod {}", fLocalPlayerKey->GetName());
     }
-#endif
 }
 

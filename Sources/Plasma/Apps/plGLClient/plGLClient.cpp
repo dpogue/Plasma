@@ -92,6 +92,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plNetClient/plNetClientMgr.h"
 #include "plNetClient/plNetLinkingMgr.h"
 
+#include "plPhysX/plSimulationMgr.h"
+
 #include "plPipeline.h"
 #include "plPipeline/plPipelineCreate.h"
 #include "plPipeline/plPlateProgressMgr.h"
@@ -319,12 +321,10 @@ bool plClient::Shutdown()
     delete fPipeline;
     fPipeline = nullptr;
 
-#ifndef MINIMAL_GL_BUILD
     if (plSimulationMgr::GetInstance())
     {
         plSimulationMgr::Shutdown();
     }
-#endif
 
     plAvatarMgr::ShutDown();
     plRelevanceMgr::DeInit();
@@ -1251,11 +1251,9 @@ bool plClient::IUpdate()
 
     plCoordinateInterface::SetTransformPhase(plCoordinateInterface::kTransformPhaseDelayed);
 
-#ifndef MINIMAL_GL_BUILD
     plProfile_BeginTiming(Simulation);
     plSimulationMgr::GetInstance()->Advance(delSecs);
     plProfile_EndTiming(Simulation);
-#endif
 
     // At this point, we just register for a plDelayedTransformMsg when dirtied.
     if (!plCoordinateInterface::GetDelayedTransformsEnabled())
@@ -1856,9 +1854,7 @@ void plClient::IOnAsyncInitComplete()
 }
 
 void plClient::ICompleteInit () {
-#ifndef MINIMAL_GL_BUILD
     plSimulationMgr::GetInstance()->Resume();               // start the sim at the last possible minute
-#endif
 
     fFlags.SetBit(kFlagIniting, false);
     hsStatusMessage("Client init complete.");

@@ -47,6 +47,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plClientResMgr/plClientResMgr.h"
 #include "plNetClient/plNetClientMgr.h"
+#include "plPhysX/plSimulationMgr.h"
 #include "plResMgr/plResManager.h"
 
 enum
@@ -95,7 +96,6 @@ void plClientLoader::Run()
 
     fClient->SetWindowHandle(fWindow);
 
-#ifndef MINIMAL_GL_BUILD
     plSimulationMgr::Init();
     if (plSimulationMgr::GetInstance()) {
         plSimulationMgr::GetInstance()->Suspend();
@@ -103,7 +103,6 @@ void plClientLoader::Run()
         hsMessageBox("PhysX install failed. You will not be able to play URU.", "Error", hsMessageBoxNormal, hsMessageBoxIconError);
         return;
     }
-#endif
 
     if (fClient->InitPipeline(fDisplay) || !fClient->StartInit()) {
         fClient->SetDone(true);
