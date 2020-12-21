@@ -338,7 +338,6 @@ void plVirtualCam1::SetDepth(float h, float y)
 // force drive mode from console
 void plVirtualCam1::Drive()
 {
-#ifndef MINIMAL_GL_BUILD
     if (GetCurrentCamera() == fDriveCamera)
     {   
         fCameraDriveInterface->SetEnabled( false );
@@ -349,7 +348,6 @@ void plVirtualCam1::Drive()
         #endif
     }
     else
-#endif
     {
         // set it to the current camera position -
         fDriveCamera->GetBrain()->SetGoal(GetCurrentCamera()->GetTargetPos());

@@ -597,10 +597,11 @@ bool plClient::BeginGame()
         msg->Send();
     }
     */
-#ifdef MINIMAL_GL_BUILD
+
     // This came from plClient::IPatchGlobalAgeFiles
     plgDispatch::Dispatch()->RegisterForExactType(plResPatcherMsg::Index(), GetKey());
 
+#ifdef MINIMAL_GL_BUILD
     plResPatcher* patcher = plResPatcher::GetInstance();
     patcher->Update(plManifest::EssentialGameManifests());
 #endif
@@ -1840,11 +1841,9 @@ void plClient::IOnAsyncInitComplete()
     ((plResManager*)hsgResMgr::ResMgr())->PageInAge("GlobalAnimations");
     SetHoldLoadRequests(false);
 
-#ifndef MINIMAL_GL_BUILD // The "hide" message never fires for this
     // Tell the transition manager to start faded out. This is so we don't
     // get a frame or two of non-faded drawing before we do our initial fade in
     (void)(new plTransitionMsg(plTransitionMsg::kFadeOut, 0.0f, true))->Send();
-#endif
 
     fFlags.SetBit(kFlagAsyncInitComplete);
     if (fFlags.IsBitSet(kFlagGlobalDataLoaded))

@@ -798,11 +798,11 @@ bool plClothingOutfit::ReadClothing()
 
 bool plClothingOutfit::IReadFromVault()
 {
-#ifndef MINIMAL_GL_BUILD
     SetupMorphSDL();
 
     WearDefaultClothing();
 
+#ifndef MINIMAL_GL_BUILD
     hsRef<RelVaultNode> rvn = VaultGetAvatarOutfitFolder();
     if (!rvn)
         return false;
@@ -833,10 +833,10 @@ bool plClothingOutfit::IReadFromVault()
             }
         }
     }
+#endif
     
     fSynchClients = true; // set true if the next synch should be bcast
     ForceUpdate(true);
-#endif
     
     return true;
 }
