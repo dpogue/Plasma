@@ -55,20 +55,7 @@ enum plGLConstants : GLuint {
     kVtxPosition    = 0,
     kVtxNormal      = 1,
     kVtxColor       = 2,
-
-    kVtxUVWSrc0,
-    kVtxUVWSrc1,
-    kVtxUVWSrc2,
-    kVtxUVWSrc3,
-    kVtxUVWSrc4,
-    kVtxUVWSrc5,
-    kVtxUVWSrc6,
-    kVtxUVWSrc7,
-    kVtxUVWSrc8,
-    kVtxUVWSrc9,
-    kVtxUVWSrc10,
-    kVtxUVWSrc11,
-    kVtxUVWSrc12
+    kVtxUVWSrc      = 3
 };
 
 #endif // _plGLConstants_inc_

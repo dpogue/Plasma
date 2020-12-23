@@ -111,6 +111,10 @@ public:
     GLuint                      uMatSpecularSrc;
     GLuint                      uPassNumber;
     GLuint                      uAlphaThreshold;
+    GLuint                      uInvertVtxAlpha;
+    GLuint                      uFogExponential;
+    GLuint                      uFogValues;
+    GLuint                      uFogColor;
 
 
     void                    Link(plGLMaterialShaderRef** back) { plGLDeviceRef::Link((plGLDeviceRef**)back); }
