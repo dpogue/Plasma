@@ -469,6 +469,14 @@ bool plClient::InitPipeline(hsWindowHndl display)
     return false;
 }
 
+void plClient::SetClearColor(hsColorRGBA& color)
+{
+    fClearColor = color;
+    if (fPipeline) {
+        fPipeline->SetClear(&fClearColor, nullptr);
+    }
+}
+
 
 bool plClient::StartInit()
 {

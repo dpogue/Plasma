@@ -188,6 +188,9 @@ public:
     bool GetQuitIntro() const { return fQuitIntro; }
     void SetQuitIntro(bool on) { fQuitIntro = on; }
 
+    void SetClearColor(hsColorRGBA &color);
+    hsColorRGBA GetClearColor() const { return fClearColor; }
+
     // Set this to true to queue any room load requests that come in.  Set it to false to process them.
     void SetHoldLoadRequests(bool hold);
 

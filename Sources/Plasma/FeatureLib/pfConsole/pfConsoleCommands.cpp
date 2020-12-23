@@ -853,6 +853,7 @@ PF_CONSOLE_CMD( Console, ExecuteFileDelayed, "string filename, float timeInSecs"
 
 #endif // LIMIT_CONSOLE_COMMANDS
 
+#endif // MINIMAL_GL_BUILD
 
 //////////////////////////////////////////////////////////////////////////////
 //// Graphics Group Commands /////////////////////////////////////////////////
@@ -860,6 +861,7 @@ PF_CONSOLE_CMD( Console, ExecuteFileDelayed, "string filename, float timeInSecs"
 
 PF_CONSOLE_GROUP( Graphics ) // Defines a main command group
 
+#ifndef MINIMAL_GL_BUILD
 #ifndef LIMIT_CONSOLE_COMMANDS
 
 // NOTE ON THESE DEBUG FLAGS:
@@ -1211,6 +1213,7 @@ PF_CONSOLE_CMD( Graphics_DebugText,         // Group name
 
 #endif // LIMIT_CONSOLE_COMMANDS
     
+#endif // MINIMAL_GL_BUILD
 
 PF_CONSOLE_SUBGROUP( Graphics, Renderer )       // Creates a sub-group under a given group
 
@@ -1225,6 +1228,7 @@ PF_CONSOLE_CMD( Graphics_Renderer, SetClearColor, "float r, float g, float b", "
 }
 
 
+#ifndef MINIMAL_GL_BUILD
 #ifndef LIMIT_CONSOLE_COMMANDS
 
 
@@ -1318,6 +1322,7 @@ PF_CONSOLE_CMD( Graphics_Renderer, MaxCullNodes, "...", "Limit occluder processi
 
 
 #endif // LIMIT_CONSOLE_COMMANDS
+#endif // MINIMAL_GL_BUILD
 
 PF_CONSOLE_CMD( Graphics_Renderer, SetYon, "float yon, ...", "Sets the view yon" )
 {
@@ -1334,6 +1339,7 @@ PF_CONSOLE_CMD( Graphics_Renderer, SetYon, "float yon, ...", "Sets the view yon"
     pfConsolePrintF(PrintString, "Yon set to {4.1f}.", (float)params[0]);
 }
 
+#ifndef MINIMAL_GL_BUILD
 #ifndef LIMIT_CONSOLE_COMMANDS
 
 PF_CONSOLE_CMD( Graphics_Renderer, TweakZBiasScale, "float deltaScale", "Adjusts the device-dependent scale value for upper-layer z biasing" )
@@ -1616,6 +1622,7 @@ PF_CONSOLE_CMD( Graphics_Renderer, ToggleRenderRequests, "", "Toggles processing
 }
 
 #endif // LIMIT_CONSOLE_COMMANDS
+#endif // MINIMAL_GL_BUILD
 
 //// Graphics.Renderer.Fog Subgroup //////////////////////////////////////////
 
@@ -1673,6 +1680,7 @@ PF_CONSOLE_CMD( Graphics_Renderer_Fog, SetDefExp2, "float end, float density", "
 
 //// Graphics.Show Subgroups //////////////////////////////////////////
 
+#ifndef MINIMAL_GL_BUILD
 #ifndef LIMIT_CONSOLE_COMMANDS
 
 
