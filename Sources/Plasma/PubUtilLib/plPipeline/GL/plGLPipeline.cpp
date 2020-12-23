@@ -128,7 +128,10 @@ plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3
     fDevice.fPipeline = this;
 
     if (fDevice.InitDevice()) {
-        glClearColor(0.f, 0.f, 0.f, 0.f);
+        hsColorRGBA clearColor = GetClearColor();
+
+        glDepthMask(GL_TRUE);
+        glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
         glClearDepth(1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
@@ -318,8 +321,9 @@ void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth)
         if (fView.fRenderState & kRenderClearDepth)
             masks |= GL_DEPTH_BUFFER_BIT;
 
+        glDepthMask(GL_TRUE);
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-        glClearDepth((double)clearDepth);
+        glClearDepth(1.0);
 
         glClear(masks);
     }
