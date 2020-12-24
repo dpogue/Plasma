@@ -42,7 +42,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "hsConfig.h"
 
-#if defined(HAVE_CPUID)
+#if defined(HAVE_CPUID) && defined(__x86_64__)
 #  if defined(_MSC_VER) || ((defined(_WIN32) || defined(_WIN64)) && defined(__INTEL_COMPILER))
 #    include <intrin.h>
 #    define MSC_COMPATIBLE
