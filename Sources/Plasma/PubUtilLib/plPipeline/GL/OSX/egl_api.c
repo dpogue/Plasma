@@ -558,7 +558,7 @@ EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surface_)
         return EGL_FALSE;
     }
 
-    glFlush();
+    //glFlush();
 
     CGLError err = CGLFlushDrawable(context->ctx);
     if(err != kCGLNoError) {
