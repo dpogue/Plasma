@@ -61,6 +61,7 @@ void PumpMessageQueueProc();
 @end
 
 @implementation AppDelegate
+PF_CONSOLE_LINK_ALL()
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
@@ -88,6 +89,7 @@ void PumpMessageQueueProc();
     [window orderFrontRegardless];
     
     gClient.SetClientWindow((hsWindowHndl)window);
+    PF_CONSOLE_INITIALIZE(Audio);
     gClient.SetClientDisplay((hsWindowHndl)NULL);
     gClient.Init(_argc, _argv);
     //NSApp.mainWindow = window;
