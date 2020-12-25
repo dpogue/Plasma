@@ -149,6 +149,11 @@ elseif(UNIX)
     target_link_libraries(plGLClient X11)
 endif()
 
+if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    #enable automatic memory management for the Obj-C code
+    set_property (TARGET plGLClient APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc")
+endif()
+
 if(PLASMA_USE_OPUS)
     target_link_libraries(plGLClient ${Opus_LIBRARIES})
 endif()

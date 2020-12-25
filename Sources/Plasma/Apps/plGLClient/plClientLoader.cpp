@@ -105,11 +105,9 @@ void plClientLoader::Run()
     }
 #endif
 
-#ifndef HS_BUILD_FOR_APPLE
     if (fClient->InitPipeline(fDisplay) || !fClient->StartInit()) {
         fClient->SetDone(true);
     }
-#endif
 
     HandleArguments();
 }
