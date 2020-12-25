@@ -84,16 +84,14 @@ PF_CONSOLE_LINK_ALL()
     // Window controller
     NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
 
-    [window setTitle:@"Uru"];
-    [window setContentSize:NSMakeSize(800, 600)];
-    [window orderFrontRegardless];
+    // Window controller
+    [self.window setContentSize:NSMakeSize(800, 600)];
+    [self.window orderFrontRegardless];
     
-    gClient.SetClientWindow((hsWindowHndl)window);
     PF_CONSOLE_INITIALIZE(Audio);
+    gClient.SetClientWindow((hsWindowHndl)(__bridge void *)self.window);
     gClient.SetClientDisplay((hsWindowHndl)NULL);
     gClient.Init(_argc, _argv);
-    //NSApp.mainWindow = window;
-    //[NSApp run];
     
     // We should quite frankly be done initing the client by now. But, if not, spawn the good old
     // "Starting URU, please wait..." dialog (not so yay)
@@ -102,18 +100,11 @@ PF_CONSOLE_LINK_ALL()
         [[NSRunLoop mainRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate now]];
     }
     
+    [self.window setTitle:[NSString stringWithCString:plProduct::LongName().c_str() encoding:NSUTF8StringEncoding]];
+    
     if(!gClient) {
         exit(0);
     }
-
-    // Can't do this threaded on mac
-    if (gClient->InitPipeline(NULL) ||
-        !gClient->StartInit()) {
-        gClient->SetDone(true);
-    }
-
-    gClient->SetQuitIntro(true);
-
 
     // Main loop
     if (gClient && !gClient->GetDone())

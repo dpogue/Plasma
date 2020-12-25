@@ -41,13 +41,13 @@
 - (id)initWithView:(NSView*)view
 {
     if ((self = [super init]) != nil) {
-        mView = [view retain];
+        mView = view ;
         mContext = nil;
         [[NSNotificationCenter defaultCenter] addObserver:self
         selector:@selector(frameChanged:)
             name:NSViewGlobalFrameDidChangeNotification
             object:mView];
-        [mView setPostsFrameChangedNotifications:YES];
+        //[mView setPostsFrameChangedNotifications:YES];
         return self;
     }
     return nil;
@@ -57,25 +57,20 @@
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     if (mContext != nil) {
-        [mContext release];
         mContext = nil;
     }
     if (mView != nil) {
-        [mView release];
         mView = nil;
     }
-    [super dealloc];
 }
 
 - (void)finalize
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     if (mContext != nil) {
-        [mContext release];
         mContext = nil;
     }
     if (mView != nil) {
-        [mView release];
         mView = nil;
     }
     [super finalize];
@@ -83,11 +78,12 @@
 
 - (void)activateInContext:(NSOpenGLContext*)context
 {
-    if (mContext != nil) {
-        [mContext release];
+    mContext = context;
+    if([context view] != mView) {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [mContext setView:mView];
+        });
     }
-    mContext = [context retain];
-    [mContext setView:mView];
 }
 
 - (void)frameChanged:(NSNotification*)notification
@@ -102,37 +98,44 @@
 
 void* CreateContext(CGLContextObj ctx)
 {
-    return [[[NSOpenGLContext alloc] initWithCGLContextObj:ctx] retain];
+    return (void *)CFBridgingRetain([[NSOpenGLContext alloc] initWithCGLContextObj:ctx]);
 }
 
 void DestroyContext(void* nsctx)
 {
-    [(NSOpenGLContext *)nsctx release];
+    //[(NSOpenGLContext *)nsctx release];
 }
 
 void* CreateView(EGLSurface s, void* nsview, unsigned* width, unsigned* height)
 {
-    NSWindow* w = (NSWindow*)nsview;
-    NSView* v = [w contentView];
-    NSRect bounds = [v bounds];
+    __block CocoaView *cocoaView;
+    //Dispatch sync onto the main queue
+    //IF THIS IS CALLED FROM THE MAIN QUEUE COULD CAUSE A DEADLOCK
+    //Hack hack hack until we can get this code sorted out better
+    //So far in use this function has not been called from the main thread
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        NSWindow* w = (__bridge NSWindow*)nsview;
+        NSView* v = [w contentView];
+        NSRect bounds = [v bounds];
 
-    if (width) {
-        *width  = bounds.size.width;
-    }
-    if (height) {
-        *height = bounds.size.height;
-    }
+        if (width) {
+            *width  = bounds.size.width;
+        }
+        if (height) {
+            *height = bounds.size.height;
+        }
+        cocoaView = [[CocoaView alloc] initWithView:v];
+    });
 
-    return [[[CocoaView alloc] initWithView:v] retain];
+    return (void *)CFBridgingRetain(cocoaView);
 }
 
 void DestroyView(void* cview)
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:(id)cview];
-    [(CocoaView*)cview release];
+    [[NSNotificationCenter defaultCenter] removeObserver:(__bridge id)cview];
 }
 
 void SetView(void* nsctx, void* cview)
 {
-    [(CocoaView*)cview activateInContext:(NSOpenGLContext*)nsctx];
+    [(__bridge CocoaView*)cview activateInContext:(__bridge NSOpenGLContext*)nsctx];
 }
