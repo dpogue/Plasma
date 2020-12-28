@@ -40,21 +40,31 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
+#include "plProduct.h"
 #include "plGLClient/plGLClient.h"
 #include "plGLClient/plClientLoader.h"
+#include "plInputCore/plInputManager.h"
+#include "plMessage/plInputEventMsg.h"
+#include "plPipeline/GL/plGLPipeline.h"
+
+#include "pfConsoleCore/pfConsoleEngine.h"
 
 #import "Cocoa/Cocoa.h"
 #import <OpenGL/gl.h>
+#import <QuartzCore/QuartzCore.h>
+#import "PLSKeyboardEventMonitor.h"
+#import "PLSView.h"
 
-plClientLoader gClient = plClientLoader();
 
 void PumpMessageQueueProc();
 
-@interface AppDelegate: NSObject <NSApplicationDelegate> {
+@interface AppDelegate: NSWindowController <NSApplicationDelegate, NSWindowDelegate> {
+    @public plClientLoader gClient;
     
 }
 
 @property (retain) NSTimer *drawTimer;
+@property (retain) PLSKeyboardEventMonitor *eventMonitor;
 @property const char **argv;
 @property int argc;
 
@@ -63,32 +73,37 @@ void PumpMessageQueueProc();
 @implementation AppDelegate
 PF_CONSOLE_LINK_ALL()
 
-- (void)applicationDidFinishLaunching:(NSNotification *)notification
-{
-    // Create a window:
-
+-(id)init {
+    
     // Style flags
     NSUInteger windowStyle =
-        (NSTitledWindowMask  |
-        NSClosableWindowMask |
-        NSResizableWindowMask);
-
+    (NSWindowStyleMaskTitled  |
+         NSWindowStyleMaskClosable |
+         NSWindowStyleMaskResizable);
+    
     // Window bounds (x, y, width, height)
     NSRect windowRect = NSMakeRect(100, 100, 800, 600);
-
-    NSWindow * window = [[[NSWindow alloc] initWithContentRect:windowRect
+    
+    NSWindow * window = [[NSWindow alloc] initWithContentRect:windowRect
                         styleMask:windowStyle
                         backing:NSBackingStoreBuffered
-                        defer:NO] autorelease];
+                        defer:NO];
+    window.contentView = [[PLSView alloc] init];
+    
+    self = [super initWithWindow:window];
+    self.window.acceptsMouseMovedEvents = YES;
+    return self;
+}
 
-    // Window controller
-    NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
+- (void)applicationDidFinishLaunching:(NSNotification *)notification
+{
+    PF_CONSOLE_INITIALIZE(Audio)
+    // Create a window:
 
     // Window controller
     [self.window setContentSize:NSMakeSize(800, 600)];
     [self.window orderFrontRegardless];
     
-    PF_CONSOLE_INITIALIZE(Audio);
     gClient.SetClientWindow((hsWindowHndl)(__bridge void *)self.window);
     gClient.SetClientDisplay((hsWindowHndl)NULL);
     gClient.Init(_argc, _argv);
@@ -105,84 +120,84 @@ PF_CONSOLE_LINK_ALL()
     if(!gClient) {
         exit(0);
     }
+    
+    self.eventMonitor = [[PLSKeyboardEventMonitor alloc] initWithView:self.window.contentView inputManager:gClient->GetInputManager()];
+    ((PLSView *)self.window.contentView).inputManager = gClient->GetInputManager();
 
     // Main loop
     if (gClient && !gClient->GetDone())
     {
         gClient->SetMessagePumpProc(PumpMessageQueueProc);
         gClient.Start();
-        self.drawTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/60.0 repeats:true block:^(NSTimer * _Nonnull timer) {
-            gClient->MainLoop();
-            PumpMessageQueueProc();
+        CVDisplayLinkRef displayLink;
+        CVDisplayLinkCreateWithCGDisplay([self.window.screen.deviceDescription[@"NSScreenNumber"] intValue], &displayLink);
+        CVDisplayLinkSetOutputHandler(displayLink, ^CVReturn(CVDisplayLinkRef  _Nonnull displayLink, const CVTimeStamp * _Nonnull inNow, const CVTimeStamp * _Nonnull inOutputTime, CVOptionFlags flagsIn, CVOptionFlags * _Nonnull flagsOut) {
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                gClient->MainLoop();
+                PumpMessageQueueProc();
 
-            if (gClient->GetDone()) {
-                gClient.ShutdownEnd();
-                [NSApp terminate:self];
-            }
-        }];
-        
+                if (gClient->GetDone()) {
+                    gClient.ShutdownEnd();
+                    [NSApp terminate:self];
+                }
+            });
+            return kCVReturnSuccess;
+        });
+        CVDisplayLinkStart(displayLink);
     }
-
-
-
-    //[pool drain];
 }
 
 @end
 
 void PumpMessageQueueProc()
 {
-    NSEvent* event;
-
-    while ((event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                            untilDate:[NSDate distantPast]
-                            inMode:NSDefaultRunLoopMode
-                            dequeue:YES]) != nil)
-    {
-
-        switch ([event type])
+    /*
+     Normally we want to receive events from the normal app event loop,
+     but the intro movie blocks the normal event loop. This lets us
+     manually process key down during the intro.
+     */
+    plClientLoader &gClient = ((AppDelegate *)[NSApp delegate])->gClient;
+    if(gClient->GetQuitIntro() == false) {
+        NSEvent *event;
+        [[NSRunLoop mainRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate now]];
+        while ((event = [NSApp nextEventMatchingMask:NSEventMaskKeyDown
+                                    untilDate:[NSDate distantPast]
+                                    inMode:NSDefaultRunLoopMode
+                                    dequeue:YES]) != nil)
         {
-        case NSEventTypeKeyDown:
+            switch ([event type])
             {
-                gClient->SetDone(true);
+            case NSEventTypeKeyDown:
+                {
+                    gClient->SetQuitIntro(true);
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        default:
-            break;
         }
-
-        [NSApp sendEvent:event];
-        [NSApp updateWindows];
     }
 }
 
-
 int main(int argc, const char** argv)
 {
-    // Autorelease Pool:
-    // Objects declared in this scope will be automatically
-    // released at the end of it, when the pool is "drained".
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
     // Create a shared app instance.
     // This will initialize the global variable
     // 'NSApp' with the application instance.
         //[application setDelegate:delegate];
-    
-    AppDelegate *delegate = [AppDelegate new];
-    delegate.argv = argv;
-    delegate.argc = argc;
-    
-    NSMenu *mainMenu = [[NSMenu alloc] init];
-    NSApplication * application = [NSApplication sharedApplication];
-    
-    
-    [application setActivationPolicy:NSApplicationActivationPolicyRegular];
-    application.mainMenu = mainMenu;
-    application.delegate = delegate;
-    [application run];
-
-    
-
+    @autoreleasepool {
+        AppDelegate *delegate = [AppDelegate new];
+        delegate.argv = argv;
+        delegate.argc = argc;
+        
+        NSMenu *mainMenu = [[NSMenu alloc] init];
+        NSApplication * application = [NSApplication sharedApplication];
+        
+        
+        [application setActivationPolicy:NSApplicationActivationPolicyRegular];
+        application.mainMenu = mainMenu;
+        application.delegate = delegate;
+        [application run];
+    }
     return 0;
 }

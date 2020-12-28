@@ -59,6 +59,12 @@ elseif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     include_directories("../../PubUtilLib/plPipeline/GL/OSX")
     set(plGLClient_SOURCES ${plGLClient_SOURCES}
         OSX/main.mm
+        OSX/PLSKeyboardEventMonitor.mm
+        OSX/PLSView.mm
+    )
+    set(plGLClient_HEADERS ${plGLClient_HEADERS}
+        OSX/PLSKeyboardEventMonitor.h
+        OSX/PLSView.h
     )
     #we know OpenGL is deprecated, but silence the warnings for now
     add_compile_definitions(GL_SILENCE_DEPRECATION)
@@ -143,6 +149,7 @@ target_link_libraries(plGLClient pfSurface)
 # System Libs
 if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_link_libraries(plGLClient "-framework Cocoa")
+    target_link_libraries(plGLClient "-framework QuartzCore")
 elseif(UNIX)
     target_link_libraries(plGLClient xcb)
     target_link_libraries(plGLClient xcb-xfixes)
