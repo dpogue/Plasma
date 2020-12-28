@@ -419,6 +419,7 @@ EGLContext eglCreateContext(EGLDisplay dpy, EGLConfig config_, EGLContext share_
         //deglSetError(EGL_BAD_ALLOC);
         return EGL_NO_CONTEXT;
     }
+    CGLEnable( context->ctx, kCGLCEMPEngine);
 
     CGLRetainContext(context->ctx);
     context->nsctx = NULL;
