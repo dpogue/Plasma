@@ -53,6 +53,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
 #import "PLSKeyboardEventMonitor.h"
+#import "PLSView.h"
 
 
 void PumpMessageQueueProc();
@@ -87,6 +88,7 @@ PF_CONSOLE_LINK_ALL()
                         styleMask:windowStyle
                         backing:NSBackingStoreBuffered
                         defer:NO];
+    window.contentView = [[PLSView alloc] init];
     
     self = [super initWithWindow:window];
     self.window.acceptsMouseMovedEvents = YES;
@@ -120,6 +122,7 @@ PF_CONSOLE_LINK_ALL()
     }
     
     self.eventMonitor = [[PLSKeyboardEventMonitor alloc] initWithView:self.window.contentView inputManager:gClient->GetInputManager()];
+    ((PLSView *)self.window.contentView).inputManager = gClient->GetInputManager();
 
     // Main loop
     if (gClient && !gClient->GetDone())
