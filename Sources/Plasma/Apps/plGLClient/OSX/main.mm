@@ -83,10 +83,10 @@ PF_CONSOLE_LINK_ALL()
     // Window bounds (x, y, width, height)
     NSRect windowRect = NSMakeRect(100, 100, 800, 600);
 
-    NSWindow * window = [[[NSWindow alloc] initWithContentRect:windowRect
+    NSWindow * window = [[NSWindow alloc] initWithContentRect:windowRect
                         styleMask:windowStyle
                         backing:NSBackingStoreBuffered
-                        defer:NO] autorelease];
+                        defer:NO];
 
     // Window controller
     NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
