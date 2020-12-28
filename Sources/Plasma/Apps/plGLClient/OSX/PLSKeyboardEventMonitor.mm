@@ -43,6 +43,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #import "PLSKeyboardEventMonitor.h"
 #include "plMessage/plInputEventMsg.h"
 
+/*
+ This class implements a Cocoa keyboard tap for Plasma.
+ 
+ IOKit isn't being used for raw keyboard input because it requires special privacy permission in macOS Catalina and higher. The Cocoa event stream is cumbersome, but doesn't require an event stream.
+ 
+ There should be an alternate implementation for macOS 11 that uses the Game Controller framework, which supports keyboards in Big Sur and higher. That input is more appropriate for a game, and would also work on an iPad version. That is not yet implemented.
+ */
+
 @interface PLSKeyboardEventMonitor ()
 
 @property (weak) NSView *view;
@@ -100,7 +108,10 @@ NSEventMaskFlagsChanged;
         return;
     }
     
-    const unsigned short KEYCODE_LINUX_TO_HID[0x7F] = {
+    //Cocoa keycodes use the ids from the original Mac.
+    //Note that Cocoa will not return keycodes for modifier keys like shift.
+    //We have to check the modifier flags for that.
+    const unsigned short KEYCODE_MAC_TO_HID[0x7F] = {
          4, 22,  7,  9, 11, 10, 29, 27, 06, 25, 00, 05, 20, 26,  8, 21,
         //0x10
         28, 23, 30, 31, 32, 33, 35, 34, 46, 38, 36, 45, 37, 39, 48, 18,
@@ -125,7 +136,7 @@ NSEventMaskFlagsChanged;
     BOOL down = event.type == NSEventTypeKeyDown;
     
     unsigned short keycode = [event keyCode];
-    plKeyDef convertedKey = (plKeyDef)KEYCODE_LINUX_TO_HID[keycode];
+    plKeyDef convertedKey = (plKeyDef)KEYCODE_MAC_TO_HID[keycode];
     
     NSEventModifierFlags modifierFlags = [event modifierFlags];
     //if it's a shift key event only way to derive up or down is through presence in the modifier flag
