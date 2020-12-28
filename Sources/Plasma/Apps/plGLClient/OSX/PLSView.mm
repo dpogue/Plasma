@@ -43,6 +43,16 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #import "PLSView.h"
 #include "plMessage/plInputEventMsg.h"
 
+/*
+ Plasma view for Cocoa
+ 
+ This view doesn't interact with drawing yet. Ideally it should implement an OpenGL layer and use the still-deprecated-but-more-supported fully hardware accelerated path. Right now it's allowing the OpenGL context to drive it as a dumb view.
+ 
+ Mouse input is handled here. The raw event stream is too wide for good mouse support, and sends events for a lot of unrelated views like the menu bar or window chrome. Using a view in the responder chain will automatically filter down to just our events.
+ 
+ Game Controller in Big Sur also implements mouse support. Becuase Plasma uses a cursor, Cocoa mouse support might be adequate.
+ */
+
 @interface PLSView ()
 
 @property NSTrackingArea *mouseTrackingArea;
@@ -51,6 +61,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 @implementation PLSView
 
+//MARK: View setup
 -(id)initWithFrame:(NSRect)frameRect
 {
     self = [super initWithFrame:frameRect];
@@ -71,6 +82,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
     [super drawRect:dirtyRect];
 }
 
+
+//MARK: Left mouse button
 -(void)mouseDown:(NSEvent *)event
 {
     [self handleMouseButtonEvent:event];
@@ -86,6 +99,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
     [self updateClientMouseLocation:event];
 }
 
+//MARK: Right mouse button
 -(void)rightMouseDown:(NSEvent *)event
 {
     [self handleMouseButtonEvent:event];
@@ -101,6 +115,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
     [self updateClientMouseLocation:event];
 }
 
+//MARK: Mouse movement
 -(void)mouseMoved:(NSEvent *)event {
     [self updateClientMouseLocation:event];
 }
@@ -116,6 +131,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
     [NSCursor unhide];
 }
 
+//MARK: Cocoa region tracking
 -(void)updateTrackingAreas
 {
     if(self.mouseTrackingArea) {
@@ -125,6 +141,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
     [self addTrackingArea:self.mouseTrackingArea];
 }
 
+//MARK: Mouse click handler
 -(void)handleMouseButtonEvent:(NSEvent *)event {
     [self updateClientMouseLocation:event];
     
