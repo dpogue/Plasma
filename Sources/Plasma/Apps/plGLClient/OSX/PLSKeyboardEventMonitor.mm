@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #import "PLSKeyboardEventMonitor.h"
 #include "plMessage/plInputEventMsg.h"
-#import <Carbon/Carbon.h>
 
 @interface PLSKeyboardEventMonitor ()
 
