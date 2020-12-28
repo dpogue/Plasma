@@ -40,11 +40,18 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
+#include "plProduct.h"
 #include "plGLClient/plGLClient.h"
 #include "plGLClient/plClientLoader.h"
+#include "plInputCore/plInputManager.h"
+#include "plMessage/plInputEventMsg.h"
+#include "plPipeline/GL/plGLPipeline.h"
+
+#include "pfConsoleCore/pfConsoleEngine.h"
 
 #import "Cocoa/Cocoa.h"
 #import <OpenGL/gl.h>
+#import <QuartzCore/QuartzCore.h>
 
 plClientLoader gClient = plClientLoader();
 
@@ -111,21 +118,22 @@ PF_CONSOLE_LINK_ALL()
     {
         gClient->SetMessagePumpProc(PumpMessageQueueProc);
         gClient.Start();
-        self.drawTimer = [NSTimer scheduledTimerWithTimeInterval:1.0/60.0 repeats:true block:^(NSTimer * _Nonnull timer) {
-            gClient->MainLoop();
-            PumpMessageQueueProc();
+        CVDisplayLinkRef displayLink;
+        CVDisplayLinkCreateWithCGDisplay([self.window.screen.deviceDescription[@"NSScreenNumber"] intValue], &displayLink);
+        CVDisplayLinkSetOutputHandler(displayLink, ^CVReturn(CVDisplayLinkRef  _Nonnull displayLink, const CVTimeStamp * _Nonnull inNow, const CVTimeStamp * _Nonnull inOutputTime, CVOptionFlags flagsIn, CVOptionFlags * _Nonnull flagsOut) {
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                gClient->MainLoop();
+                PumpMessageQueueProc();
 
-            if (gClient->GetDone()) {
-                gClient.ShutdownEnd();
-                [NSApp terminate:self];
-            }
-        }];
-        
+                if (gClient->GetDone()) {
+                    gClient.ShutdownEnd();
+                    [NSApp terminate:self];
+                }
+            });
+            return kCVReturnSuccess;
+        });
+        CVDisplayLinkStart(displayLink);
     }
-
-
-
-    //[pool drain];
 }
 
 @end
@@ -160,33 +168,25 @@ void PumpMessageQueueProc()
     }
 }
 
-
 int main(int argc, const char** argv)
 {
-    // Autorelease Pool:
-    // Objects declared in this scope will be automatically
-    // released at the end of it, when the pool is "drained".
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
     // Create a shared app instance.
     // This will initialize the global variable
     // 'NSApp' with the application instance.
         //[application setDelegate:delegate];
-    
-    AppDelegate *delegate = [AppDelegate new];
-    delegate.argv = argv;
-    delegate.argc = argc;
-    
-    NSMenu *mainMenu = [[NSMenu alloc] init];
-    NSApplication * application = [NSApplication sharedApplication];
-    
-    
-    [application setActivationPolicy:NSApplicationActivationPolicyRegular];
-    application.mainMenu = mainMenu;
-    application.delegate = delegate;
-    [application run];
-
-    
-
+    @autoreleasepool {
+        AppDelegate *delegate = [AppDelegate new];
+        delegate.argv = argv;
+        delegate.argc = argc;
+        
+        NSMenu *mainMenu = [[NSMenu alloc] init];
+        NSApplication * application = [NSApplication sharedApplication];
+        
+        
+        [application setActivationPolicy:NSApplicationActivationPolicyRegular];
+        application.mainMenu = mainMenu;
+        application.delegate = delegate;
+        [application run];
+    }
     return 0;
 }

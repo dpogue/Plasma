@@ -143,6 +143,7 @@ target_link_libraries(plGLClient pfSurface)
 # System Libs
 if(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_link_libraries(plGLClient "-framework Cocoa")
+    target_link_libraries(plGLClient "-framework QuartzCore")
 elseif(UNIX)
     target_link_libraries(plGLClient xcb)
     target_link_libraries(plGLClient xcb-xfixes)
