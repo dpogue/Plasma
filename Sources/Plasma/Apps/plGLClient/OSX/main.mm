@@ -132,27 +132,31 @@ PF_CONSOLE_LINK_ALL()
 
 void PumpMessageQueueProc()
 {
-    NSEvent* event;
-
-    while ((event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                            untilDate:[NSDate distantPast]
-                            inMode:NSDefaultRunLoopMode
-                            dequeue:YES]) != nil)
-    {
-
-        switch ([event type])
+    /*
+     Normally we want to receive events from the normal app event loop,
+     but the intro movie blocks the normal event loop. This lets us
+     manually process key down during the intro.
+     */
+    plClientLoader &gClient = ((AppDelegate *)[NSApp delegate])->gClient;
+    if(gClient->GetQuitIntro() == false) {
+        NSEvent *event;
+        [[NSRunLoop mainRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate now]];
+        while ((event = [NSApp nextEventMatchingMask:NSEventMaskKeyDown
+                                    untilDate:[NSDate distantPast]
+                                    inMode:NSDefaultRunLoopMode
+                                    dequeue:YES]) != nil)
         {
-        case NSEventTypeKeyDown:
+            switch ([event type])
             {
-                gClient->SetDone(true);
+            case NSEventTypeKeyDown:
+                {
+                    gClient->SetQuitIntro(true);
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        default:
-            break;
         }
-
-        [NSApp sendEvent:event];
-        [NSApp updateWindows];
     }
 }
 
