@@ -195,6 +195,8 @@ protected:
     uint32_t                            fFrame;     // inc'd every time the camera moves.
     uint32_t                            fRenderCnt; // inc'd every begin scene.
 
+    uint32_t                            fVtxRefTime;
+
     bool                                fVSync;
 
     plPlateManager*                     fPlateMgr;
