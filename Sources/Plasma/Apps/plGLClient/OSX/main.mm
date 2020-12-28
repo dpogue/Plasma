@@ -52,16 +52,18 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #import "Cocoa/Cocoa.h"
 #import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
+#import "PLSKeyboardEventMonitor.h"
 
-plClientLoader gClient = plClientLoader();
 
 void PumpMessageQueueProc();
 
-@interface AppDelegate: NSObject <NSApplicationDelegate> {
+@interface AppDelegate: NSWindowController <NSApplicationDelegate, NSWindowDelegate> {
+    @public plClientLoader gClient;
     
 }
 
 @property (retain) NSTimer *drawTimer;
+@property (retain) PLSKeyboardEventMonitor *eventMonitor;
 @property const char **argv;
 @property int argc;
 
@@ -70,32 +72,36 @@ void PumpMessageQueueProc();
 @implementation AppDelegate
 PF_CONSOLE_LINK_ALL()
 
-- (void)applicationDidFinishLaunching:(NSNotification *)notification
-{
-    // Create a window:
-
+-(id)init {
+    
     // Style flags
     NSUInteger windowStyle =
-        (NSTitledWindowMask  |
-        NSClosableWindowMask |
-        NSResizableWindowMask);
-
+    (NSWindowStyleMaskTitled  |
+         NSWindowStyleMaskClosable |
+         NSWindowStyleMaskResizable);
+    
     // Window bounds (x, y, width, height)
     NSRect windowRect = NSMakeRect(100, 100, 800, 600);
-
+    
     NSWindow * window = [[NSWindow alloc] initWithContentRect:windowRect
                         styleMask:windowStyle
                         backing:NSBackingStoreBuffered
                         defer:NO];
+    
+    self = [super initWithWindow:window];
+    self.window.acceptsMouseMovedEvents = YES;
+    return self;
+}
 
-    // Window controller
-    NSWindowController * windowController = [[[NSWindowController alloc] initWithWindow:window] autorelease];
+- (void)applicationDidFinishLaunching:(NSNotification *)notification
+{
+    PF_CONSOLE_INITIALIZE(Audio)
+    // Create a window:
 
     // Window controller
     [self.window setContentSize:NSMakeSize(800, 600)];
     [self.window orderFrontRegardless];
     
-    PF_CONSOLE_INITIALIZE(Audio);
     gClient.SetClientWindow((hsWindowHndl)(__bridge void *)self.window);
     gClient.SetClientDisplay((hsWindowHndl)NULL);
     gClient.Init(_argc, _argv);
@@ -112,6 +118,8 @@ PF_CONSOLE_LINK_ALL()
     if(!gClient) {
         exit(0);
     }
+    
+    self.eventMonitor = [[PLSKeyboardEventMonitor alloc] initWithView:self.window.contentView inputManager:gClient->GetInputManager()];
 
     // Main loop
     if (gClient && !gClient->GetDone())

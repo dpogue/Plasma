@@ -59,6 +59,10 @@ elseif(APPLE AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     include_directories("../../PubUtilLib/plPipeline/GL/OSX")
     set(plGLClient_SOURCES ${plGLClient_SOURCES}
         OSX/main.mm
+        OSX/PLSKeyboardEventMonitor.mm
+    )
+    set(plGLClient_HEADERS ${plGLClient_HEADERS}
+        OSX/PLSKeyboardEventMonitor.h
     )
     #we know OpenGL is deprecated, but silence the warnings for now
     add_compile_definitions(GL_SILENCE_DEPRECATION)

@@ -40,6 +40,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
+#ifndef plClientLoader_h
+#define plClientLoader_h
+
 #include "HeadSpin.h"
 #include "hsThread.h"
 #include "plCmdParser.h"
@@ -116,4 +119,5 @@ public:
     operator bool() const { return fClient != nullptr; }
 };
 
+#endif
 
