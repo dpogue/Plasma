@@ -215,6 +215,10 @@ plClient::plClient()
     plNetClientMgr::SetInstance(new plNetClientMgr);
     plAgeLoader::SetInstance(new plAgeLoader);
 
+#ifdef MINIMAL_GL_BUILD
+    plNetClientMgr::GetInstance()->SetFlagsBit(plNetClientMgr::kLocalTriggers);
+#endif
+
     // Use it to parse the init directory
     plFileName initFolder = plFileSystem::GetInitPath();
     pfConsoleDirSrc dirSrc(fConsoleEngine, initFolder, "*.ini");
