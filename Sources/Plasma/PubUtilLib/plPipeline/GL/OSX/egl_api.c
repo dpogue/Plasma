@@ -59,25 +59,7 @@ EGLBoolean eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor)
         CGLGetVersion(&display->major, &display->minor);
 
         if (!display->cocoa_config) {
-            CGLRendererInfoObj renderers;
-            GLint nrend = 0;
-            CGLError err = CGLQueryRendererInfo(CGDisplayIDToOpenGLDisplayMask(display->id), &renderers, &nrend);
-            display->config_count = 0;
-
-            if (err == kCGLNoError) {
-                GLint i = 0;
-
-                fprintf(stderr, "available renderers:\n");
-                for(; i < nrend; i++)
-                {
-                    helperAddRendererConfigs(display, renderers, i);
-                }
-                CGLDestroyRendererInfo(renderers);
-            }
-            else
-            {
-                fprintf(stderr, "CGLQueryRendererInfo failed: %s\n", CGLErrorString(err));
-            }
+            helperAddRendererConfigs(display);
         }
 
         display->initialized = 1;
@@ -411,7 +393,8 @@ EGLContext eglCreateContext(EGLDisplay dpy, EGLConfig config_, EGLContext share_
     }
     fprintf(stderr, "Context version %d creation requested.\n", context->version);
 
-    CGLError err = CGLCreateContext(((OSX_EGLConfig*)config_)->pf, share_context ? share_context->ctx : NULL, &context->ctx);
+    CGLPixelFormatObj pf = ((OSX_EGLConfig*)config_)->pf;
+    CGLError err = CGLCreateContext(pf, share_context ? share_context->ctx : NULL, &context->ctx);
     if(err != kCGLNoError)
     {
         fprintf(stderr, "CGLCreateContext failed: %s\n", CGLErrorString(err));
