@@ -45,109 +45,97 @@ static GLint helperGetNextBitDepth(GLint *flags)
             fprintf(stderr, #f " failed for " #a ": %s\n", CGLErrorString(err)); \
         } \
     } while(0)
-#define RINFO(n, v) CALLCGL(CGLDescribeRenderer, (renderer_info, renderer_index, n, &v), v)
 #define PFINFO(n, v) CALLCGL(CGLDescribePixelFormat, (c.pf, 0, n, &v), v)
 
-static void helperAddRendererConfigs(OSX_EGLDisplay* display, CGLRendererInfoObj renderer_info, int renderer_index)
+static void helperAddRendererConfigs(OSX_EGLDisplay* display)
 {
     CGLError err;
-
-    GLint renderer_id = 0, accelerated = 0;
-    RINFO(kCGLRPRendererID, renderer_id);
-    RINFO(kCGLRPAccelerated, accelerated);
+    
     GLint window = 0, pbuffer = 1;
-    GLint colormode_flags = 0, buffermode_flags = 0;
-    GLint depth_flags = 0, stencil_flags = 0;
-    RINFO(kCGLRPWindow, window);
-    RINFO(kCGLRPColorModes, colormode_flags);
-    RINFO(kCGLRPBufferModes, buffermode_flags);
-    RINFO(kCGLRPDepthModes, depth_flags);
-    RINFO(kCGLRPStencilModes, stencil_flags);
 
-    fprintf(stderr, "0x%x: generating usable pixel formats:\n", renderer_id);
+    fprintf(stderr, "generating usable pixel formats:\n");
 
     OSX_EGLConfig c;
-    c.renderer_id = renderer_id;
-    c.caveat = accelerated ? EGL_NONE : EGL_SLOW_CONFIG;
     c.level = 0;
-    c.native_renderable = window ? EGL_TRUE : EGL_FALSE;
     c.transparency_type = EGL_NONE;
     c.transparent_red = 0;
     c.transparent_green = 0;
     c.transparent_blue = 0;
+    c.red_bits = 8;
+    c.green_bits = 8;
+    c.blue_bits = 8;
+    c.alpha_bits = 8;
+    c.depth_bits = 16;
+    c.buffer_bits = 32;
+    CGLPixelFormatAttribute attribs[64], i = 0;
+    attribs[i++] = kCGLPFAClosestPolicy;
+    attribs[i++] = kCGLPFAAccelerated;
+    attribs[i++] = kCGLPFANoRecovery;
+    attribs[i++] = kCGLPFADoubleBuffer;
+    attribs[i++] = kCGLPFAColorSize;   attribs[i++] = c.red_bits + c.green_bits + c.blue_bits + c.alpha_bits;
+    attribs[i++] = kCGLPFAAlphaSize;   attribs[i++] = c.alpha_bits;
+    if(c.depth_bits != 0) {
+        attribs[i++] = kCGLPFADepthSize;   attribs[i++] = c.depth_bits;
+    }
+    if(c.stencil_bits != 0) {
+        attribs[i++] = kCGLPFAStencilSize; attribs[i++] = c.stencil_bits;
+    }
+    attribs[i++] = kCGLPFAOpenGLProfile; attribs[i++] = (CGLPixelFormatAttribute)kCGLOGLPVersion_3_2_Core;
+    attribs[i++] = 0;
+    GLint npix = 0;
 
-    while (helperGetNextColorMode(&colormode_flags, &c.buffer_bits, &c.red_bits, &c.green_bits, &c.blue_bits, &c.alpha_bits))
+    err = CGLChoosePixelFormat(attribs, &c.pf, &npix);
+    if (err == kCGLNoError && npix > 0)
     {
-        GLint dp = depth_flags;
-        do
+        GLint cs = -1, a = -1, d = -1, s = -1, glv = 0;
+        PFINFO(kCGLPFAColorSize, cs);
+        PFINFO(kCGLPFAAlphaSize, a);
+        PFINFO(kCGLPFADepthSize, d);
+        PFINFO(kCGLPFAStencilSize, s);
+        PFINFO(kCGLPFAOpenGLProfile, glv);
+        if (cs == c.red_bits + c.green_bits + c.blue_bits + c.alpha_bits &&
+            a == c.alpha_bits && d == c.depth_bits &&
+            s == c.stencil_bits)
         {
-            c.depth_bits = helperGetNextBitDepth(&dp);
-            GLint st = stencil_flags;
-            do
-            {
-                c.stencil_bits = helperGetNextBitDepth(&st);
-                CGLPixelFormatAttribute attribs[64], i = 0;
-                attribs[i++] = kCGLPFAClosestPolicy;
-                if (accelerated) attribs[i++] = kCGLPFAAccelerated;
-                if (accelerated) attribs[i++] = kCGLPFANoRecovery;
-                if ((buffermode_flags & kCGLDoubleBufferBit)) attribs[i++] = kCGLPFADoubleBuffer;
-                attribs[i++] = kCGLPFAColorSize;   attribs[i++] = c.red_bits + c.green_bits + c.blue_bits + c.alpha_bits;
-                attribs[i++] = kCGLPFAAlphaSize;   attribs[i++] = c.alpha_bits;
-                attribs[i++] = kCGLPFADepthSize;   attribs[i++] = c.depth_bits;
-                attribs[i++] = kCGLPFAStencilSize; attribs[i++] = c.stencil_bits;
-                attribs[i++] = kCGLPFARendererID;  attribs[i++] = renderer_id;
-                attribs[i++] = kCGLPFAOpenGLProfile; attribs[i++] = (CGLPixelFormatAttribute)kCGLOGLPVersion_3_2_Core;
-                attribs[i++] = 0;
-                GLint npix = 0;
+            CGLRetainPixelFormat(c.pf);
+            c.id = ++display->config_count;
+            c.surface_type = 0;
+            PFINFO(kCGLPFASampleBuffers, c.sample_buffers);
+            PFINFO(kCGLPFASamples, c.samples);
+            PFINFO(kCGLPFADepthSize, c.depth_bits);
+            
+            //macOS doesn't seem to want to report sample buffers or samples
+            //this might be a request only property and not queryable?
+            //For now just make up an answer. Needs to be revisited.
+            c.sample_buffers = 1;
+            c.samples = 4;
+            
+            GLint renderer_id = 0, accelerated = 0;
+            PFINFO(kCGLRPRendererID, renderer_id);
+            PFINFO(kCGLRPAccelerated, accelerated);
+            c.renderer_id = renderer_id;
+            c.caveat = accelerated ? EGL_NONE : EGL_SLOW_CONFIG;
+            
+            c.native_renderable = window ? EGL_TRUE : EGL_FALSE;
 
-                err = CGLChoosePixelFormat(attribs, &c.pf, &npix);
-                if (err == kCGLNoError && npix > 0)
-                {
-                    GLint cs = -1, a = -1, d = -1, s = -1, glv = 0;
-                    PFINFO(kCGLPFAColorSize, cs);
-                    PFINFO(kCGLPFAAlphaSize, a);
-                    PFINFO(kCGLPFADepthSize, d);
-                    PFINFO(kCGLPFAStencilSize, s);
-                    PFINFO(kCGLPFAOpenGLProfile, glv);
-                    if (cs == c.red_bits + c.green_bits + c.blue_bits + c.alpha_bits &&
-                        a == c.alpha_bits && d == c.depth_bits &&
-                        s == c.stencil_bits)
-                    {
-                        CGLRetainPixelFormat(c.pf);
-                        c.id = ++display->config_count;
-                        c.surface_type = 0;
-                        PFINFO(kCGLPFASampleBuffers, c.sample_buffers);
-                        PFINFO(kCGLPFASamples, c.samples);
-                        
-                        //macOS doesn't seem to want to report sample buffers or samples
-                        //this might be a request only property and not queryable?
-                        //For now just make up an answer. Needs to be revisited.
-                        c.sample_buffers = 1;
-                        c.samples = 4;
+            fprintf(stderr, "\t0x%02x: %dbpp (%d-%d-%d-%d) depth %-2d stencil %d GL %d\n",
+                c.id, c.buffer_bits, c.red_bits,
+                c.green_bits, c.blue_bits, c.alpha_bits,
+                c.depth_bits, c.stencil_bits, glv);
 
-                        fprintf(stderr, "\t0x%02x: %dbpp (%d-%d-%d-%d) depth %-2d stencil %d GL %d\n",
-                            c.id, c.buffer_bits, c.red_bits,
-                            c.green_bits, c.blue_bits, c.alpha_bits,
-                            c.depth_bits, c.stencil_bits, glv);
-
-                        display->cocoa_config = realloc(display->cocoa_config,
-                            display->config_count * sizeof(OSX_EGLConfig));
-                        display->cocoa_config[display->config_count - 1] = c;
-                    }
-                    else
-                    {
-                        // we didn't get what we asked for, trash it
-                        CGLReleasePixelFormat(c.pf);
-                    }
-                }
-                else if (err != kCGLNoError)
-                {
-                    fprintf(stderr, "CGLChoosePixelFormat failed: %s\n", CGLErrorString(err));
-                }
-            }
-            while (st);
+            display->cocoa_config = realloc(display->cocoa_config,
+                display->config_count * sizeof(OSX_EGLConfig));
+            display->cocoa_config[display->config_count - 1] = c;
         }
-        while (dp);
+        else
+        {
+            // we didn't get what we asked for, trash it
+            CGLReleasePixelFormat(c.pf);
+        }
+    }
+    else if (err != kCGLNoError)
+    {
+        fprintf(stderr, "CGLChoosePixelFormat failed: %s\n", CGLErrorString(err));
     }
 }
 #undef RINFO
