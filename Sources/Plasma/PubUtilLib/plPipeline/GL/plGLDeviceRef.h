@@ -48,6 +48,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 class plGBufferGroup;
 class plBitmap;
+class plRenderTarget;
 
 
 class plGLDeviceRef : public hsGDeviceRef
@@ -207,6 +208,25 @@ public:
     virtual ~plGLTextureRef();
 
     void Release();
+};
+
+
+
+class plGLRenderTargetRef: public plGLTextureRef
+{
+public:
+    // fRef is the texture ref, so we can keep using this like a normal texture
+    GLuint          fFrameBuffer;
+    GLuint          fDepthBuffer;
+
+    void                    Link(plGLRenderTargetRef**back) { plGLDeviceRef::Link((plGLDeviceRef**)back); }
+    plGLRenderTargetRef*    GetNext() { return (plGLRenderTargetRef*)fNext; }
+
+    virtual ~plGLRenderTargetRef();
+
+    void Release();
+
+    virtual void SetOwner(plRenderTarget* targ) { fOwner = (plBitmap*)targ; }
 };
 
 

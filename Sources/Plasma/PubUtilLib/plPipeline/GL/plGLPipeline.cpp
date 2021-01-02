@@ -64,15 +64,22 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #endif
 
 #include "hsTimer.h"
-
-#include "plPipeline/plPipelineCreate.h"
-#include "plPipeline/plDebugText.h"
 #include "plPipeDebugFlags.h"
+#include "plPipeResReq.h"
+
+#include "pnNetCommon/plNetApp.h"   // for dbg logging
+#include "pnMessage/plPipeResMakeMsg.h"
 #include "plDrawable/plDrawableSpans.h"
 #include "plDrawable/plGBufferGroup.h"
 #include "plGLight/plLightInfo.h"
+#include "plPipeline/plCubicRenderTarget.h"
+#include "plPipeline/plDebugText.h"
+#include "plPipeline/plDynamicEnvMap.h"
+#include "plPipeline/plPipelineCreate.h"
 #include "plScene/plRenderRequest.h"
 #include "plSurface/hsGMaterial.h"
+#include "plSurface/plLayer.h"
+
 
 #include "hsGMatState.inl"
 
@@ -121,7 +128,7 @@ bool plRenderTriListFunc::RenderPrims() const
 
 
 plGLPipeline::plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3DDeviceModeRecord* devModeRec)
-:   pl3DPipeline(devModeRec), fMatRefList(nullptr)
+:   pl3DPipeline(devModeRec), fMatRefList(), fRenderTargetRefList()
 {
     fDevice.fDevice = display;
     fDevice.fWindow = window;
@@ -307,7 +314,15 @@ void plGLPipeline::PopRenderRequest(plRenderRequest* req)
     fView.fXformResetFlags = fView.kResetProjection | fView.kResetCamera;
 }
 
-void plGLPipeline::ClearRenderTarget(plDrawable* d) {}
+void plGLPipeline::ClearRenderTarget(plDrawable* d)
+{
+    plDrawableSpans* src = plDrawableSpans::ConvertNoRef(d);
+
+    ClearRenderTarget();
+
+    if (!src)
+        return;
+}
 
 void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth)
 {
@@ -329,7 +344,125 @@ void plGLPipeline::ClearRenderTarget(const hsColorRGBA* col, const float* depth)
     }
 }
 
-hsGDeviceRef* plGLPipeline::MakeRenderTargetRef(plRenderTarget* owner) { return nullptr; }
+hsGDeviceRef* plGLPipeline::MakeRenderTargetRef(plRenderTarget* owner)
+{
+    plGLRenderTargetRef* ref = nullptr;
+    GLuint depthBuffer = -1;
+
+    // If we have Shader Model 3 and support non-POT textures, let's make reflections the pipe size
+#if 1
+    if (plDynamicCamMap* camMap = plDynamicCamMap::ConvertNoRef(owner)) {
+        //if ((plQuality::GetCapability() > plQuality::kPS_2) && fSettings.fD3DCaps & kCapsNpotTextures)
+            camMap->ResizeViewport(IGetViewTransform());
+    }
+#endif
+
+    /// Check--is this renderTarget really a child of a cubicRenderTarget?
+    if (owner->GetParent()) {
+        /// This'll create the deviceRefs for all of its children as well
+        MakeRenderTargetRef(owner->GetParent());
+        return owner->GetDeviceRef();
+    }
+
+    // If we already have a rendertargetref, we just need it filled out with D3D resources.
+    if (owner->GetDeviceRef())
+        ref = (plGLRenderTargetRef*)owner->GetDeviceRef();
+
+    /// Create the render target now
+    // Start with the depth surface.
+    // Note that we only ever give a cubic rendertarget a single shared depth buffer,
+    // since we only render one face at a time. If we were rendering part of face X, then part
+    // of face Y, then more of face X, then they would all need their own depth buffers.
+    if (owner->GetZDepth() && (owner->GetFlags() & (plRenderTarget::kIsTexture | plRenderTarget::kIsOffscreen))) {
+#ifdef GL_VERSION_4_5
+        glCreateRenderbuffers(1, &depthBuffer);
+        glNamedRenderbufferStorage(depthBuffer, GL_DEPTH24_STENCIL8, owner->GetWidth(), owner->GetHeight());
+#else
+        glGenRenderbuffers(1, &depthBuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, owner->GetWidth(), owner->GetHeight());
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+#endif
+    }
+
+    // See if it's a cubic render target.
+    // Primary consumer here is the vertex/pixel shader water.
+    if (plCubicRenderTarget* cubicRT = plCubicRenderTarget::ConvertNoRef(owner)) {
+        /// And create the ref (it'll know how to set all the flags)
+        //if (ref)
+        //    ref->Set(surfFormat, 0, owner);
+        //else
+        //    ref = new plGLRenderTargetRef(surfFormat, 0, owner);
+
+        // TODO: The rest
+    }
+
+    // Not a cubic, is it a texture render target? These are currently used
+    // primarily for shadow map generation.
+    else if (owner->GetFlags() & plRenderTarget::kIsTexture) {
+        /// Create a normal texture
+        if (!ref)
+            ref = new plGLRenderTargetRef();
+
+        ref->fOwner = owner;
+        ref->fDepthBuffer = depthBuffer;
+        ref->fMapping = GL_TEXTURE_2D;
+
+#ifdef GL_VERSION_4_5
+        glCreateTextures(GL_TEXTURE_2D, 1, &ref->fRef);
+        glTextureStorage2D(ref->fRef, 1, GL_RGBA8, owner->GetWidth(), owner->GetHeight());
+        glTextureParameteri(ref->fRef, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(ref->fRef, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glCreateFramebuffers(1, &ref->fFrameBuffer);
+        glNamedFramebufferTexture(ref->fFrameBuffer, GL_COLOR_ATTACHMENT0, ref->fRef, 0);
+        if (ref->fDepthBuffer != -1)
+            glNamedFramebufferRenderbuffer(ref->fFrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, ref->fDepthBuffer);
+#else
+        glGenTextures(1, &ref->fRef);
+        glBindTexture(GL_TEXTURE_2D, ref->fRef);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, owner->GetWidth(), owner->GetHeight());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        glGenFramebuffers(1, &ref->fFrameBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, ref->fFrameBuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ref->fRef, 0);
+        if (ref->fDepthBuffer != -1)
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, ref->fDepthBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
+    }
+
+    // Not a texture either, must be a plain offscreen.
+    // Offscreen isn't currently used for anything.
+    else if (owner->GetFlags() & plRenderTarget::kIsOffscreen) {
+        /// Create a blank surface
+        //if (ref)
+        //    ref->Set(surfFormat, 0, owner);
+        //else
+        //    ref = new plGLRenderTargetRef(surfFormat, 0, owner);
+    }
+
+    // Keep it in a linked list for ready destruction.
+    if (owner->GetDeviceRef() != ref) {
+        owner->SetDeviceRef(ref);
+        // Unref now, since for now ONLY the RT owns the ref, not us (not until we use it, at least)
+        hsRefCnt_SafeUnRef(ref);
+        if (ref != nullptr && !ref->IsLinked())
+            ref->Link(&fRenderTargetRefList);
+    } else {
+        if (ref != nullptr && !ref->IsLinked())
+            ref->Link(&fRenderTargetRefList);
+    }
+
+    // Mark as not dirty so it doesn't get re-created
+    if (ref != nullptr)
+        ref->SetDirty(false);
+
+    return ref;
+}
 
 bool plGLPipeline::BeginRender()
 {

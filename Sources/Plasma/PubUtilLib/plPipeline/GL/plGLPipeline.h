@@ -58,7 +58,8 @@ protected:
     friend class plGLDevice;
     friend class plGLPlateManager;
 
-    plGLMaterialShaderRef* fMatRefList;
+    plGLMaterialShaderRef*  fMatRefList;
+    plGLRenderTargetRef*    fRenderTargetRefList;
 
 public:
     plGLPipeline(hsWindowHndl display, hsWindowHndl window, const hsG3DDeviceModeRecord *devMode);

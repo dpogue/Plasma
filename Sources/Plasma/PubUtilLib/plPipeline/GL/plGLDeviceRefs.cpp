@@ -131,13 +131,14 @@ void plGLIndexBufferRef::Release()
 }
 
 
-
+/*****************************************************************************
+ ** Texture cleanup Functions                                               **
+ *****************************************************************************/
 
 plGLTextureRef::~plGLTextureRef()
 {
     Release();
 }
-
 
 void plGLTextureRef::Release()
 {
@@ -145,4 +146,21 @@ void plGLTextureRef::Release()
         glDeleteTextures(1, &fRef);
         fRef = 0;
     }
+    SetDirty(true);
+}
+
+
+/*****************************************************************************
+ ** FrameBuffer cleanup Functions                                           **
+ *****************************************************************************/
+
+plGLRenderTargetRef::~plGLRenderTargetRef()
+{
+    Release();
+}
+
+void plGLRenderTargetRef::Release()
+{
+    plGLTextureRef::Release();
+    SetDirty(true);
 }

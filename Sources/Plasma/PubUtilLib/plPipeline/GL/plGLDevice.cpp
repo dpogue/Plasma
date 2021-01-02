@@ -48,6 +48,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plDrawable/plGBufferGroup.h"
 #include "plGImage/plMipmap.h"
 #include "plGImage/plCubicEnvironmap.h"
+#include "plPipeline/plRenderTarget.h"
 
 #ifndef GL_LUMINANCE
 #define GL_LUMINANCE GL_RED
@@ -215,6 +216,25 @@ void plGLDevice::Shutdown()
 
 void plGLDevice::SetRenderTarget(plRenderTarget* target)
 {
+    plGLRenderTargetRef* ref = nullptr;
+
+    if (target != nullptr) {
+        ref = (plGLRenderTargetRef*)target->GetDeviceRef();
+        if (ref == nullptr || ref->IsDirty())
+            ref = (plGLRenderTargetRef*)fPipeline->MakeRenderTargetRef(target);
+    }
+
+    if (ref == nullptr)
+    {
+        /// Set to main screen
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    else
+    {
+        /// Set to this target
+        glBindFramebuffer(GL_FRAMEBUFFER, ref->fFrameBuffer);
+    }
+
     SetViewport();
 }
 
