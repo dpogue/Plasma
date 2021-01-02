@@ -310,7 +310,11 @@ void plGLDevice::CheckStaticVertexBuffer(VertexBufferRef* vRef, plGBufferGroup* 
 
     if (!vRef->fRef)
     {
+#ifdef GL_VERSION_4_5
+        glCreateBuffers(1, &vRef->fRef);
+#else
         glGenBuffers(1, &vRef->fRef);
+#endif
 
         // Fill in the vertex data.
         FillStaticVertexBufferRef(vRef, owner, idx);
@@ -337,11 +341,14 @@ void plGLDevice::FillStaticVertexBufferRef(VertexBufferRef* ref, plGBufferGroup*
         return;
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, ref->fRef);
-
     if (ref->fData)
     {
+#ifdef GL_VERSION_4_5
+        glNamedBufferData(ref->fRef, size, ref->fData + vertStart, GL_STATIC_DRAW);
+#else
+        glBindBuffer(GL_ARRAY_BUFFER, ref->fRef);
         glBufferData(GL_ARRAY_BUFFER, size, ref->fData + vertStart, GL_STATIC_DRAW);
+#endif
     }
     else
     {
@@ -395,7 +402,12 @@ void plGLDevice::FillStaticVertexBufferRef(VertexBufferRef* ref, plGBufferGroup*
         }
 
         hsAssert((ptr - buffer) == size, "Didn't fill the buffer?");
+#ifdef GL_VERSION_4_5
+        glNamedBufferData(ref->fRef, size, buffer, GL_STATIC_DRAW);
+#else
+        glBindBuffer(GL_ARRAY_BUFFER, ref->fRef);
         glBufferData(GL_ARRAY_BUFFER, size, buffer, GL_STATIC_DRAW);
+#endif
 
         delete[] buffer;
     }
@@ -461,7 +473,11 @@ void plGLDevice::CheckIndexBuffer(IndexBufferRef* iRef)
     {
         iRef->SetVolatile(false);
 
+#ifdef GL_VERSION_4_5
+        glCreateBuffers(1, &iRef->fRef);
+#else
         glGenBuffers(1, &iRef->fRef);
+#endif
 
         iRef->SetDirty(true);
         iRef->SetRebuiltSinceUsed(true);
@@ -478,8 +494,12 @@ void plGLDevice::FillIndexBufferRef(IndexBufferRef* iRef, plGBufferGroup* owner,
         return;
     }
 
+#ifdef GL_VERSION_4_5
+    glNamedBufferData(iRef->fRef, size, owner->GetIndexBufferData(idx) + startIdx, GL_STATIC_DRAW);
+#else
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, owner->GetIndexBufferData(idx) + startIdx, GL_STATIC_DRAW);
+#endif
 
     iRef->SetDirty(false);
 }
