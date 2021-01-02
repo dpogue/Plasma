@@ -63,11 +63,9 @@ REGISTER_CREATABLE(plCubicRenderTarget);
 #include "plCubicRenderTargetModifier.h"
 REGISTER_CREATABLE(plCubicRenderTargetModifier);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plDynamicEnvMap.h"
 REGISTER_CREATABLE(plDynamicCamMap);
 REGISTER_CREATABLE(plDynamicEnvMap);
-#endif
 
 #include "plFogEnvironment.h"
 REGISTER_CREATABLE(plFogEnvironment);

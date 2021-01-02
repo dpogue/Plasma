@@ -50,6 +50,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <string_theory/format>
 
 #include "hsTemplates.h"
+#include "plQuality.h"
+
 #include "plGLConstants.h"
 #include "plGLPipeline.h"
 #include "plGLMaterialShaderRef.h"
