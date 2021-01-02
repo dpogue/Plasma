@@ -97,10 +97,7 @@ plProfile_CreateMemCounter("Total Texture Size", "Draw", TotalTexSize);
 plProfile_CreateCounter("Material Change", "Draw", MatChange);
 plProfile_CreateCounter("Layer Change", "Draw", LayChange);
 
-plProfile_CreateTimer("PlateMgr", "PipeT", PlateMgr);
-plProfile_CreateTimer("DebugText", "PipeT", DebugText);
-plProfile_CreateTimer("Reset", "PipeT", Reset);
-
+plProfile_CreateTimer("PrepDrawable", "PipeT", PrepDrawable);
 plProfile_CreateTimer("RenderSpan", "PipeT", RenderSpan);
 plProfile_CreateTimer("  MergeCheck", "PipeT", MergeCheck);
 plProfile_CreateTimer("  MergeSpan", "PipeT", MergeSpan);
@@ -112,6 +109,11 @@ plProfile_CreateTimer("  CheckDyn", "PipeT", CheckDyn);
 plProfile_CreateTimer("  CheckStat", "PipeT", CheckStat);
 plProfile_CreateTimer("  RenderBuff", "PipeT", RenderBuff);
 plProfile_CreateTimer("  RenderPrim", "PipeT", RenderPrim);
+plProfile_CreateTimer("PlateMgr", "PipeT", PlateMgr);
+plProfile_CreateTimer("DebugText", "PipeT", DebugText);
+plProfile_CreateTimer("Reset", "PipeT", Reset);
+
+plProfile_CreateCounterNoReset("Reload", "PipeC", PipeReload);
 
 static plRenderNilFunc sRenderNil;
 
@@ -211,8 +213,11 @@ bool plGLPipeline::PreRender(plDrawable* drawable, hsTArray<int16_t>& visList, p
 
 bool plGLPipeline::PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visList, plVisMgr* visMgr)
 {
+    plProfile_BeginTiming(PrepDrawable);
+
     plDrawableSpans* ice = plDrawableSpans::ConvertNoRef(drawable);
     if (!ice) {
+        plProfile_EndTiming(PrepDrawable);
         return false;
     }
 
@@ -230,6 +235,8 @@ bool plGLPipeline::PrepForRender(plDrawable* drawable, hsTArray<int16_t>& visLis
     ice->PrepForRender(this);
 
     // Other stuff that we're ignoring for now...
+
+    plProfile_EndTiming(PrepDrawable);
 
     return true;
 }
@@ -557,11 +564,40 @@ void plGLPipeline::Resize(uint32_t width, uint32_t height) {}
 
 void plGLPipeline::LoadResources()
 {
+    hsStatusMessageF("Begin Device Reload t=%f",hsTimer::GetSeconds());
+    plNetClientApp::StaticDebugMsg("Begin Device Reload");
+
     if (plGLPlateManager* pm = static_cast<plGLPlateManager*>(fPlateMgr))
-    {
         pm->IReleaseGeometry();
+
+    IReleaseAvRTPool();
+
+    // Create all RenderTargets
+    plPipeRTMakeMsg* rtMake = new plPipeRTMakeMsg(this);
+    rtMake->Send();
+
+    if (plGLPlateManager* pm = static_cast<plGLPlateManager*>(fPlateMgr))
         pm->ICreateGeometry();
-    }
+
+    // Create all POOL_DEFAULT (sorted) index buffers in the scene.
+    plPipeGeoMakeMsg* defMake = new plPipeGeoMakeMsg(this, true);
+    defMake->Send();
+
+    // This can be a bit of a mem hog and will use more mem if available, so
+    // keep it last in the POOL_DEFAULT allocs.
+    IFillAvRTPool();
+
+    // Force a create of all our static vertex buffers.
+    plPipeGeoMakeMsg* manMake = new plPipeGeoMakeMsg(this, false);
+    manMake->Send();
+
+    // Okay, we've done it, clear the request.
+    plPipeResReq::Clear();
+
+    plProfile_IncCount(PipeReload, 1);
+
+    hsStatusMessageF("End Device Reload t=%f",hsTimer::GetSeconds());
+    plNetClientApp::StaticDebugMsg("End Device Reload");
 }
 
 bool plGLPipeline::SetGamma(float eR, float eG, float eB) { return false; }
