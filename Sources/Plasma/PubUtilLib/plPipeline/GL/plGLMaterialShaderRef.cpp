@@ -568,6 +568,13 @@ void plGLMaterialShaderRef::ISetShaderVariableLocs()
     this->uAlphaThreshold   = glGetUniformLocation(fRef, "uAlphaThreshold");
     this->uInvertVtxAlpha   = glGetUniformLocation(fRef, "uInvertVtxAlpha");
 
+    // Matrix inputs
+    this->uMatrixProj     = glGetUniformLocation(fRef, "uMatrixProj");
+    this->uMatrixC2W      = glGetUniformLocation(fRef, "uMatrixC2W");
+    this->uMatrixW2C      = glGetUniformLocation(fRef, "uMatrixW2C");
+    this->uMatrixL2W      = glGetUniformLocation(fRef, "uMatrixL2W");
+    this->uMatrixW2L      = glGetUniformLocation(fRef, "uMatrixW2L");
+
     // Material inputs
     this->uGlobalAmbient  = glGetUniformLocation(fRef, "uGlobalAmb");
     this->uMatAmbientCol  = glGetUniformLocation(fRef, "uAmbientCol");
