@@ -683,7 +683,6 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 
     if (vRef->fFormat & plGBufferGroup::kSkinIndices)
     {
-        hsAssert(false, "Indexed skinning not supported");
         weight_offset += sizeof(uint32_t);
     }
 
