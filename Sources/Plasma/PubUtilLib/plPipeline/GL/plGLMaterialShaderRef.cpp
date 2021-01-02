@@ -591,6 +591,20 @@ void plGLMaterialShaderRef::ISetShaderVariableLocs()
     this->uFogValues      = glGetUniformLocation(fRef, "uFogValues");
     this->uFogColor       = glGetUniformLocation(fRef, "uFogColor");
 
+    // Lamp inputs
+    for (size_t i = 0; i < 8; i++) {
+        this->uLampSources[i].position     = glGetUniformLocation(fRef, ST::format("uLampSources[{}].position", i).c_str());
+        this->uLampSources[i].ambient      = glGetUniformLocation(fRef, ST::format("uLampSources[{}].ambient", i).c_str());
+        this->uLampSources[i].diffuse      = glGetUniformLocation(fRef, ST::format("uLampSources[{}].diffuse", i).c_str());
+        this->uLampSources[i].specular     = glGetUniformLocation(fRef, ST::format("uLampSources[{}].specular", i).c_str());
+        this->uLampSources[i].direction    = glGetUniformLocation(fRef, ST::format("uLampSources[{}].direction", i).c_str());
+        this->uLampSources[i].spotProps    = glGetUniformLocation(fRef, ST::format("uLampSources[{}].spotProps", i).c_str());
+        this->uLampSources[i].constAtten   = glGetUniformLocation(fRef, ST::format("uLampSources[{}].constAtten", i).c_str());
+        this->uLampSources[i].linAtten     = glGetUniformLocation(fRef, ST::format("uLampSources[{}].linAtten", i).c_str());
+        this->uLampSources[i].quadAtten    = glGetUniformLocation(fRef, ST::format("uLampSources[{}].quadAtten", i).c_str());
+        this->uLampSources[i].scale        = glGetUniformLocation(fRef, ST::format("uLampSources[{}].scale", i).c_str());
+    }
+
     size_t layerCount = fMaterial->GetNumLayers();
 
     this->uLayerMat.assign(layerCount, -1);
