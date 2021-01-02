@@ -878,8 +878,6 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
             glUniform1i(mRef->uPassNumber, pass);
         }
 
-        glUniform1f(mRef->uInvertVtxAlpha, 0.f);
-
         plLayerInterface* lay = material->GetLayer(mRef->GetPassIndex(pass));
 
         ICalcLighting(mRef, lay, &span);
@@ -889,6 +887,11 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
 
         IHandleZMode(s);
         IHandleBlendMode(s);
+
+        if (s.fBlendFlags & hsGMatState::kBlendInvertVtxAlpha)
+            glUniform1f(mRef->uInvertVtxAlpha, 1.f);
+        else
+            glUniform1f(mRef->uInvertVtxAlpha, 0.f);
 
         if (s.fBlendFlags & (hsGMatState::kBlendTest | hsGMatState::kBlendAlpha | hsGMatState::kBlendAddColorTimesAlpha) &&
             !(s.fBlendFlags & hsGMatState::kBlendAlphaAlways))
