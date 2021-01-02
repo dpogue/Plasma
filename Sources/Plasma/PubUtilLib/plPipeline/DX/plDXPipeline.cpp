@@ -271,8 +271,6 @@ static const enum _D3DTRANSFORMSTATETYPE    sTextureStages[ 8 ] =
     D3DTS_TEXTURE4, D3DTS_TEXTURE5, D3DTS_TEXTURE6, D3DTS_TEXTURE7
 };
 
-static const float kAvTexPoolShrinkThresh = 30.f; // seconds
-
 // This caps the number of D3D lights we use. We'll use up to the max allowed
 // or this number, whichever is smaller. (This is to prevent us going haywire
 // on trying to allocate an array for ALL of the lights in the Ref device.)
@@ -8686,18 +8684,6 @@ void plDXPipeline::IEndAllocUnManaged()
     fD3DDevice->EvictManagedResources();
 }
 
-bool plDXPipeline::CheckResources()
-{
-    if ((fClothingOutfits.GetCount() <= 1 && fAvRTPool.GetCount() > 1) ||
-        (fAvRTPool.GetCount() >= 16 && (fAvRTPool.GetCount() / 2 >= fClothingOutfits.GetCount())))
-    {
-        return (hsTimer::GetSysSeconds() - fAvRTShrinkValidSince > kAvTexPoolShrinkThresh);
-    }
-
-    fAvRTShrinkValidSince = hsTimer::GetSysSeconds();
-    return (fAvRTPool.GetCount() < fClothingOutfits.GetCount());
-}
-
 // LoadResources ///////////////////////////////////////////////////////////////////////
 // Basically, we have to load anything that goes into POOL_DEFAULT before
 // anything into POOL_MANAGED, or the memory manager gets confused.
@@ -12000,115 +11986,6 @@ void plDXPipeline::IDisableLightsForShadow()
 void plDXPipeline::IEnableShadowLight(plShadowSlave* slave)
 {
     fD3DDevice->LightEnable(slave->fLightIndex, true);
-}
-
-void plDXPipeline::SubmitClothingOutfit(plClothingOutfit* co)
-{
-    if (fClothingOutfits.Find(co) == fClothingOutfits.kMissingIndex)
-    {
-        fClothingOutfits.Append(co);
-        if (!fPrevClothingOutfits.RemoveItem(co))
-            co->GetKey()->RefObject();
-    }
-}
-
-void plDXPipeline::IClearClothingOutfits(hsTArray<plClothingOutfit*>* outfits)
-{
-    int i;
-    for (i = outfits->GetCount() - 1; i >= 0; i--)
-    {
-        plClothingOutfit *co = outfits->Get(i);
-        outfits->Remove(i);
-        IFreeAvRT((plRenderTarget*)co->fTargetLayer->GetTexture());
-        co->fTargetLayer->SetTexture(nil);
-        co->GetKey()->UnRefObject();
-    }
-}
-
-void plDXPipeline::IFillAvRTPool()
-{
-    fAvNextFreeRT = 0;
-    fAvRTShrinkValidSince = hsTimer::GetSysSeconds();
-    int numRTs = 1;
-    if (fClothingOutfits.GetCount() > 1)
-    {
-        // Just jump to 8 for starters so we don't have to refresh for the 2nd, 4th, AND 8th player
-        numRTs = 8;
-        while (numRTs < fClothingOutfits.GetCount())
-            numRTs *= 2;
-    }
-
-    // I could see a 32MB video card going down to 64x64 RTs in extreme cases
-    // (over 100 players onscreen at once), but really, if such hardware is ever trying to push 
-    // that, the low texture resolution is not going to be your major concern.
-    for (fAvRTWidth = 1024 >> plMipmap::GetGlobalLevelChopCount(); fAvRTWidth >= 32; fAvRTWidth /= 2)
-    {
-        if (IFillAvRTPool(numRTs, fAvRTWidth))
-            return;
-
-        // Nope? Ok, lower the resolution and try again.
-    }
-}
-
-bool plDXPipeline::IFillAvRTPool(uint16_t numRTs, uint16_t width)
-{
-    fAvRTPool.SetCount(numRTs);
-    int i;
-    for (i = 0; i < numRTs; i++)
-    {
-        uint16_t flags = plRenderTarget::kIsTexture | plRenderTarget::kIsProjected;
-        uint8_t bitDepth = 32;
-        uint8_t zDepth = 0;
-        uint8_t stencilDepth = 0;
-        fAvRTPool[i] = new plRenderTarget(flags, width, width, bitDepth, zDepth, stencilDepth);
-
-        // If anyone fails, release everyone we've created.
-        if (!MakeRenderTargetRef(fAvRTPool[i]))
-        {
-            int j;
-            for (j = 0; j <= i; j++)
-            {
-                delete fAvRTPool[j];
-            }
-            return false;
-        }
-    }
-    return true;
-}
-
-void plDXPipeline::IReleaseAvRTPool()
-{
-    int i;
-    for (i = 0; i < fClothingOutfits.GetCount(); i++)
-    {
-        fClothingOutfits[i]->fTargetLayer->SetTexture(nil);
-    }
-    for (i = 0; i < fPrevClothingOutfits.GetCount(); i++)
-    {
-        fPrevClothingOutfits[i]->fTargetLayer->SetTexture(nil);
-    }   
-    for (i = 0; i < fAvRTPool.GetCount(); i++)
-    {
-        delete(fAvRTPool[i]);
-    }
-    fAvRTPool.Reset();
-}
-
-plRenderTarget *plDXPipeline::IGetNextAvRT()
-{
-    return fAvRTPool[fAvNextFreeRT++];
-}
-
-void plDXPipeline::IFreeAvRT(plRenderTarget* tex)
-{
-    uint32_t index = fAvRTPool.Find(tex);
-    if (index != fAvRTPool.kMissingIndex)
-    {
-        hsAssert(index < fAvNextFreeRT, "Freeing an avatar RT that's already free?");
-        fAvRTPool[index] = fAvRTPool[fAvNextFreeRT - 1];
-        fAvRTPool[fAvNextFreeRT - 1] = tex;
-        fAvNextFreeRT--;
-    }
 }
 
 struct plAVTexVert

@@ -52,8 +52,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plCubicRenderTarget.h"
 
 #include "plTweak.h"
+#include "hsTimer.h"
 
-#include "plSurface/hsGMaterial.h"
+#include "pnSceneObject/plDrawInterface.h"
+#include "pnSceneObject/plSceneObject.h"
+#include "plAvatar/plAvatarClothing.h"
 #include "plDrawable/plDrawableSpans.h"
 #include "plDrawable/plGBufferGroup.h"
 #include "plDrawable/plSpaceTree.h"
@@ -63,10 +66,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plGLight/plLightInfo.h"
 #include "plGLight/plShadowSlave.h"
 #include "plGLight/plShadowCaster.h"
-#include "pnSceneObject/plDrawInterface.h"
-#include "pnSceneObject/plSceneObject.h"
 #include "plScene/plRenderRequest.h"
 #include "plScene/plVisMgr.h"
+#include "plSurface/hsGMaterial.h"
+#include "plSurface/plLayer.h"
 
 plProfile_CreateTimer("RenderScene",            "PipeT", RenderScene);
 plProfile_CreateTimer("VisEval",                "PipeT", VisEval);
@@ -97,6 +100,8 @@ static const float kPerspLayerScale  = 0.00001f;
 static const float kPerspLayerScaleW = 0.001f;
 static const float kPerspLayerTrans  = 0.00002f;
 
+static const float kAvTexPoolShrinkThresh = 30.f; // seconds
+
 pl3DPipeline::pl3DPipeline(const hsG3DDeviceModeRecord* devModeRec)
 :   fMaxLayersAtOnce(-1),
     fMaxPiggyBacks(),
@@ -126,7 +131,10 @@ pl3DPipeline::pl3DPipeline(const hsG3DDeviceModeRecord* devModeRec)
     fVtxRefTime(),
     fVSync(),
     fPlateMgr(),
-    fDebugTextMgr()
+    fDebugTextMgr(),
+    fAvRTShrinkValidSince(),
+    fAvRTWidth(1024),
+    fAvNextFreeRT()
 {
 
     fOverLayerStack.Reset();
@@ -180,6 +188,9 @@ pl3DPipeline::~pl3DPipeline()
     // Tell the light infos to unlink themselves
     while (fActiveLights)
         UnRegisterLight(fActiveLights);
+
+    IClearClothingOutfits(&fClothingOutfits);
+    IClearClothingOutfits(&fPrevClothingOutfits);
 }
 
 
@@ -472,6 +483,19 @@ void pl3DPipeline::EndVisMgr(plVisMgr* visMgr)
 }
 
 
+bool pl3DPipeline::CheckResources()
+{
+    if ((fClothingOutfits.GetCount() <= 1 && fAvRTPool.GetCount() > 1) ||
+        (fAvRTPool.GetCount() >= 16 && (fAvRTPool.GetCount() / 2 >= fClothingOutfits.GetCount())))
+    {
+        return (hsTimer::GetSysSeconds() - fAvRTShrinkValidSince > kAvTexPoolShrinkThresh);
+    }
+
+    fAvRTShrinkValidSince = hsTimer::GetSysSeconds();
+    return (fAvRTPool.GetCount() < fClothingOutfits.GetCount());
+}
+
+
 void pl3DPipeline::SetZBiasScale(float scale)
 {
     scale += 1.0f;
@@ -646,6 +670,17 @@ void pl3DPipeline::SubmitShadowSlave(plShadowSlave* slave)
 }
 
 
+void pl3DPipeline::SubmitClothingOutfit(plClothingOutfit* co)
+{
+    if (fClothingOutfits.Find(co) == fClothingOutfits.kMissingIndex)
+    {
+        fClothingOutfits.Append(co);
+        if (!fPrevClothingOutfits.RemoveItem(co))
+            co->GetKey()->RefObject();
+    }
+}
+
+
 plLayerInterface* pl3DPipeline::PushPiggyBackLayer(plLayerInterface* li)
 {
     fPiggyBackStack.Push(li);
@@ -799,6 +834,106 @@ void pl3DPipeline::ISetShadowFromGroup(plDrawableSpans* drawable, const plSpan* 
                     span->AddShadowSlave(fShadows[i]->fIndex);
             }
         }
+    }
+}
+
+
+void pl3DPipeline::IClearClothingOutfits(hsTArray<plClothingOutfit*>* outfits)
+{
+    for (int32_t i = outfits->GetCount() - 1; i >= 0; i--) {
+        plClothingOutfit* co = outfits->Get(i);
+        outfits->Remove(i);
+        IFreeAvRT((plRenderTarget*)co->fTargetLayer->GetTexture());
+        co->fTargetLayer->SetTexture(nullptr);
+        co->GetKey()->UnRefObject();
+    }
+}
+
+
+void pl3DPipeline::IFillAvRTPool()
+{
+    fAvNextFreeRT = 0;
+    fAvRTShrinkValidSince = hsTimer::GetSysSeconds();
+    int numRTs = 1;
+
+    if (fClothingOutfits.GetCount() > 1) {
+        // Just jump to 8 for starters so we don't have to refresh for the 2nd, 4th, AND 8th player
+        numRTs = 8;
+        while (numRTs < fClothingOutfits.GetCount())
+            numRTs *= 2;
+    }
+
+    // I could see a 32MB video card going down to 64x64 RTs in extreme cases
+    // (over 100 players onscreen at once), but really, if such hardware is ever trying to push
+    // that, the low texture resolution is not going to be your major concern.
+    for (fAvRTWidth = 1024 >> plMipmap::GetGlobalLevelChopCount(); fAvRTWidth >= 32; fAvRTWidth /= 2) {
+        if (IFillAvRTPool(numRTs, fAvRTWidth))
+            return;
+
+        // Nope? Ok, lower the resolution and try again.
+    }
+}
+
+
+bool pl3DPipeline::IFillAvRTPool(uint16_t numRTs, uint16_t width)
+{
+    fAvRTPool.SetCount(numRTs);
+
+    for (uint16_t i = 0; i < numRTs; i++) {
+        uint16_t flags = plRenderTarget::kIsTexture | plRenderTarget::kIsProjected;
+        uint8_t bitDepth = 32;
+        uint8_t zDepth = 0;
+        uint8_t stencilDepth = 0;
+
+        fAvRTPool[i] = new plRenderTarget(flags, width, width, bitDepth, zDepth, stencilDepth);
+
+        // If anyone fails, release everyone we've created.
+        if (!MakeRenderTargetRef(fAvRTPool[i])) {
+            for (uint16_t j = 0; j <= i; j++) {
+                delete fAvRTPool[j];
+                fAvRTPool[j] = nullptr;
+            }
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+void pl3DPipeline::IReleaseAvRTPool()
+{
+    for (size_t i = 0; i < fClothingOutfits.GetCount(); i++) {
+        fClothingOutfits[i]->fTargetLayer->SetTexture(nullptr);
+    }
+
+    for (size_t i = 0; i < fPrevClothingOutfits.GetCount(); i++) {
+        fPrevClothingOutfits[i]->fTargetLayer->SetTexture(nullptr);
+    }
+
+    for (size_t i = 0; i < fAvRTPool.GetCount(); i++) {
+        delete fAvRTPool[i];
+    }
+
+    fAvRTPool.Reset();
+}
+
+
+plRenderTarget* pl3DPipeline::IGetNextAvRT()
+{
+    return fAvRTPool[fAvNextFreeRT++];
+}
+
+
+void pl3DPipeline::IFreeAvRT(plRenderTarget* tex)
+{
+    uint32_t index = fAvRTPool.Find(tex);
+    if (index != fAvRTPool.kMissingIndex) {
+        hsAssert(index < fAvNextFreeRT, "Freeing an avatar RT that's already free?");
+        fAvRTPool[index] = fAvRTPool[fAvNextFreeRT - 1];
+        fAvRTPool[fAvNextFreeRT - 1] = tex;
+        fAvNextFreeRT--;
     }
 }
 

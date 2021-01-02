@@ -275,9 +275,6 @@ protected:
     IDirect3DVertexBuffer9*         fBlurVBuffers[kMaxRenderTargetNext];
     uint32_t                          fBlurVSHandle;
 
-    hsTArray<plClothingOutfit*>     fClothingOutfits;
-    hsTArray<plClothingOutfit*>     fPrevClothingOutfits;
-
     // Debug stuff
     plDrawableSpans *fBoundsSpans;
     hsGMaterial     *fBoundsMat;
@@ -519,18 +516,8 @@ protected:
     void                IBlurShadowMap(plShadowSlave* slave);
 
     // Avatar Texture Rendering
-    double                      fAvRTShrinkValidSince;
-    hsTArray<plRenderTarget*>   fAvRTPool;
-    uint16_t                      fAvRTWidth;
-    uint32_t                      fAvNextFreeRT;
-    void                    IFillAvRTPool();
-    bool                    IFillAvRTPool(uint16_t numRTs, uint16_t width); // Returns true if we successfully filled the pool. Otherwise cleans up.
-    void                    IReleaseAvRTPool();
-    plRenderTarget*         IGetNextAvRT();
-    void                    IFreeAvRT(plRenderTarget* tex);
     void                    IPreprocessAvatarTextures();
     void                    IDrawClothingQuad(float x, float y, float w, float h, float uOff, float vOff, plMipmap *tex);
-    void                    IClearClothingOutfits(hsTArray<plClothingOutfit*>* outfits);
 
     void IPrintDeviceInitError();
 
@@ -566,7 +553,6 @@ public:
     virtual bool                        IsFullScreen() const { return fSettings.fFullscreen; }
     virtual void                        Resize( uint32_t width, uint32_t height );
 
-    virtual bool                        CheckResources();
     virtual void                        LoadResources();    // Tells us where it's a good time to load in unmanaged resources.
 
     // Create a debug text font object
@@ -600,8 +586,6 @@ public:
     // Overriden (Un)Register Light methods
     virtual void                        RegisterLight(plLightInfo* light);
     virtual void                        UnRegisterLight(plLightInfo* light);
-
-    virtual void                        SubmitClothingOutfit(plClothingOutfit* co);
 
     virtual bool                        SetGamma(float eR, float eG, float eB);
     virtual bool                        SetGamma(const uint16_t* const tabR, const uint16_t* const tabG, const uint16_t* const tabB);

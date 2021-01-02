@@ -202,6 +202,14 @@ protected:
     plPlateManager*                     fPlateMgr;
     plDebugTextManager*                 fDebugTextMgr;
 
+    // Avatar Texture Rendering
+    hsTArray<plClothingOutfit*>         fClothingOutfits;
+    hsTArray<plClothingOutfit*>         fPrevClothingOutfits;
+    double                              fAvRTShrinkValidSince;
+    hsTArray<plRenderTarget*>           fAvRTPool;
+    uint16_t                            fAvRTWidth;
+    uint32_t                            fAvNextFreeRT;
+
 
 public:
     pl3DPipeline(const hsG3DDeviceModeRecord* devModeRec);
@@ -423,7 +431,8 @@ public:
         return fView.GetMaxCullNodes();
     }
 
-    //virtual bool CheckResources() = 0;
+    virtual bool CheckResources();
+
     //virtual void LoadResources() = 0;
 
     virtual void SetProperty(uint32_t prop, bool on) {
@@ -700,7 +709,8 @@ public:
      */
     virtual void SubmitShadowSlave(plShadowSlave* slave);
 
-    //virtual void SubmitClothingOutfit(plClothingOutfit* co) = 0;
+    virtual void SubmitClothingOutfit(plClothingOutfit* co);
+
     //virtual bool SetGamma(float eR, float eG, float eB) = 0;
     //virtual bool SetGamma(const uint16_t* const tabR, const uint16_t* const tabG, const uint16_t* const tabB) = 0;
     //virtual bool CaptureScreen(plMipmap* dest, bool flipVertical = false, uint16_t desiredWidth = 0, uint16_t desiredHeight = 0) = 0;
@@ -787,6 +797,18 @@ protected:
      * Note that a shadow slave corresponds to a shadow map.
      */
     void ISetShadowFromGroup(plDrawableSpans* drawable, const plSpan* span, plLightInfo* liInfo);
+
+    void IClearClothingOutfits(hsTArray<plClothingOutfit*>* outfits);
+    void IFillAvRTPool();
+
+    /**
+     * Returns true if we successfully filled the pool. Otherwise cleans up.
+     */
+    bool IFillAvRTPool(uint16_t numRTs, uint16_t width);
+
+    void IReleaseAvRTPool();
+    plRenderTarget* IGetNextAvRT();
+    void IFreeAvRT(plRenderTarget* tex);
 
 
     /**

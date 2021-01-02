@@ -422,8 +422,6 @@ bool plGLPipeline::IsFullScreen() const { return false; }
 
 void plGLPipeline::Resize(uint32_t width, uint32_t height) {}
 
-bool plGLPipeline::CheckResources() { return false; }
-
 void plGLPipeline::LoadResources()
 {
     if (plGLPlateManager* pm = static_cast<plGLPlateManager*>(fPlateMgr))
@@ -432,8 +430,6 @@ void plGLPipeline::LoadResources()
         pm->ICreateGeometry();
     }
 }
-
-void plGLPipeline::SubmitClothingOutfit(plClothingOutfit* co) {}
 
 bool plGLPipeline::SetGamma(float eR, float eG, float eB) { return false; }
 

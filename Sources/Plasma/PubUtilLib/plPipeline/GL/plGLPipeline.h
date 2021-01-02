@@ -88,9 +88,7 @@ public:
     void RenderScreenElements() override;
     bool IsFullScreen() const override;
     void Resize(uint32_t width, uint32_t height) override;
-    bool CheckResources() override;
     void LoadResources() override;
-    void SubmitClothingOutfit(plClothingOutfit* co) override;
     bool SetGamma(float eR, float eG, float eB) override;
     bool SetGamma(const uint16_t* const tabR, const uint16_t* const tabG, const uint16_t* const tabB) override;
     bool CaptureScreen(plMipmap* dest, bool flipVertical = false, uint16_t desiredWidth = 0, uint16_t desiredHeight = 0) override;
