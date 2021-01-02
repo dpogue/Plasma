@@ -67,6 +67,7 @@ static void helperAddRendererConfigs(OSX_EGLDisplay* display)
     c.alpha_bits = 8;
     c.depth_bits = 16;
     c.buffer_bits = 32;
+    c.stencil_bits = 0;
     CGLPixelFormatAttribute attribs[64], i = 0;
     attribs[i++] = kCGLPFAClosestPolicy;
     attribs[i++] = kCGLPFAAccelerated;
