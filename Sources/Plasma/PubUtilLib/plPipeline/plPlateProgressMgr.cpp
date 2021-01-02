@@ -252,7 +252,7 @@ bool plPlateProgressMgr::IDrawTheStupidThing(plPipeline *p, plOperationProgress 
     hsColorRGBA clearColor;
     hsColorRGBA barColor;
 
-    clearColor.Set(0.0f, 0.0f, 0.0f, 1.0f);
+    clearColor.Set(0.0f, 0.0f, 0.0f, 0.0f);
     barColor.FromARGB32(kProgressBarColor);
 
     fProgressMap->ClearToColor(clearColor);
