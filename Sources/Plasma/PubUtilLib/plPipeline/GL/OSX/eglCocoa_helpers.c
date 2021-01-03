@@ -65,19 +65,17 @@ static void helperAddRendererConfigs(OSX_EGLDisplay* display)
     c.green_bits = 8;
     c.blue_bits = 8;
     c.alpha_bits = 8;
-    c.depth_bits = 16;
+    c.depth_bits = 24;
     c.buffer_bits = 32;
     c.stencil_bits = 0;
     CGLPixelFormatAttribute attribs[64], i = 0;
-    attribs[i++] = kCGLPFAClosestPolicy;
     attribs[i++] = kCGLPFAAccelerated;
     attribs[i++] = kCGLPFANoRecovery;
     attribs[i++] = kCGLPFADoubleBuffer;
     attribs[i++] = kCGLPFAColorSize;   attribs[i++] = c.red_bits + c.green_bits + c.blue_bits + c.alpha_bits;
+    attribs[i++] = kCGLPFAMinimumPolicy;
     attribs[i++] = kCGLPFAAlphaSize;   attribs[i++] = c.alpha_bits;
-    if(c.depth_bits != 0) {
-        attribs[i++] = kCGLPFADepthSize;   attribs[i++] = c.depth_bits;
-    }
+    attribs[i++] = kCGLPFADepthSize;   attribs[i++] = c.depth_bits;
     if(c.stencil_bits != 0) {
         attribs[i++] = kCGLPFAStencilSize; attribs[i++] = c.stencil_bits;
     }
@@ -95,7 +93,7 @@ static void helperAddRendererConfigs(OSX_EGLDisplay* display)
         PFINFO(kCGLPFAStencilSize, s);
         PFINFO(kCGLPFAOpenGLProfile, glv);
         if (cs == c.red_bits + c.green_bits + c.blue_bits + c.alpha_bits &&
-            a == c.alpha_bits && d == c.depth_bits &&
+            a == c.alpha_bits &&
             s == c.stencil_bits)
         {
             CGLRetainPixelFormat(c.pf);
