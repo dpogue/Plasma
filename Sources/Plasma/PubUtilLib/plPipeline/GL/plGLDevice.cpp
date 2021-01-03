@@ -569,6 +569,9 @@ void plGLDevice::CheckTexture(TextureRef* tRef)
 void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
 {
     tRef->fLevels = img->GetNumLevels() - 1;
+    
+    GLuint pbo;
+    glGenBuffers(1, &pbo);
 
     if (img->IsCompressed()) {
         // Hack around the smallest levels being unusable
@@ -581,16 +584,39 @@ void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
 
         for (GLuint lvl = 0; lvl <= tRef->fLevels; lvl++) {
             img->SetCurrLevel(lvl);
-
-            glCompressedTexImage2D(mapping, lvl, tRef->fFormat, img->GetCurrWidth(), img->GetCurrHeight(), 0, img->GetCurrLevelSize(), img->GetCurrLevelPtr());
+            
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, img->GetCurrLevelSize(), NULL, GL_STATIC_DRAW);
+            
+            void* imgBuffer = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+            if(imgBuffer) {
+                memcpy(imgBuffer, img->GetCurrLevelPtr(), img->GetCurrLevelSize());
+            }
+            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+            
+            glCompressedTexImage2D(mapping, lvl, tRef->fFormat, img->GetCurrWidth(), img->GetCurrHeight(), 0, img->GetCurrLevelSize(), NULL);
+            
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
         }
     } else {
         for (GLuint lvl = 0; lvl <= tRef->fLevels; lvl++) {
             img->SetCurrLevel(lvl);
-
-            glTexImage2D(mapping, lvl, tRef->fFormat, img->GetCurrWidth(), img->GetCurrHeight(), 0, tRef->fDataFormat, tRef->fDataType, img->GetCurrLevelPtr());
+            
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, img->GetCurrLevelSize(), NULL, GL_STATIC_DRAW);
+            
+            void* imgBuffer = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+            if(imgBuffer) {
+                memcpy(imgBuffer, img->GetCurrLevelPtr(), img->GetCurrLevelSize());
+            }
+            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+            
+            glTexImage2D(mapping, lvl, tRef->fFormat, img->GetCurrWidth(), img->GetCurrHeight(), 0, tRef->fDataFormat, tRef->fDataType, NULL);
+            
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
         }
     }
+    glDeleteBuffers(1, &pbo);
 }
 
 void plGLDevice::MakeTextureRef(TextureRef* tRef, plLayerInterface* layer, plMipmap* img)
