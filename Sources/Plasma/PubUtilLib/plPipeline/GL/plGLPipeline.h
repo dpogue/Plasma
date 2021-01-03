@@ -127,6 +127,7 @@ protected:
     void IScaleLight(plGLMaterialShaderRef* mRef, size_t i, float scale);
 
     void IDrawPlate(plPlate* plate);
+    void IPreprocessAvatarTextures();
 };
 
 #endif // _plGLPipeline_inc_

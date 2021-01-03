@@ -71,8 +71,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnNetCommon/plNetApp.h"   // for dbg logging
 #include "pnMessage/plPipeResMakeMsg.h"
+#include "plAvatar/plAvatarClothing.h"
 #include "plDrawable/plDrawableSpans.h"
 #include "plDrawable/plGBufferGroup.h"
+#include "plGImage/plMipmap.h"
 #include "plGLight/plLightInfo.h"
 #include "plPipeline/plCubicRenderTarget.h"
 #include "plPipeline/plDebugText.h"
@@ -116,6 +118,10 @@ plProfile_CreateTimer("DebugText", "PipeT", DebugText);
 plProfile_CreateTimer("Reset", "PipeT", Reset);
 
 plProfile_CreateCounterNoReset("Reload", "PipeC", PipeReload);
+plProfile_CreateCounter("AvRTPoolUsed", "PipeC", AvRTPoolUsed);
+plProfile_CreateCounter("AvRTPoolCount", "PipeC", AvRTPoolCount);
+plProfile_CreateCounter("AvRTPoolRes", "PipeC", AvRTPoolRes);
+plProfile_CreateCounter("AvRTShrinkTime", "PipeC", AvRTShrinkTime);
 
 static plRenderNilFunc sRenderNil;
 
@@ -464,6 +470,8 @@ bool plGLPipeline::BeginRender()
         fDevice.BeginRender();
 
         fVtxRefTime++;
+
+        IPreprocessAvatarTextures();
     }
 
     fRenderCnt++;
@@ -1496,6 +1504,72 @@ void plGLPipeline::IDrawPlate(plPlate* plate)
     glDrawElements(GL_TRIANGLE_STRIP, 6, GL_UNSIGNED_SHORT, (GLvoid*)(sizeof(uint16_t) * 0));
 
     //IPopPiggyBacks();
+}
+
+
+
+struct plAVTexVert
+{
+    float fPos[3];
+    float fUv[2];
+};
+
+void plGLPipeline::IPreprocessAvatarTextures()
+{
+    plProfile_Set(AvRTPoolUsed, fClothingOutfits.GetCount());
+    plProfile_Set(AvRTPoolCount, fAvRTPool.GetCount());
+    plProfile_Set(AvRTPoolRes, fAvRTWidth);
+    plProfile_Set(AvRTShrinkTime, uint32_t(hsTimer::GetSysSeconds() - fAvRTShrinkValidSince));
+
+    // Frees anyone used last frame that we don't need this frame
+    IClearClothingOutfits(&fPrevClothingOutfits);
+
+    if (fClothingOutfits.GetCount() == 0)
+        return;
+
+    static float kIdentityMatrix[16] = {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+
+    //glUniformMatrix4fv(mRef->uMatrixProj, 1, GL_TRUE, kIdentityMatrix);
+    //glUniformMatrix4fv(mRef->uMatrixW2C, 1, GL_TRUE, kIdentityMatrix);
+    //glUniformMatrix4fv(mRef->uMatrixC2W, 1, GL_TRUE, kIdentityMatrix);
+    //glUniformMatrix4fv(mRef->uMatrixL2W, 1, GL_TRUE, kIdentityMatrix);
+
+    for (size_t oIdx = 0; oIdx < fClothingOutfits.GetCount(); oIdx++) {
+        plClothingOutfit* co = fClothingOutfits[oIdx];
+        if (co->fBase == nullptr || co->fBase->fBaseTexture == nullptr)
+            continue;
+
+#if 0
+        plRenderTarget* rt = plRenderTarget::ConvertNoRef(co->fTargetLayer->GetTexture());
+        if (rt != nullptr && co->fDirtyItems.Empty())
+            // we've still got our valid RT from last frame and we have nothing to do.
+            continue;
+
+        if (rt == nullptr) {
+            rt = IGetNextAvRT();
+            co->fTargetLayer->SetTexture(rt);
+        }
+#endif
+
+        //PushRenderTarget(rt);
+
+        // HACK HACK HACK
+        co->fTargetLayer->SetTexture(co->fBase->fBaseTexture);
+
+        // TODO: Actually render to the render target
+
+        //PopRenderTarget();
+        //co->fDirtyItems.Clear();
+    }
+
+    fView.fXformResetFlags = fView.kResetAll;
+
+    fClothingOutfits.Swap(fPrevClothingOutfits);
 }
 
 
