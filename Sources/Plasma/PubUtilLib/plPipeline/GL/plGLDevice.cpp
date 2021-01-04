@@ -191,6 +191,7 @@ bool plGLDevice::InitDevice()
     glEnable(GL_MULTISAMPLE);
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
+    glGenBuffers(1, &fTextureLoadPBO);
 
     return true;
 }
@@ -602,7 +603,7 @@ void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
         for (GLuint lvl = 0; lvl <= tRef->fLevels; lvl++) {
             img->SetCurrLevel(lvl);
             
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fTextureLoadPBO);
             glBufferData(GL_PIXEL_UNPACK_BUFFER, img->GetCurrLevelSize(), NULL, GL_STATIC_DRAW);
             
             void* imgBuffer = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
@@ -616,7 +617,6 @@ void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
         }
     }
-    glDeleteBuffers(1, &pbo);
 }
 
 void plGLDevice::MakeTextureRef(TextureRef* tRef, plLayerInterface* layer, plMipmap* img)
