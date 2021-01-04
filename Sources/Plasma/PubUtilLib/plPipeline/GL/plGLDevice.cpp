@@ -570,9 +570,6 @@ void plGLDevice::CheckTexture(TextureRef* tRef)
 void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
 {
     tRef->fLevels = img->GetNumLevels() - 1;
-    
-    GLuint pbo;
-    glGenBuffers(1, &pbo);
 
     if (img->IsCompressed()) {
         // Hack around the smallest levels being unusable
@@ -586,7 +583,7 @@ void plGLDevice::BindTexture(TextureRef* tRef, plMipmap* img, GLuint mapping)
         for (GLuint lvl = 0; lvl <= tRef->fLevels; lvl++) {
             img->SetCurrLevel(lvl);
             
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, fTextureLoadPBO);
             glBufferData(GL_PIXEL_UNPACK_BUFFER, img->GetCurrLevelSize(), NULL, GL_STATIC_DRAW);
             
             void* imgBuffer = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
