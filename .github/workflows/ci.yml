@@ -29,6 +29,12 @@ jobs:
           arch: ${{ matrix.platform.qt-arch }}
           dir: ${{ github.workspace }}/qt
 
+      - name: Initialize CodeQL
+        if: matrix.cfg.str == 'external-release'
+        uses: github/codeql-action/init@v1
+        with:
+          languages: cpp
+
       - name: Configure
         run: |
           cmake `
@@ -49,6 +55,10 @@ jobs:
       - name: Install
         run: |
           cmake --build build --target INSTALL --config "${{ matrix.cfg.type }}" -j 2
+
+      - name: Perform CodeQL Analysis
+        if: matrix.cfg.str == 'external-release'
+        uses: github/codeql-action/analyze@v1
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
