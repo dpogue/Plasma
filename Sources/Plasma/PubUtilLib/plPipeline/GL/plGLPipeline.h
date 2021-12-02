@@ -128,6 +128,9 @@ protected:
 
     void IDrawPlate(plPlate* plate);
     void IPreprocessAvatarTextures();
+    
+    bool IIsViewLeftHanded();
+    void ISetCullMode(bool flip = false);
 };
 
 #endif // _plGLPipeline_inc_
