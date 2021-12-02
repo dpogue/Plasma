@@ -84,6 +84,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plSurface/hsGMaterial.h"
 #include "plSurface/plLayer.h"
 
+#include "plGLight/plShadowSlave.h"
+#include "plGLight/plShadowCaster.h"
+
 
 #include "hsGMatState.inl"
 
@@ -489,7 +492,7 @@ bool plGLPipeline::EndRender() {
     if (--fInSceneDepth == 0) {
         retVal = fDevice.EndRender();
 
-        //IClearShadowSlaves();
+        IClearShadowSlaves();
     }
 
     // Do this last, after we've drawn everything
@@ -1572,7 +1575,18 @@ void plGLPipeline::IPreprocessAvatarTextures()
     fClothingOutfits.Swap(fPrevClothingOutfits);
 }
 
-
+// IClearShadowSlaves ///////////////////////////////////////////////////////////////////////////
+// At EndRender(), we need to clear our list of shadow slaves. They are only valid for one frame.
+void plGLPipeline::IClearShadowSlaves()
+{
+    int i;
+    for( i = 0; i < fShadows.GetCount(); i++ )
+    {
+        const plShadowCaster* caster = fShadows[i]->fCaster;
+        caster->GetKey()->UnRefObject();
+    }
+    fShadows.SetCount(0);
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

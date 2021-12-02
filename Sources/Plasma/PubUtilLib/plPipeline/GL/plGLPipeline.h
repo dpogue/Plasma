@@ -125,6 +125,8 @@ protected:
     void IEnableLight(plGLMaterialShaderRef* mRef, size_t i, plLightInfo* light);
     void IDisableLight(plGLMaterialShaderRef* mRef, size_t i);
     void IScaleLight(plGLMaterialShaderRef* mRef, size_t i, float scale);
+    
+    void IClearShadowSlaves();
 
     void IDrawPlate(plPlate* plate);
     void IPreprocessAvatarTextures();
