@@ -1573,24 +1573,13 @@ void plGLPipeline::IPreprocessAvatarTextures()
     fClothingOutfits.Swap(fPrevClothingOutfits);
 }
 
-
-
-//// IIsViewLeftHanded ////////////////////////////////////////////////////////
-//  Returns true if the combination of the local2world and world2camera
-//  matrices is left-handed.
-
-bool plGLPipeline::IIsViewLeftHanded()
-{
-    return fView.GetViewTransform().GetOrthogonal() ^ ( fView.fLocalToWorldLeftHanded ^ fView.fWorldToCamLeftHanded ) ? true : false;
-}
-
 //// ISetCullMode /////////////////////////////////////////////////////////////
 //  Tests and sets the current winding order cull mode (CW, CCW, or none).
 // Will reverse the cull mode as necessary for left handed camera or local to world
 // transforms.
 void plGLPipeline::ISetCullMode(bool flip)
 {
-    if( IIsViewLeftHanded() ) {
+    if( fView.IIsViewLeftHanded() ) {
         glCullFace(GL_BACK);
     } else {
         glCullFace(GL_FRONT);

@@ -236,6 +236,13 @@ public:
      * frustum.
      */
     bool    TestVisibleWorld(const plSceneObject* sObj);
+    
+    
+    /**
+     * Returns true if the combination of the local2world and world2camera
+     * matrices is left-handed.
+     */
+    bool    IIsViewLeftHanded();
 };
 
 
