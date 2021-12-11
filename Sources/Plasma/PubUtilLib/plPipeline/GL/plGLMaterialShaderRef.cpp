@@ -685,6 +685,16 @@ uint32_t plGLMaterialShaderRef::IHandleMaterial(uint32_t layer, std::shared_ptr<
     // Ignoring the bit about self-rendering cube maps
 
     plLayerInterface* currLay = /*IPushOverBaseLayer*/ fMaterial->GetLayer(layer);
+    
+    /*
+     If the layer opacity is 0, don't draw it. This prevents it from contributing to the Z buffer.
+     This can happen with some models like the fire marbles in the neighborhood that have some models
+     for physics only, and then can block other rendering in the Z buffer.
+     DX pipeline does this in ILoopOverLayers.
+     */
+    if(currLay->GetOpacity() <= 0) {
+        return -1;
+    }
 
     if (fPipeline->IsDebugFlagSet(plPipeDbg::kFlagBumpW) && (currLay->GetMiscFlags() & hsGMatState::kMiscBumpDu)) {
         currLay = fMaterial->GetLayer(++layer);
