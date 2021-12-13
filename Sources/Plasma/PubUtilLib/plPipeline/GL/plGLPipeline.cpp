@@ -890,6 +890,11 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
         }
 
         plLayerInterface* lay = material->GetLayer(mRef->GetPassIndex(pass));
+
+        ICalcLighting(mRef, lay, &span);
+
+        hsGMatState s;
+        s.Composite(lay->GetState(), fMatOverOn, fMatOverOff);
         
         /*
          If the layer opacity is 0, don't draw it. This prevents it from contributing to the Z buffer.
@@ -897,14 +902,11 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
          for physics only, and then can block other rendering in the Z buffer.
          DX pipeline does this in ILoopOverLayers.
          */
-        if(lay->GetOpacity() <= 0) {
+        if( (s.fBlendFlags & hsGMatState::kBlendAlpha)
+           &&lay->GetOpacity() <= 0
+           &&(fCurrLightingMethod != plSpan::kLiteVtxPreshaded) ) {
             continue;
         }
-
-        ICalcLighting(mRef, lay, &span);
-
-        hsGMatState s;
-        s.Composite(lay->GetState(), fMatOverOn, fMatOverOff);
 
         IHandleZMode(s);
         IHandleBlendMode(s);
@@ -1214,6 +1216,7 @@ void plGLPipeline::ICalcLighting(plGLMaterialShaderRef* mRef, const plLayerInter
             } else {
                 glUniform1f(mRef->uMatAmbientSrc, 0.0);
             }
+            fCurrLightingMethod = plSpan::kLiteMaterial;
 
             break;
         }
@@ -1235,6 +1238,7 @@ void plGLPipeline::ICalcLighting(plGLMaterialShaderRef* mRef, const plLayerInter
             } else {
                 glUniform1f(mRef->uMatEmissiveSrc, 1.0);
             }
+            fCurrLightingMethod = plSpan::kLiteVtxPreshaded;
             break;
         }
 
@@ -1264,6 +1268,7 @@ void plGLPipeline::ICalcLighting(plGLMaterialShaderRef* mRef, const plLayerInter
             glUniform1f(mRef->uMatDiffuseSrc,  0.0);
             glUniform1f(mRef->uMatEmissiveSrc, 1.0);
             glUniform1f(mRef->uMatSpecularSrc, 1.0);
+            fCurrLightingMethod = plSpan::kLiteVtxNonPreshaded;
             break;
         }
     }
