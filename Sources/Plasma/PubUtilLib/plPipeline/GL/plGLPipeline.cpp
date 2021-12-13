@@ -935,6 +935,7 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
             glDisable(GL_CULL_FACE);
         } else {
             glEnable(GL_CULL_FACE);
+            ISetCullMode();
         }
 
         // TEMP
@@ -1583,6 +1584,19 @@ void plGLPipeline::IPreprocessAvatarTextures()
     fView.fXformResetFlags = fView.kResetAll;
 
     fClothingOutfits.Swap(fPrevClothingOutfits);
+}
+
+//// ISetCullMode /////////////////////////////////////////////////////////////
+// Tests and sets the current winding order cull mode (CW, CCW, or none).
+// Will reverse the cull mode as necessary for left handed camera or local to world
+// transforms.
+void plGLPipeline::ISetCullMode(bool flip)
+{
+    if( fView.IIsViewLeftHanded() ) {
+        glCullFace(GL_BACK);
+    } else {
+        glCullFace(GL_FRONT);
+    }
 }
 
 // IClearShadowSlaves ///////////////////////////////////////////////////////////////////////////

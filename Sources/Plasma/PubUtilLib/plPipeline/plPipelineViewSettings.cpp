@@ -414,3 +414,8 @@ bool plPipelineViewSettings::TestVisibleWorld(const plSceneObject* sObj)
     }
     return false;
 }
+
+bool plPipelineViewSettings::IIsViewLeftHanded()
+{
+    return GetViewTransform().GetOrthogonal() ^ ( fLocalToWorldLeftHanded ^ fWorldToCamLeftHanded ) ? true : false;
+}

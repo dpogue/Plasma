@@ -130,6 +130,8 @@ protected:
 
     void IDrawPlate(plPlate* plate);
     void IPreprocessAvatarTextures();
+    
+    void ISetCullMode(bool flip = false);
 };
 
 #endif // _plGLPipeline_inc_
