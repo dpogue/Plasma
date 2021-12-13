@@ -84,6 +84,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plSurface/hsGMaterial.h"
 #include "plSurface/plLayer.h"
 
+#include "plGLight/plShadowSlave.h"
+#include "plGLight/plShadowCaster.h"
+
 
 #include "hsGMatState.inl"
 
@@ -489,7 +492,7 @@ bool plGLPipeline::EndRender() {
     if (--fInSceneDepth == 0) {
         retVal = fDevice.EndRender();
 
-        //IClearShadowSlaves();
+        IClearShadowSlaves();
     }
 
     // Do this last, after we've drawn everything
@@ -887,6 +890,16 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb,
         }
 
         plLayerInterface* lay = material->GetLayer(mRef->GetPassIndex(pass));
+        
+        /*
+         If the layer opacity is 0, don't draw it. This prevents it from contributing to the Z buffer.
+         This can happen with some models like the fire marbles in the neighborhood that have some models
+         for physics only, and then can block other rendering in the Z buffer.
+         DX pipeline does this in ILoopOverLayers.
+         */
+        if(lay->GetOpacity() <= 0) {
+            continue;
+        }
 
         ICalcLighting(mRef, lay, &span);
 
@@ -1574,7 +1587,7 @@ void plGLPipeline::IPreprocessAvatarTextures()
 }
 
 //// ISetCullMode /////////////////////////////////////////////////////////////
-//  Tests and sets the current winding order cull mode (CW, CCW, or none).
+// Tests and sets the current winding order cull mode (CW, CCW, or none).
 // Will reverse the cull mode as necessary for left handed camera or local to world
 // transforms.
 void plGLPipeline::ISetCullMode(bool flip)
@@ -1584,6 +1597,19 @@ void plGLPipeline::ISetCullMode(bool flip)
     } else {
         glCullFace(GL_FRONT);
     }
+}
+
+// IClearShadowSlaves ///////////////////////////////////////////////////////////////////////////
+// At EndRender(), we need to clear our list of shadow slaves. They are only valid for one frame.
+void plGLPipeline::IClearShadowSlaves()
+{
+    int i;
+    for( i = 0; i < fShadows.GetCount(); i++ )
+    {
+        const plShadowCaster* caster = fShadows[i]->fCaster;
+        caster->GetKey()->UnRefObject();
+    }
+    fShadows.SetCount(0);
 }
 
 
