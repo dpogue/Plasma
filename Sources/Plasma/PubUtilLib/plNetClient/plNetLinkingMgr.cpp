@@ -356,7 +356,7 @@ bool plNetLinkingMgr::MsgReceive( plMessage *msg )
         plAgeLoader::GetInstance()->ExecPendingAgeFniFiles();
         plAgeLoader::GetInstance()->ExecPendingAgeCsvFiles();
 
-        ST::string avatarName = "Male";
+        ST::string avatarName = "Blake";
         ST::string linkInName = GetAgeLink()->SpawnPoint().GetName();
         plAvatarMgr::GetInstance()->LoadPlayer(avatarName, "", linkInName);
 

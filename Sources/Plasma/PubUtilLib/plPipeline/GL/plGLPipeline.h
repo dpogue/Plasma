@@ -132,6 +132,19 @@ protected:
     void IPreprocessAvatarTextures();
     
     void ISetCullMode(bool flip = false);
+
+    bool ISoftwareVertexBlend(plDrawableSpans* drawable, const hsTArray<int16_t>& visList);
+    void            IBlendVertsIntoBuffer( plSpan* span, 
+                                            hsMatrix44* matrixPalette, int numMatrices,
+                                            const uint8_t *src, uint8_t format, uint32_t srcStride, 
+                                            uint8_t *dest, uint32_t destStride, uint32_t count, uint16_t localUVWChans )
+                                                { blend_vert_buffer.call(span, matrixPalette, numMatrices, src, format, srcStride, dest, destStride, count, localUVWChans); };
+
+protected:
+    typedef void(*blend_vert_buffer_ptr)(plSpan*, hsMatrix44*, int, const uint8_t *,
+                                         uint8_t , uint32_t, uint8_t *, uint32_t,
+                                         uint32_t, uint16_t);
+    static hsCpuFunctionDispatcher<blend_vert_buffer_ptr> blend_vert_buffer;
 };
 
 #endif // _plGLPipeline_inc_
