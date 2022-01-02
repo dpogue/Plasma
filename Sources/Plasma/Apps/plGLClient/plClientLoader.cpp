@@ -73,10 +73,7 @@ extern bool gDataServerLocal;
 
 
 plClientLoader::plClientLoader() :
-    fClient(nullptr),
-    fWindow(nullptr),
-    fDisplay(nullptr),
-    fArguments(s_cmdLineArgs, std::size(s_cmdLineArgs))
+    fClient(), fWindow(), fDisplay(), fArguments()
 { }
 
 void plClientLoader::Run()
@@ -139,7 +136,9 @@ void plClientLoader::Init(int argc, const char** argv)
     {
         args.push_back(ST::string::from_utf8(argv[i]));
     }
-    fArguments.Parse(args);
+
+    fArguments = new plCmdParser(s_cmdLineArgs, std::size(s_cmdLineArgs));
+    fArguments->Parse(args);
 
     hsThread::Start();
 }

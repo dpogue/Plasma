@@ -52,7 +52,7 @@ class plClientLoader : private hsThread
     class plClient* fClient;
     hsWindowHndl fWindow;
     hsWindowHndl fDisplay;
-    plCmdParser fArguments;
+    plCmdParser* fArguments;
 
     virtual void OnQuit() override
     {
