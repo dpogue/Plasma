@@ -110,9 +110,7 @@ REGISTER_CREATABLE(plSpaceTree);
 #include "plWaveSetBase.h"
 REGISTER_NONCREATABLE(plWaveSetBase);
 
-#ifndef MINIMAL_GL_BUILD
 #include "plWaveSet7.h"
 REGISTER_CREATABLE(plWaveSet7);
-#endif
 
 #endif // plDrawableCreatable_inc
