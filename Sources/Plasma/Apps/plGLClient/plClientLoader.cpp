@@ -110,15 +110,15 @@ void plClientLoader::Run()
 
 void plClientLoader::HandleArguments()
 {
-    if (fArguments.IsSpecified(kArgLocalData))
+    if (fArguments->IsSpecified(kArgLocalData))
     {
         gDataServerLocal = true;
     }
 
-    if (fArguments.IsSpecified(kArgStartUpAgeName))
+    if (fArguments->IsSpecified(kArgStartUpAgeName))
     {
         if (plNetClientMgr* mgr = plNetClientMgr::GetInstance()) {
-            mgr->SetIniStartupAge(fArguments.GetString(kArgStartUpAgeName));
+            mgr->SetIniStartupAge(fArguments->GetString(kArgStartUpAgeName));
         }
 
         gDataServerLocal = true;
