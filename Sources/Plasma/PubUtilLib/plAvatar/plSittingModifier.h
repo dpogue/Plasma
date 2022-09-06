@@ -72,6 +72,17 @@ class plSittingModifier : public plSingleModifier
 public: 
     enum
     {
+        kCustomSitIdleAnim = 0,
+        kCustomSitFrontAnim,
+        kCustomStandFrontAnim,
+        kCustomSitLeftAnim,
+        kCustomStandLeftAnim,
+        kCustomSitRightAnim,
+        kCustomStandRightAnim
+    };
+
+    enum
+    {
         kApproachFront  = 0x01,
         kApproachLeft   = 0x02,
         kApproachRight  = 0x04,
@@ -95,6 +106,7 @@ public:
     bool MsgReceive(plMessage *msg) override;
 
     void AddNotifyKey(plKey key) { fNotifyKeys.emplace_back(std::move(key)); }
+    void AddCustomAnimation(uint32_t type, const ST::string& animName);
 
     virtual void Trigger(const plArmatureMod *avMod, plNotifyMsg *enterNotify, plNotifyMsg *exitNotify);
     virtual void UnTrigger();
@@ -110,7 +122,7 @@ protected:
 
     /** Figure out which approach we should use to the sit target, and add the relevant
         stages to the brain. */
-    plAvBrainGeneric * IBuildSitBrain(const plKey& avModKey, const plKey& seekKey, const char **pAnimName, plNotifyMsg *enterNotify, plNotifyMsg *exitNotify);
+    plAvBrainGeneric * IBuildSitBrain(const plKey& avModKey, const plKey& seekKey, ST::string* pAnimName, plNotifyMsg *enterNotify, plNotifyMsg *exitNotify);
 
     /** Unused. */
     bool IEval(double secs, float del, uint32_t dirty) override { return true; }
@@ -121,6 +133,15 @@ protected:
     /** The chair in question is in use. It will untrigger when the avatar leaves it. */
     //bool              fTriggered;
     plKey           fTriggeredAvatarKey;
+
+    // Animation Name overrides
+    ST::string      fSitIdleAnim;
+    ST::string      fSitFrontAnim;
+    ST::string      fStandFrontAnim;
+    ST::string      fSitLeftAnim;
+    ST::string      fStandLeftAnim;
+    ST::string      fSitRightAnim;
+    ST::string      fStandRightAnim;
 };
 
 

@@ -67,14 +67,20 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 // CTOR ------------------------------
 // -----
 plSittingModifier::plSittingModifier()
-: fMiscFlags()
+: fMiscFlags(), fSitIdleAnim(ST_LITERAL("SitIdle")),
+  fSitFrontAnim(ST_LITERAL("SitFront")), fStandFrontAnim(ST_LITERAL("StandUpFront")),
+  fSitLeftAnim(ST_LITERAL("SitLeft")), fStandLeftAnim(ST_LITERAL("StandUpLeft")),
+  fSitRightAnim(ST_LITERAL("SitRight")), fStandRightAnim(ST_LITERAL("StandUpRight"))
 {
 }
 
 // CTOR ------------------------------------------------------------------------
 // -----
 plSittingModifier::plSittingModifier(bool hasFront, bool hasLeft, bool hasRight)
-: fMiscFlags()
+: fMiscFlags(), fSitIdleAnim(ST_LITERAL("SitIdle")),
+  fSitFrontAnim(ST_LITERAL("SitFront")), fStandFrontAnim(ST_LITERAL("StandUpFront")),
+  fSitLeftAnim(ST_LITERAL("SitLeft")), fStandLeftAnim(ST_LITERAL("StandUpLeft")),
+  fSitRightAnim(ST_LITERAL("SitRight")), fStandRightAnim(ST_LITERAL("StandUpRight"))
 {
     if (hasFront)
         fMiscFlags |= kApproachFront;
@@ -102,6 +108,21 @@ void plSittingModifier::Read(hsStream *stream, hsResMgr *mgr)
     fNotifyKeys.reserve(keyCount);
     for (uint32_t i = 0; i < keyCount; i++ )
         fNotifyKeys.emplace_back(mgr->ReadKey(stream));
+
+    if (HasFlag(kCustomSitIdleAnim))
+        fSitIdleAnim = stream->ReadSafeString();
+    if (HasFlag(kCustomSitFrontAnim))
+        fSitFrontAnim = stream->ReadSafeString();
+    if (HasFlag(kCustomStandFrontAnim))
+        fStandFrontAnim = stream->ReadSafeString();
+    if (HasFlag(kCustomSitLeftAnim))
+        fSitLeftAnim = stream->ReadSafeString();
+    if (HasFlag(kCustomStandLeftAnim))
+        fStandLeftAnim = stream->ReadSafeString();
+    if (HasFlag(kCustomSitRightAnim))
+        fSitRightAnim = stream->ReadSafeString();
+    if (HasFlag(kCustomStandRightAnim))
+        fStandRightAnim = stream->ReadSafeString();
 }
 
 // Write -----------------------------------------------------
@@ -111,10 +132,25 @@ void plSittingModifier::Write(hsStream *stream, hsResMgr *mgr)
     plSingleModifier::Write(stream, mgr);
 
     stream->WriteByte(fMiscFlags);
-    
+
     stream->WriteLE32((uint32_t)fNotifyKeys.size());
     for (const plKey& key : fNotifyKeys)
         mgr->WriteKey(stream, key);
+
+    if (HasFlag(kCustomSitIdleAnim))
+        stream->WriteSafeString(fSitIdleAnim);
+    if (HasFlag(kCustomSitFrontAnim))
+        stream->WriteSafeString(fSitFrontAnim);
+    if (HasFlag(kCustomStandFrontAnim))
+        stream->WriteSafeString(fStandFrontAnim);
+    if (HasFlag(kCustomSitLeftAnim))
+        stream->WriteSafeString(fSitLeftAnim);
+    if (HasFlag(kCustomStandLeftAnim))
+        stream->WriteSafeString(fStandLeftAnim);
+    if (HasFlag(kCustomSitRightAnim))
+        stream->WriteSafeString(fSitRightAnim);
+    if (HasFlag(kCustomStandRightAnim))
+        stream->WriteSafeString(fStandRightAnim);
 }
 
 // ISetupNotify -------------------------------------------------------------------------
@@ -208,6 +244,51 @@ bool plSittingModifier::MsgReceive(plMessage *msg)
     return result || plSingleModifier::MsgReceive(msg);
 }
 
+// AddCustomAnimation ---------------------------------------------------------
+// -------------------
+void plSittingModifier::AddCustomAnimation(uint32_t type, const ST::string& animName)
+{
+    switch (type) {
+    case kCustomSitIdleAnim:
+        SetFlag(kCustomSitIdleAnim);
+        fSitIdleAnim = animName;
+        break;
+
+    case kCustomSitFrontAnim:
+        SetFlag(kCustomSitFrontAnim);
+        fSitFrontAnim = animName;
+        break;
+
+    case kCustomStandFrontAnim:
+        SetFlag(kCustomStandFrontAnim);
+        fStandFrontAnim = animName;
+        break;
+
+    case kCustomSitLeftAnim:
+        SetFlag(kCustomSitLeftAnim);
+        fSitLeftAnim = animName;
+        break;
+
+    case kCustomStandLeftAnim:
+        SetFlag(kCustomStandLeftAnim);
+        fStandLeftAnim = animName;
+        break;
+
+    case kCustomSitRightAnim:
+        SetFlag(kCustomSitRightAnim);
+        fSitRightAnim = animName;
+        break;
+
+    case kCustomStandRightAnim:
+        SetFlag(kCustomStandRightAnim);
+        fStandRightAnim = animName;
+        break;
+
+    default:
+        FATAL("Unrecognized sitting mod animation override");
+    }
+}
+
 // Trigger ----------------------------------------------------------------------------------------
 // --------
 void plSittingModifier::Trigger(const plArmatureMod *avMod, plNotifyMsg *enterNotify, plNotifyMsg *exitNotify)
@@ -221,8 +302,8 @@ void plSittingModifier::Trigger(const plArmatureMod *avMod, plNotifyMsg *enterNo
         // send the SEEK message
 
 
-        const char *animName = nullptr;   // this will be the name of our sit animation, which we
-                                          // need to know so we can seek properly.
+        ST::string animName = {};   // this will be the name of our sit animation, which we
+                                    // need to know so we can seek properly.
         
         plAvBrainGeneric *brain = IBuildSitBrain(avModKey, seekKey, &animName, enterNotify, exitNotify);
         if(brain)
@@ -265,7 +346,7 @@ void plSittingModifier::Trigger(const plArmatureMod *avMod, plNotifyMsg *enterNo
 
 // IIsClosestAnim -------------------------------------------------------------------
 // ---------------
-bool IIsClosestAnim(const char *animName, hsMatrix44 &sitGoal, float &closestDist,
+bool IIsClosestAnim(const ST::string& animName, hsMatrix44 &sitGoal, float &closestDist,
                     hsPoint3 curPosition, const plArmatureMod *avatar)
 {
     plAGAnim *anim = avatar->FindCustomAnim(animName);
@@ -299,13 +380,13 @@ bool IIsClosestAnim(const char *animName, hsMatrix44 &sitGoal, float &closestDis
 // IBuildSitBrain ---------------------------------------------------------------------
 // ----------------
 plAvBrainGeneric *plSittingModifier::IBuildSitBrain(const plKey& avModKey, const plKey& seekKey,
-                    const char **pAnimName, plNotifyMsg *enterNotify, plNotifyMsg *exitNotify)
+                    ST::string* pAnimName, plNotifyMsg *enterNotify, plNotifyMsg *exitNotify)
 {
     plArmatureMod *avatar = plArmatureMod::ConvertNoRef(avModKey->ObjectIsLoaded());
     plSceneObject *seekObj = plSceneObject::ConvertNoRef(seekKey->ObjectIsLoaded());
     float closestDist = 0.0f;
-    const char* sitAnimName = nullptr;
-    const char* standAnimName = "StandUpFront";      // always prefer to stand facing front
+    ST::string* sitAnimName = nullptr;
+    ST::string* standAnimName = &fStandFrontAnim;      // always prefer to stand facing front
 
     bool frontClear = fMiscFlags & kApproachFront;
     plAvBrainGeneric *brain = nullptr;
@@ -315,43 +396,42 @@ plAvBrainGeneric *plSittingModifier::IBuildSitBrain(const plKey& avModKey, const
         hsMatrix44 sitGoal = seekObj->GetLocalToWorld();
         hsPoint3 curPosition = avatar->GetTarget(0)->GetLocalToWorld().GetTranslate();
 
-        if(fMiscFlags & kApproachLeft && IIsClosestAnim("SitLeft", sitGoal, closestDist, curPosition, avatar))
+        if(fMiscFlags & kApproachLeft && IIsClosestAnim(fSitLeftAnim, sitGoal, closestDist, curPosition, avatar))
         {
-            sitAnimName = "SitLeft";
+            sitAnimName = &fSitLeftAnim;
             if(!frontClear)
-                standAnimName = "StandUpLeft";
+                standAnimName = &fStandLeftAnim;
         }
 
-        if(fMiscFlags & kApproachRight && IIsClosestAnim("SitRight", sitGoal, closestDist, curPosition, avatar))
+        if(fMiscFlags & kApproachRight && IIsClosestAnim(fSitRightAnim, sitGoal, closestDist, curPosition, avatar))
         {
-            sitAnimName = "SitRight";
+            sitAnimName = &fSitRightAnim;
             if(!frontClear)
-                standAnimName = "StandUpRight";
+                standAnimName = &fStandRightAnim;
         }
 
-        if(frontClear && IIsClosestAnim("SitFront", sitGoal, closestDist, curPosition, avatar))
+        if(frontClear && IIsClosestAnim(fSitFrontAnim, sitGoal, closestDist, curPosition, avatar))
         {
-            sitAnimName = "SitFront";
-            standAnimName = "StandUpFront";
+            sitAnimName = &fSitFrontAnim;
+            standAnimName = &fStandFrontAnim;
         }
 
-        if(sitAnimName)
-        {
+        if (sitAnimName) {
             uint32_t exitFlags = plAvBrainGeneric::kExitNormal;   // SOME stages can be interrupted, but not the brain itself
             brain = new plAvBrainGeneric(nullptr, enterNotify, exitNotify, nullptr, exitFlags, plAvBrainGeneric::kDefaultFadeIn,
                                          plAvBrainGeneric::kDefaultFadeOut, plAvBrainGeneric::kMoveRelative);
 
-            plAnimStage *sitStage = new plAnimStage(sitAnimName, 0, plAnimStage::kForwardAuto, plAnimStage::kBackNone,
+            plAnimStage *sitStage = new plAnimStage(*sitAnimName, 0, plAnimStage::kForwardAuto, plAnimStage::kBackNone,
                                                     plAnimStage::kAdvanceAuto, plAnimStage::kRegressNone, 0);
-            plAnimStage *idleStage = new plAnimStage("SitIdle", plAnimStage::kNotifyEnter, plAnimStage::kForwardAuto, plAnimStage::kBackNone,
+            plAnimStage *idleStage = new plAnimStage(fSitIdleAnim, plAnimStage::kNotifyEnter, plAnimStage::kForwardAuto, plAnimStage::kBackNone,
                                                     plAnimStage::kAdvanceOnMove, plAnimStage::kRegressNone, -1);
-            plAnimStage *standStage = new plAnimStage(standAnimName, 0, plAnimStage::kForwardAuto, plAnimStage::kBackNone,
+            plAnimStage *standStage = new plAnimStage(*standAnimName, 0, plAnimStage::kForwardAuto, plAnimStage::kBackNone,
                                                     plAnimStage::kAdvanceAuto, plAnimStage::kRegressNone, 0);
 
             brain->AddStage(sitStage);
             brain->AddStage(idleStage);
             brain->AddStage(standStage);
-            *pAnimName = sitAnimName;
+            *pAnimName = *sitAnimName;
 
             brain->SetType(plAvBrainGeneric::kSit);
             brain->SetRecipient(GetKey());
