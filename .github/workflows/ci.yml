@@ -82,9 +82,24 @@ jobs:
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
 
+      - name: Initialize CodeQL
+        if: matrix.cfg.external == 'ON'
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp
+          queries: security-and-quality
+
       - name: Build
         run: |
           cmake --build build --config "${{ matrix.cfg.type }}" -j 2
+
+      - name: Perform CodeQL Analysis
+        if: matrix.cfg.external == 'ON'
+        uses: github/codeql-action/analyze@v2
+
+      - name: Test
+        run: |
+          cmake --build build --target check --config "${{ matrix.cfg.type }}" -j 2
 
       - name: Install
         run: |
@@ -95,10 +110,6 @@ jobs:
         with:
           name: plasma-${{ matrix.platform.str }}-${{ matrix.cfg.str }}
           path: build/install
-
-      - name: Test
-        run: |
-          cmake --build build --target check --config "${{ matrix.cfg.type }}" -j 2
 
   max:
     # Can only run if we have a token for our super seekrit Max SDK repo. Sad.
@@ -223,9 +234,20 @@ jobs:
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
 
+      - name: Initialize CodeQL
+        if: matrix.cfg.external == 'ON'
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp
+          queries: security-and-quality
+
       - name: Build
         run: |
           cmake --build build -j 2
+
+      - name: Perform CodeQL Analysis
+        if: matrix.cfg.external == 'ON'
+        uses: github/codeql-action/analyze@v2
 
       - name: Test
         run: |
@@ -298,9 +320,20 @@ jobs:
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
 
+      - name: Initialize CodeQL
+        if: matrix.cfg.external == 'ON'
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp
+          queries: security-and-quality
+
       - name: Build
         run: |
           cmake --build build --config "${{ matrix.cfg.type }}" -j 2
+
+      - name: Perform CodeQL Analysis
+        if: matrix.cfg.external == 'ON'
+        uses: github/codeql-action/analyze@v2
 
       - name: Test
         run: |
