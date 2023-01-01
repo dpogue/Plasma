@@ -6,6 +6,7 @@ include_directories("${PLASMA_SOURCE_ROOT}/PubUtilLib")
 if(PLASMA_BUILD_TOOLS)
     add_subdirectory(SoundDecompress)
     add_subdirectory(plSystemInfo)
+    add_subdirectory(plIniTest)
     if(WIN32) # Until ASIO netcode is done
         add_subdirectory(plFilePatcher)
     endif()
