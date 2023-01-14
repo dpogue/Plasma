@@ -177,7 +177,8 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { str: linux-x64 }
+          - { str: linux-x86, arch: x86, flags: "-m32" }
+          - { str: linux-x64, arch: x64, flags: "-m64" }
         cfg:
           - { external: OFF, type: RelWithDebInfo, str: internal-release }
           - { external: OFF, type: Debug, str: internal-debug }
@@ -202,6 +203,14 @@ jobs:
               ninja-build \
               qtbase5-dev
 
+      - name: Install multilib dependencies
+        if: matrix.platform.arch == 'x86'
+        run: |
+          sudo apt-get install -y gcc-multilib g++-multilib
+
+          # We need to hack vcpkg to set the right linker flags
+          sed -i '13i\   string(APPEND VCPKG_LINKER_FLAGS " -m32")' vcpkg/scripts/toolchains/linux.cmake
+
       - name: Setup NuGet
         run: |
           nuget sources add \
@@ -219,7 +228,10 @@ jobs:
         run: |
           cmake \
             -G Ninja \
+            -DCMAKE_C_FLAGS=${{ matrix.platform.flags }} \
+            -DCMAKE_CXX_FLAGS=${{ matrix.platform.flags }} \
             -DUSE_VCPKG=ON \
+            -DVCPKG_TARGET_TRIPLET="${{ matrix.platform.arch }}-linux" \
             -DCMAKE_BUILD_TYPE=${{ matrix.cfg.type }} \
             -DPLASMA_BUILD_TESTS=ON \
             -DPLASMA_BUILD_TOOLS=ON \
