@@ -105,7 +105,8 @@ enum
     kArgStartUpAgeName,
     kArgPvdFile,
     kArgSkipIntroMovies,
-    kArgRenderer
+    kArgRenderer,
+    kArgUsername
 };
 
 static const plCmdArgDef s_cmdLineArgs[] = {
@@ -119,6 +120,7 @@ static const plCmdArgDef s_cmdLineArgs[] = {
     { kCmdArgFlagged  | kCmdTypeString,     "PvdFile",         kArgPvdFile },
     { kCmdArgFlagged  | kCmdTypeBool,       "SkipIntroMovies", kArgSkipIntroMovies },
     { kCmdArgFlagged  | kCmdTypeString,     "Renderer",        kArgRenderer },
+    { kCmdArgFlagged  | kCmdTypeString,     "Username",        kArgUsername },
 };
 
 //
@@ -240,7 +242,7 @@ static size_t CurlCallback(void *buffer, size_t size, size_t nmemb, void *param)
     return size * nmemb;
 }
 
-static bool ConsoleLoginScreen()
+static bool ConsoleLoginScreen(const ST::string& cliUsername)
 {
     std::thread statusThread = std::thread([]() {
         ST::string statusUrl = GetServerStatusUrl();
@@ -271,19 +273,22 @@ static bool ConsoleLoginScreen()
     statusFlag.Wait();
     statusThread.join();
 
-    fprintf(stdout, "[Use Ctrl+D to cancel]\nUsername or Email: ");
-    fflush(stdout);
+    ST::string username = cliUsername;
+    if (cliUsername.empty()) {
+        fprintf(stdout, "[Use Ctrl+D to cancel]\nUsername or Email: ");
+        fflush(stdout);
 
-    char username[kMaxAccountNameLength];
-
-    if (fscanf(stdin, "%s", username) != 1) {
-        return false;
+        char tmpUsername[kMaxAccountNameLength];
+        if (fscanf(stdin, "%s", tmpUsername) != 1) {
+            return false;
+        }
+        username = tmpUsername;
     }
 
     pfPasswordStore* store = pfPasswordStore::Instance();
     ST::string password = store->GetPassword(username);
 
-    if (!password.empty()) {
+    if (!password.empty() && cliUsername.empty()) {
         fprintf(stdout, "Use saved password? [y/n] ");
         fflush(stdout);
         char c;
@@ -648,6 +653,7 @@ int main(int argc, const char** argv)
     cmdParser.Parse(args);
 
     bool doIntroDialogs = true;
+    ST::string cliUsername;
 #ifndef PLASMA_EXTERNAL_RELEASE
     if (cmdParser.IsSpecified(kArgSkipLoginDialog))
         doIntroDialogs = false;
@@ -668,6 +674,8 @@ int main(int argc, const char** argv)
         plPXSimulation::SetDefaultDebuggerEndpoint(cmdParser.GetString(kArgPvdFile));
     if (cmdParser.IsSpecified(kArgRenderer))
         gClient.SetRequestedRenderingBackend(ParseRendererArgument(cmdParser.GetString(kArgRenderer)));
+    if (cmdParser.IsSpecified(kArgUsername))
+        cliUsername = cmdParser.GetString(kArgUsername);
 #endif
 
     plFileName serverIni = "server.ini";
@@ -720,7 +728,7 @@ int main(int argc, const char** argv)
     curl_global_init(CURL_GLOBAL_ALL);
 
     // Login stuff
-    if (!ConsoleLoginScreen()) {
+    if (!ConsoleLoginScreen(cliUsername)) {
         gClient.ShutdownStart();
         gClient.ShutdownEnd();
         NetCommShutdown();
