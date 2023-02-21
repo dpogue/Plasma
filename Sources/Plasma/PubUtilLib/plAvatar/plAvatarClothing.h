@@ -163,6 +163,7 @@ public:
 class plClothingOutfit : public plSynchedObject
 {
     friend class plDXPipeline;
+    friend class plGLPipeline;
 
 public:
     plArmatureMod *fAvatar;
