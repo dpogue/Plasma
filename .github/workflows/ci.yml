@@ -179,7 +179,7 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { str: linux-x86, arch: x86, flags: "-m32" }
+          - { str: linux-x86, arch: x86, flags: "-m32 -malign-double" }
           - { str: linux-x64, arch: x64, flags: "-m64" }
         cfg:
           - { external: OFF, type: RelWithDebInfo, str: internal-release }
@@ -230,8 +230,8 @@ jobs:
         run: |
           cmake \
             -G Ninja \
-            -DCMAKE_C_FLAGS=${{ matrix.platform.flags }} \
-            -DCMAKE_CXX_FLAGS=${{ matrix.platform.flags }} \
+            -DCMAKE_C_FLAGS="${{ matrix.platform.flags }}" \
+            -DCMAKE_CXX_FLAGS="${{ matrix.platform.flags }}" \
             -DUSE_VCPKG=ON \
             -DVCPKG_TARGET_TRIPLET="${{ matrix.platform.arch }}-linux" \
             -DCMAKE_BUILD_TYPE=${{ matrix.cfg.type }} \
@@ -242,11 +242,6 @@ jobs:
             -S . -B build
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
-
-      - name: debug libs
-        if: failure()
-        run: |
-          ls -lah build/vcpkg_installed/x86-linux/debug/lib
 
       - name: vcpkg logs
         if: failure()
@@ -275,7 +270,7 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { str: macos-arm64, arch: arm64, triplet: arm64 }
+          #- { str: macos-arm64, arch: arm64, triplet: arm64 }
           - { str: macos-x64, arch: x86_64, triplet: x64 }
         cfg:
           - { external: OFF, type: RelWithDebInfo, str: internal-release }
