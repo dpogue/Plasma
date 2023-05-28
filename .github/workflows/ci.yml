@@ -312,6 +312,7 @@ jobs:
             -G Xcode \
             -DUSE_VCPKG=ON \
             -DVCPKG_TARGET_TRIPLET="${{ matrix.platform.triplet}}-osx" \
+            -DVCPKG_HOST_TRIPLET="x64-osx" \
             -DVCPKG_OSX_ARCHITECTURES=${{ matrix.platform.arch }} \
             -DVCPKG_OSX_DEPLOYMENT_TARGET=10.14 \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.platform.arch }} \
