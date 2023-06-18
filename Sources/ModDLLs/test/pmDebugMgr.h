@@ -46,23 +46,30 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "HeadSpin.h"
 #include "pnKeyedObject/hsKeyedObject.h"
 
+class pfGUIDialogMod;
+
 class pmDebugMgr : public hsKeyedObject
 {
 protected:
     static pmDebugMgr* fInstance;
 
     plKey fMyKey;
+    pfGUIDialogMod* fDialog;
 
     pmDebugMgr();
     ~pmDebugMgr();
 
     void IInit();
+    plKey IAddKey(hsKeyedObject* ko, const ST::string& prefix);
+    void ICreateDebugButton();
 
 public:
+    static pmDebugMgr* Instance();
+
     CLASSNAME_REGISTER(pmDebugMgr);
     GETINTERFACE_ANY(pmDebugMgr, hsKeyedObject);
 
-    static pmDebugMgr* Instance();
+    bool MsgReceive(plMessage* msg) override;
 };
 
 #endif // pmDebugMgr_h_inc
