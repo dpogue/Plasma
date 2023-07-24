@@ -68,10 +68,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #endif
 
 #if defined(HS_BUILD_FOR_APPLE)
-#import <CoreGraphics/CoreGraphics.h>
-#import <CoreText/CoreText.h>
+#   include <ApplicationServices/ApplicationServices.h>
 #elif defined(HS_BUILD_FOR_UNIX)
-#include <fontconfig/fontconfig.h>
+#   include <fontconfig/fontconfig.h>
 #endif
 
 //// Constructor & Destructor /////////////////////////////////////////////////
@@ -136,9 +135,29 @@ uint16_t  *plTextFont::IInitFontTexture()
     CFRelease(fontName);
     CFRelease(fontDescriptor);
     
-    CFURLRef fontURL = (CFURLRef) CTFontDescriptorCopyAttribute(fulfilledFontDescriptor, kCTFontURLAttribute);
-    CFStringRef fileSystemPath = CFURLCopyFileSystemPath(fontURL, kCFURLPOSIXPathStyle);
     char cPath[PATH_MAX];
+    CFURLRef fontURL;
+
+#ifdef HAVE_BUILTIN_AVAILABLE
+    if (__builtin_available(macOS 10.6, *)) {
+        fontURL = (CFURLRef) CTFontDescriptorCopyAttribute(fulfilledFontDescriptor, kCTFontURLAttribute);
+    } else
+#endif
+    {
+        CTFontRef font = CTFontCreateWithFontDescriptor(fulfilledFontDescriptor, 0, nullptr);
+        hsAssert(font != nullptr, "Cannot load Mac font");
+
+        ATSFontRef atsFont = CTFontGetPlatformFont(font, nullptr);
+        hsAssert(atsFont == 0, "Cannot load Mac platform font");
+
+        FSRef fsRef;
+        OSStatus status = ATSFontGetFileReference(atsFont, &fsRef);
+        CFRelease(font);
+
+        fontURL = CFURLCreateFromFSRef(nullptr, &fsRef);
+    }
+
+    CFStringRef fileSystemPath = CFURLCopyFileSystemPath(fontURL, kCFURLPOSIXPathStyle);
     CFStringGetCString(fileSystemPath, cPath, PATH_MAX, kCFStringEncodingUTF8);
     
     ftError = FT_New_Face(library, cPath, 0, &face);

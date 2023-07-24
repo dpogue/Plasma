@@ -73,7 +73,7 @@ target_link_libraries(plPipeline
         pfGameGUIMgr # plCaptureRender
         $<$<PLATFORM_ID:Windows>:plWinDpi>
         freetype
-        "$<$<PLATFORM_ID:Darwin>:-framework CoreText>"
+        "$<$<PLATFORM_ID:Darwin>:-framework ApplicationServices>"
         $<$<AND:$<NOT:$<PLATFORM_ID:Windows>>,$<NOT:$<PLATFORM_ID:Darwin>>>:Fontconfig::Fontconfig>
     INTERFACE
         pnFactory
