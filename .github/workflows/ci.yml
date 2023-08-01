@@ -5,6 +5,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   # HACK to enable/disable the max CI based on presence/absence of secret. See also:
   # https://github.com/actions/runner/issues/1138
@@ -81,6 +84,8 @@ jobs:
             -S . -B build
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+          VCPKG_FEATURE_FLAGS: ${{ (github.event_name == 'push' && 'dependencygraph') || '' }}
+          GITHUB_TOKEN: ${{ (github.event_name == 'push' && secrets.GITHUB_TOKEN) || '' }}
 
       - name: Build
         run: |
@@ -224,6 +229,8 @@ jobs:
             -S . -B build
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+          VCPKG_FEATURE_FLAGS: ${{ (github.event_name == 'push' && 'dependencygraph') || '' }}
+          GITHUB_TOKEN: ${{ (github.event_name == 'push' && secrets.GITHUB_TOKEN) || '' }}
 
       - name: Build
         run: |
@@ -300,6 +307,8 @@ jobs:
             -S . -B build
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+          VCPKG_FEATURE_FLAGS: ${{ (github.event_name == 'push' && 'dependencygraph') || '' }}
+          GITHUB_TOKEN: ${{ (github.event_name == 'push' && secrets.GITHUB_TOKEN) || '' }}
 
       - name: Build
         run: |
