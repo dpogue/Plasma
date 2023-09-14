@@ -2036,3 +2036,19 @@ hsCpuFunctionDispatcher<plGLPipeline::blend_vert_buffer_ptr> plGLPipeline::blend
     nullptr,                                // SSSE3
     &IBlendVertBuffer<ISkinVertexSSE41>
 };
+
+
+
+
+
+#ifdef HS_BUILD_FOR_MACOS
+#include "pfCGLRenderLayer.h"
+
+CALayer* plGLPipeline::GetRenderLayer()
+{
+    pfCGLRenderLayer* layer = pfCGLRenderLayer::getLayer();
+    layer->SetDevice(fDevice);
+
+    return reinterpret_cast<CALayer*>(layer);
+}
+#endif

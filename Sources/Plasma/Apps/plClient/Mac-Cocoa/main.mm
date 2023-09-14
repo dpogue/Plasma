@@ -460,6 +460,7 @@ dispatch_queue_t loadingQueue = dispatch_queue_create("", DISPATCH_QUEUE_SERIAL)
         exit(0);
     }
 
+    self.plsView.layer = gClient->GetPipeline()->GetRenderLayer();
     self.eventMonitor = [[PLSKeyboardEventMonitor alloc] initWithView:self.window.contentView
                                                          inputManager:&gClient];
     ((PLSView*)self.window.contentView).inputManager = gClient->GetInputManager();

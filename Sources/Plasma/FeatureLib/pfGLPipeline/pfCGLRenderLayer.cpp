@@ -39,31 +39,53 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
 *==LICENSE==*/
-#ifndef _plCGLDevice_h_
-#define _plCGLDevice_h_
 
-#include "plGLDevice.h"
-#include "plPipeline/hsG3DDeviceSelector.h"
+#include "pfCGLRenderLayer.h"
 
-class plCGLDevice : public plGLDeviceImpl
+#include <functional>
+
+#include "plCGLDevice.h"
+#include "pfCGLRenderLayer_Private.inl"
+
+struct objc_class* pfCGLRenderLayer::sRenderLayerClass = nullptr;
+
+void pfCGLRenderLayer::IInitClass()
 {
-    friend class pfCGLRenderLayer;
+    sRenderLayerClass = objc_allocateClassPair(_GL_CLS(CAOpenGLLayer), "pfCGLRenderLayer", 0);
 
-private:
-    typedef struct _CGLContextObject* CGLContextObj;
+    class_addIvar(sRenderLayerClass, "_data", sizeof(RenderLayerData), log2(sizeof(RenderLayerData)), "{?=^v}");
 
-protected:
-    CGLContextObj fContext;
+    _GL_SUBCLASS_METHOD(drawInCGLContext_pixelFormat_forLayerTime_displayTime_);
 
-    plCGLDevice(hsWindowHndl window, hsWindowHndl device, CGLContextObj context);
+    objc_registerClassPair(sRenderLayerClass);
+}
 
-public:
-    static bool Enumerate(hsG3DDeviceRecord& record);
-    static plCGLDevice* TryInit(hsWindowHndl window, hsWindowHndl device, const char** error);
+pfCGLRenderLayer* pfCGLRenderLayer::getLayer()
+{
+    if (!getClass()) {
+        IInitClass();
+    }
 
-    void Shutdown() override;
-    bool BeginRender(const char** error) override;
-    bool EndRender(const char** error) override;
-};
+    pfCGLRenderLayer* layer = sendMsg<pfCGLRenderLayer*>(getClass(), _GL_SEL(layer));
 
-#endif // _plCGLDevice_h_
+    RenderLayerData& data = layer->getRenderLayerData();
+    data.device = nullptr;
+
+    return layer;
+}
+
+void pfCGLRenderLayer::SetDevice(plGLDevice& dev)
+{
+    RenderLayerData& data = getRenderLayerData();
+    data.device = reinterpret_cast<plCGLDevice*>(dev.fImpl);
+}
+
+void pfCGLRenderLayer::drawInCGLContext_pixelFormat_forLayerTime_displayTime_(pfCGLRenderLayer* self, struct obj_selector* cmd, CGLContextObj ctx, CGLPixelFormatObj pf, CFTimeInterval t, const CVTimeStamp* ts)
+{
+    CGLSetCurrentContext(ctx);
+
+    glClearColor(1.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    self->sendSuper<void>(_GL_SEL(drawInCGLContext_pixelFormat_forLayerTime_displayTime_), ctx, pf, t, ts);
+}

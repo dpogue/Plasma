@@ -6,6 +6,7 @@ set(pfGLPipeline_SOURCES
     plGLPipeline.cpp
     plGLPlateManager.cpp
     plGLTextFont.cpp
+    $<$<PLATFORM_ID:Darwin>:pfCGLRenderLayer.cpp>
     $<$<PLATFORM_ID:Darwin>:plCGLDevice.cpp>
     plEGLDevice.cpp
     $<$<PLATFORM_ID:Windows>:plWGLDevice.cpp>
@@ -19,6 +20,8 @@ set(pfGLPipeline_HEADERS
     pfGLPipelineCreatable.h
     plGLPlateManager.h
     plGLTextFont.h
+    pfCGLRenderLayer.h
+    pfCGLRenderLayer_Private.inl
     plCGLDevice.h
     plEGLDevice.h
     plWGLDevice.h

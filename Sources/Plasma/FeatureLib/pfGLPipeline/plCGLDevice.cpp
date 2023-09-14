@@ -42,8 +42,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plCGLDevice.h"
 
-#ifdef HS_BUILD_FOR_MACOS
 #include <AvailabilityMacros.h>
+#include <OpenGL/OpenGL.h>
 
 bool plCGLDevice::Enumerate(hsG3DDeviceRecord& record)
 {
@@ -182,6 +182,3 @@ bool plCGLDevice::EndRender(const char** error)
 {
     return true;
 }
-
-#endif // HS_BUILD_FOR_MACOS
-

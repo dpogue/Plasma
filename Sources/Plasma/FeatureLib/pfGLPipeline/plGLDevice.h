@@ -69,6 +69,9 @@ public:
 
 class plGLDevice
 {
+    // This needs to access the plCGLDevice implementation directly, and I'd rather not expose fImpl as public API
+    friend class pfCGLRenderLayer;
+
 public:
     typedef plGLVertexBufferRef VertexBufferRef;
     typedef plGLIndexBufferRef  IndexBufferRef;

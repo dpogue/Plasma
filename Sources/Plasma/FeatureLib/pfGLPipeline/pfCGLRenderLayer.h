@@ -39,31 +39,57 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
 *==LICENSE==*/
-#ifndef _plCGLDevice_h_
-#define _plCGLDevice_h_
+#ifndef _pfCGLRenderLayer_h_
+#define _pfCGLRenderLayer_h_
 
-#include "plGLDevice.h"
-#include "plPipeline/hsG3DDeviceSelector.h"
+#ifdef HS_BUILD_FOR_MACOS
+#include <QuartzCore/QuartzCore.h>
+#include <objc/objc-runtime.h>
 
-class plCGLDevice : public plGLDeviceImpl
+class plCGLDevice;
+class plGLDevice;
+
+class pfCGLRenderLayer : public objc_object
 {
-    friend class pfCGLRenderLayer;
+public:
+    struct RenderLayerData {
+        plCGLDevice* device;
+    };
+
+    static pfCGLRenderLayer* getLayer();
+
+    void SetDevice(plGLDevice& dev);
 
 private:
-    typedef struct _CGLContextObject* CGLContextObj;
+    static struct objc_class* sRenderLayerClass;
+    static struct objc_class* getClass() {
+        return sRenderLayerClass;
+    }
 
-protected:
-    CGLContextObj fContext;
+    RenderLayerData& getRenderLayerData() {
+        static ptrdiff_t offset = ivar_getOffset(class_getInstanceVariable(getClass(), "_data"));
 
-    plCGLDevice(hsWindowHndl window, hsWindowHndl device, CGLContextObj context);
+        return *(reinterpret_cast<RenderLayerData*>(reinterpret_cast<uint8_t*>(this) + offset));
+    }
 
-public:
-    static bool Enumerate(hsG3DDeviceRecord& record);
-    static plCGLDevice* TryInit(hsWindowHndl window, hsWindowHndl device, const char** error);
+    static void IInitClass();
 
-    void Shutdown() override;
-    bool BeginRender(const char** error) override;
-    bool EndRender(const char** error) override;
+    template<typename _Ret, typename... _Args>
+    static _Ret sendMsg(const void* pObj, struct objc_selector* selector, _Args... args);
+
+    template<typename _Ret, typename... _Args>
+    _Ret sendMsg(struct objc_selector* selector, _Args... args);
+
+    template<typename _Ret, typename... _Args>
+    _Ret sendSuper(struct objc_selector* selector, _Args... args);
+
+    pfCGLRenderLayer() = delete;
+    pfCGLRenderLayer(const pfCGLRenderLayer&) = delete;
+    ~pfCGLRenderLayer() = delete;
+    pfCGLRenderLayer& operator=(const pfCGLRenderLayer&) = delete;
+
+    static void drawInCGLContext_pixelFormat_forLayerTime_displayTime_(pfCGLRenderLayer* self, struct obj_selector* cmd, CGLContextObj ctx, CGLPixelFormatObj pf, CFTimeInterval t, const CVTimeStamp* ts);
 };
+#endif // HS_BUILD_FOR_MACOS
 
-#endif // _plCGLDevice_h_
+#endif // _pfCGLRenderLayer_h_

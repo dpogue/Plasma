@@ -114,6 +114,10 @@ public:
     void ResetDisplayDevice(int Width, int Height, int ColorDepth, bool Windowed, int NumAASamples, int MaxAnisotropicSamples, bool vSync = false  ) override;
     void RenderSpans(plDrawableSpans* ice, const std::vector<int16_t>& visList) override;
 
+#ifdef HS_BUILD_FOR_MACOS
+    CALayer* GetRenderLayer() override;
+#endif
+
 protected:
     void ISetupTransforms(plDrawableSpans* drawable, const plSpan& span, plGLMaterialShaderRef* mRef, hsMatrix44& lastL2W);
     void IRenderBufferSpan(const plIcicle& span, hsGDeviceRef* vb, hsGDeviceRef* ib, hsGMaterial* material, uint32_t vStart, uint32_t vLength, uint32_t iStart, uint32_t iLength);
