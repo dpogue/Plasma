@@ -35,6 +35,8 @@ set(PRODUCT_UUID        "ea489821-6c35-4bd0-9dae-bb17c585e680"
 option(PRODUCT_EMBED_BUILD_INFO "Embed build revision information into plProduct" ON)
 cmake_dependent_option(PRODUCT_EMBED_BUILD_TIME "Embed build time into plProduct" ON [[PRODUCT_EMBED_BUILD_INFO]] OFF)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # HeadSpin Configuration
 
 # Define HS_DEBUGGING for debug builds

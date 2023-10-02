@@ -8,7 +8,9 @@ set(plPageOptimizer_HEADERS
     plPageOptimizer.h
 )
 
-plasma_executable(plPageOptimizer TOOL
+plasma_executable(plPageOptimizer
+    TOOL
+    FOLDER Apps
     SOURCES ${plPageOptimizer_SOURCES} ${plPageOptimizer_HEADERS}
 )
 target_link_libraries(

@@ -17,6 +17,7 @@ set(pnUtils_SOURCES
 )
 
 plasma_library(pnUtils
+    FOLDER NucleusLib
     SOURCES ${pnUtils_HEADERS} ${pnUtils_SOURCES}
     PRECOMPILED_HEADERS Pch.h
     UNITY_BUILD

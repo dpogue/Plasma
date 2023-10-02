@@ -128,7 +128,7 @@ else()
 endif()
 
 if(APPLE)
-    plasma_executable(plClient CLIENT INSTALL_PDB SOURCES ${plClient_SOURCES} ${plClient_HEADERS} ${RESOURCES})
+    plasma_executable(plClient CLIENT INSTALL_PDB FOLDER Apps SOURCES ${plClient_SOURCES} ${plClient_HEADERS} ${RESOURCES})
     set_target_properties(plClient PROPERTIES
         BUNDLE TRUE
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Mac-Cocoa/Info.plist.in"
@@ -173,6 +173,7 @@ if(APPLE)
     endif()
 else()
     plasma_executable(plClient WIN32 CLIENT INSTALL_PDB
+        FOLDER Apps
         SOURCES
             ${plClient_SOURCES} ${plClient_HEADERS}
             ${plClient_TEXT} ${plClient_RESOURCES}

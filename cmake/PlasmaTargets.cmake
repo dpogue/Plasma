@@ -20,24 +20,25 @@ cmake_dependent_option(
 function(plasma_executable TARGET)
     cmake_parse_arguments(PARSE_ARGV 1 _pex
         "WIN32;CLIENT;TOOL;QT_GUI;EXCLUDE_FROM_ALL;NO_SANITIZE;INSTALL_PDB"
-        ""
+        "FOLDER"
         "SOURCES"
     )
 
     if(_pex_WIN32)
         list(APPEND addexe_args WIN32)
     endif()
-    if(_pex_QT_GUI)
+    if(_pex_QT_GUI OR _pex_CLIENT)
         list(APPEND addexe_args WIN32 MACOSX_BUNDLE)
-    endif()
-    if(_pex_CLIENT)
-        list(APPEND addexe_args MACOSX_BUNDLE)
     endif()
     if(_pex_EXCLUDE_FROM_ALL)
         list(APPEND addexe_args EXCLUDE_FROM_ALL)
     endif()
     add_executable(${TARGET} ${addexe_args} ${_pex_SOURCES})
     set_target_properties(${TARGET} PROPERTIES XCODE_GENERATE_SCHEME TRUE)
+
+    if(_pex_FOLDER)
+        set_target_properties(${TARGET} PROPERTIES FOLDER ${_pex_FOLDER})
+    endif()
 
     if(_pex_CLIENT)
         set(install_destination client)
@@ -93,7 +94,7 @@ endfunction()
 function(plasma_library TARGET)
     cmake_parse_arguments(PARSE_ARGV 1 _plib
         "UNITY_BUILD;OBJECT;SHARED;NO_SANITIZE"
-        ""
+        "FOLDER"
         "PRECOMPILED_HEADERS;SOURCES"
     )
 
@@ -109,6 +110,10 @@ function(plasma_library TARGET)
         set(libtype STATIC)
     endif()
     add_library(${TARGET} ${libtype} ${_plib_SOURCES})
+
+    if(_plib_FOLDER)
+        set_target_properties(${TARGET} PROPERTIES FOLDER ${_plib_FOLDER})
+    endif()
 
     if(PLASMA_USE_PCH AND _plib_PRECOMPILED_HEADERS)
         target_precompile_headers(${TARGET} PRIVATE ${_plib_PRECOMPILED_HEADERS})

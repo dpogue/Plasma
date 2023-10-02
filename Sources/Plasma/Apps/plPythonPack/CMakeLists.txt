@@ -7,7 +7,9 @@ set(plPythonPack_HEADERS
     PythonInterface.h
 )
 
-plasma_executable(plPythonPack TOOL
+plasma_executable(plPythonPack
+    TOOL
+    FOLDER Apps
     SOURCES ${plPythonPack_SOURCES} ${plPythonPack_HEADERS}
 )
 target_link_libraries(
