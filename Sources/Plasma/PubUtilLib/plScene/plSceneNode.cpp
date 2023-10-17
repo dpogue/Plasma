@@ -55,6 +55,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsStream.h"
 
 #include <algorithm>
+#include <string_theory/format>
 
 #include "pnKeyedObject/plKey.h"
 #include "pnMessage/plNodeRefMsg.h"
@@ -310,10 +311,7 @@ void plSceneNode::IRemovePhysical(plPhysical* p)
         plKey oldNodeKey = p->GetSceneNode();
         if (oldNodeKey && oldNodeKey != GetKey())
         {
-            char buf[256];
-            sprintf(buf, "Trying to remove physical %s from scenenode %s,\nbut it's actually in %s",
-                p->GetKeyName().c_str(), GetKeyName().c_str(), oldNodeKey->GetName().c_str());
-            hsAssert(0, buf);
+            hsAssert(0, ST::format("Trying to remove physical {} from scenenode {},\nbut it's actually in {}", p->GetKeyName(), GetKeyName(), oldNodeKey->GetName()).c_str());
         }
     }
 #endif

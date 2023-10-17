@@ -41,6 +41,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 #include <string>
 #include <ctime>
+#include <string_theory/format>
 
 #include "plSecureStream.h"
 #include "hsWindows.h"
@@ -296,9 +297,7 @@ uint32_t plSecureStream::IRead(uint32_t bytes, void* buffer)
         if (success)
         {
             // EOF ocurred
-            char str[128];
-            sprintf(str, "Hit EOF on Windows read, only read %d out of requested %d bytes\n", numItems, bytes);
-            hsDebugMessage(str, 0);
+            hsDebugMessage(ST::format("Hit EOF on Windows read, only read {} out of requested {} bytes\n", numItems, bytes).c_str(), 0);
         }
         else
         {

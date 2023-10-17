@@ -227,7 +227,7 @@ const char* plMD5Checksum::GetAsHexString() const
     hsAssert(fValid, "Trying to get string version of invalid checksum");
 
     for (i = 0, ptr = tempString; i < sizeof(fChecksum); i++, ptr += 2)
-        sprintf(ptr, "%02x", fChecksum[i]);
+        snprintf(ptr, 3, "%02x", fChecksum[i]);
 
     *ptr = 0;
 
@@ -379,7 +379,7 @@ const char* plSHAChecksum::GetAsHexString() const
     hsAssert(fValid, "Trying to get string version of invalid checksum");
 
     for (i = 0, ptr = tempString; i < sizeof(fChecksum); i++, ptr += 2)
-        sprintf(ptr, "%02x", fChecksum[i]);
+        snprintf(ptr, 3, "%02x", fChecksum[i]);
 
     *ptr = 0;
 
@@ -521,7 +521,7 @@ const char* plSHA1Checksum::GetAsHexString() const
     hsAssert(fValid, "Trying to get string version of invalid checksum");
 
     for (i = 0, ptr = tempString; i < sizeof(fChecksum); i++, ptr += 2)
-        sprintf(ptr, "%02x", fChecksum[i]);
+        snprintf(ptr, 3, "%02x", fChecksum[i]);
 
     *ptr = 0;
 

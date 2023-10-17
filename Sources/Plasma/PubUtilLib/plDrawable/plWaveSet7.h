@@ -377,7 +377,7 @@ protected:
     plRenderRequest*    ICreateRenderRequest(plRenderTarget* rt, plDrawableSpans* draw, float pri);
     void                ISubmitRenderRequests();
 
-    plRenderTarget*     ICreateTransferRenderTarget(const char* name, int size);
+    plRenderTarget*     ICreateTransferRenderTarget(const ST::string& name, int size);
     plDrawableSpans*    ICreateClearDrawable(plDrawableSpans* drawable, hsGMaterial* mat);
     
     void                IAddBumpBiasShaders(plLayer* layer);

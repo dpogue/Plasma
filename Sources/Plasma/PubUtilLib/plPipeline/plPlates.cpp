@@ -539,7 +539,7 @@ void    plGraphPlate::IDrawNumber( uint32_t number, uint32_t *dataPtr, uint32_t 
     int     i;
 
 
-    sprintf( str, "%d", number );
+    snprintf(str, 16, "%d", number);
     for( i = 0; str[ i ] != 0; i++ )
     {
         IDrawDigit( str[ i ] - '0', dataPtr, stride, color );

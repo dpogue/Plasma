@@ -44,6 +44,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <ctime>
 #include <wchar.h>
 #include <algorithm>
+#include <string_theory/format>
 
 static const uint32_t kDefaultKey[4] = { 0x6c0a5452, 0x3827d0f, 0x3a170b92, 0x16db7fc2 };
 static const int kEncryptChunkSize = 8;
@@ -179,9 +180,7 @@ uint32_t plEncryptedStream::IRead(uint32_t bytes, void* buffer)
     if ((unsigned)numItems < bytes) {
         if (feof(fRef)) {
             // EOF ocurred
-            char str[128];
-            sprintf(str, "Hit EOF on UNIX Read, only read %d out of requested %d bytes\n", numItems, bytes);
-            hsDebugMessage(str, 0);
+            hsDebugMessage(ST::format("Hit EOF on UNIX Read, only read {} out of requested {} bytes\n", numItems, bytes).c_str(), 0);
         }
         else {
             hsDebugMessage("Error on UNIX Read", ferror(fRef));

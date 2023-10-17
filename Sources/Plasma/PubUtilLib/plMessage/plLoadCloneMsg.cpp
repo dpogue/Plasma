@@ -42,6 +42,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plLoadCloneMsg.h"
 
+#include <string_theory/format>
+
 #include "HeadSpin.h"
 #include "hsResMgr.h"
 #include "hsStream.h"
@@ -82,9 +84,7 @@ plLoadCloneMsg::plLoadCloneMsg(const plUoid &uoidToClone, plKey requestorKey, ui
             fValidMsg = true;
             this->AddReceiver(plNetApp::GetInstance()->GetKey());
         } else {
-            char buffer[128];
-            sprintf(buffer, "Can't find key named %s", uoidToClone.GetObjectName().c_str());
-            hsAssert(0, buffer);
+            hsAssert(0, ST::format("Can't find key named {}", uoidToClone.GetObjectName()).c_str());
         }
     } else {
         hsStatusMessage("Clone requestor is not loaded.");

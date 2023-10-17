@@ -158,9 +158,7 @@ bool plMultistageBehMod::MsgReceive(plMessage* msg)
                         const plKey& seekKey = GetTarget()->GetKey();      // our seek point
 
 #ifdef DEBUG_MULTISTAGE
-                        char sbuf[256];
-                        sprintf(sbuf,"plMultistageModMsg - starting multistage from %s",sender->GetName().c_str());
-                        plAvatarMgr::GetInstance()->GetLog()->AddLine(sbuf);
+                        plAvatarMgr::GetInstance()->GetLog()->AddLine(ST::format("plMultistageModMsg - starting multistage from {}", sender->GetName()).c_str());
 #endif
                         plAvSeekMsg *seeker = new plAvSeekMsg(nullptr, avModKey, seekKey, 1.0f, fSmartSeek);
                         seeker->Send();

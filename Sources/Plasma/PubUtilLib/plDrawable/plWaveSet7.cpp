@@ -2095,7 +2095,7 @@ plRenderRequest* plWaveSet7::ICreateRenderRequest(plRenderTarget* rt, plDrawable
     return req;
 }
 
-plRenderTarget* plWaveSet7::ICreateTransferRenderTarget(const char* name, int size)
+plRenderTarget* plWaveSet7::ICreateTransferRenderTarget(const ST::string& name, int size)
 {
     uint16_t flags = plRenderTarget::kIsTexture | plRenderTarget::kIsOrtho;
     uint8_t bitDepth = 32;
@@ -2197,7 +2197,7 @@ hsGMaterial* plWaveSet7::ICreateFixedMatPS(hsGMaterial* mat, const int numUVWs)
         hsgResMgr::ResMgr()->SendRef(mat->GetLayer(i)->GetKey(), refMsg, plRefFlags::kActiveRef);
     }
 
-    plRenderTarget* rt = ICreateTransferRenderTarget("CompRT", kCompositeSize);
+    plRenderTarget* rt = ICreateTransferRenderTarget(ST_LITERAL("CompRT"), kCompositeSize);
 
     if( mat->GetNumLayers() && mat->GetLayer(0) )
     {
@@ -2709,9 +2709,7 @@ plShader* plWaveSet7::ICreateDecalPShader(DecalPType t)
         ST::string buff = ST::format("{}_{}", GetKey()->GetName(), fname[t]);
         hsgResMgr::ResMgr()->NewKey(buff, pShader, GetKey()->GetUoid().GetLocation());
         pShader->SetIsPixelShader(true);
-
-//      sprintf(buff, "sha/%s.inl", fname[t]);
-//      pShader->SetShaderFileName(buff);
+//      pShader->SetShaderFileName(ST::format("sha/{}.inl", fname[t]).c_str());
         pShader->SetDecl(plShaderTable::Decl(shaderIDs[t]));
 
         hsgResMgr::ResMgr()->SendRef(pShader->GetKey(), new plGenRefMsg(GetKey(), plRefMsg::kOnRequest, t, kRefDecPShader), plRefFlags::kActiveRef);
@@ -4130,9 +4128,7 @@ void plWaveSet7::IAddGraphPShader(hsGMaterial* mat, int iPass)
 plRenderTarget* plWaveSet7::ISetupGraphShoreRenderReq(int which)
 {
     plConst(int) kGraphSize(256);
-    char name[256];
-    sprintf(name, "Graph_%d", which);
-    plRenderTarget* rt = ICreateTransferRenderTarget(name, kGraphSize);
+    plRenderTarget* rt = ICreateTransferRenderTarget(ST::format("Graph {}", which), kGraphSize);
     
     hsgResMgr::ResMgr()->SendRef(rt->GetKey(), new plGenRefMsg(GetKey(), plRefMsg::kOnRequest, which, kRefGraphShoreRT), plRefFlags::kActiveRef);
 

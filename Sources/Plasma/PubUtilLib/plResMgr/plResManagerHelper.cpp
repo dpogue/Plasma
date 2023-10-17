@@ -59,6 +59,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plRegistryHelpers.h"
 #include "plResMgrSettings.h"
 
+#include <string_theory/format>
+
 #include "pnKeyedObject/plFixedKey.h"
 
 #include "plMessage/plResMgrHelperMsg.h"
@@ -189,9 +191,7 @@ void plResManagerHelper::LoadAndHoldPageKeys( plRegistryPageNode *page )
 
     // Load and ref the keys
 #ifdef HS_DEBUGGING
-    char msg[ 256 ];
-    sprintf( msg, "*** Temporarily loading keys for room %s>%s based on FindKey() query, will drop in 1 sec ***", page->GetPageInfo().GetAge().c_str(), page->GetPageInfo().GetPage().c_str());
-    hsStatusMessage( msg );
+    hsStatusMessage(ST::format("*** Temporarily loading keys for room {}>{} based on FindKey() query, will drop in 1 sec ***", page->GetPageInfo().GetAge(), page->GetPageInfo().GetPage()).c_str());
 #endif
     kResMgrLogF(2, 0xff80ff80, "Temporarily loading keys for room {}>{}, will drop in 1 sec", page->GetPageInfo().GetAge(), page->GetPageInfo().GetPage());
         

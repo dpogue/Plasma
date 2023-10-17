@@ -51,6 +51,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plgDispatch.h"
 
 #if defined(HS_DEBUGGING) || defined(LOG_ACTIVE_REFS)
+#include <string_theory/format>
 #include "pnFactory/plFactory.h"
 #endif
 
@@ -117,7 +118,7 @@ plKeyImp::~plKeyImp()
 #if defined(HS_DEBUGGING) && 0
     // Colin debugging
     char buf[512];
-    sprintf(buf, "0x%x %s %s\n", this, fIDName, fClassType);
+    snprintf(buf, 512, "0x%x %s %s\n", this, fIDName, fClassType);
     hsStatusMessage(buf);
 #endif
 
@@ -312,9 +313,8 @@ hsKeyedObject* plKeyImp::SetObjectPtr(hsKeyedObject* p)
 #ifdef HS_DEBUGGING
         if (fClassType)
         {
-            char str[2048];
-            sprintf(str, "Mismatch of class (we are a %s, given a %s)", fClassType, p->ClassName());
-            hsAssert(fClassType == p->ClassName() || strcmp(fClassType, p->ClassName()) == 0, str); // points to static
+            ST::string str = ST::format("Mismatch of class (we are a {}, given a {})", fClassType, p->ClassName());
+            hsAssert(fClassType == p->ClassName() || strcmp(fClassType, p->ClassName()) == 0, str.c_str()); // points to static
         }
         else
             fClassType = p->ClassName();

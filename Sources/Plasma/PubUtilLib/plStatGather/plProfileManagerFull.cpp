@@ -408,7 +408,7 @@ void plProfileManagerFull::IPrintGroup(hsStream* s, const char* groupName, bool 
         if (strcmp(var->GetGroup(), groupName) == 0)
         {
             if (printTitle)
-                sprintf(buf, "%s:%s", var->GetGroup(), var->GetName());
+                snprintf(buf, 256, "%s:%s", var->GetGroup(), var->GetName());
             else
                 var->PrintAvg(buf, false);
 
