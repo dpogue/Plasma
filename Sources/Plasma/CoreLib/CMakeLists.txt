@@ -47,6 +47,7 @@ set(CoreLib_HEADERS
     hsLockGuard.h
     hsMatrix44.h
     hsMatrixMath.h
+    hsOptionalCall.h
     hsPoint2.h
     hsPoolVector.h
     hsQuat.h
