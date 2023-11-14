@@ -44,11 +44,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsThread.h"
 #include "hsWindows.h"
 
+class plClient;
+class plClientWindow;
+
 class plClientLoader : private hsThread
 {
-    class plClient* fClient;
-    hsWindowHndl fWindow;
-    hsWindowHndl fDisplay;
+    plClient* fClient;
+    plClientWindow* fWindow;
     uint32_t fDevType;
 
     void OnQuit() override
@@ -60,7 +62,7 @@ class plClientLoader : private hsThread
     void Run() override;
 
 public:
-    plClientLoader() : fClient(), fWindow(), fDisplay(), fDevType() { }
+    plClientLoader() : fClient(), fWindow(), fDevType() { }
 
     /**
      * Initializes the client asyncrhonouslynn including: loading the localization, 
@@ -80,12 +82,7 @@ public:
     /**
      * Sets the client window handle.
      */
-    void SetClientWindow(hsWindowHndl hWnd) { fWindow = hWnd; }
-
-    /**
-     * Sets the client display handle.
-     */
-    void SetClientDisplay(hsWindowHndl hDC) { fDisplay = hDC; }
+    void SetClientWindow(plClientWindow* wnd) { fWindow = wnd; }
 
     /**
      * Sets the preferred rendering backend for the client pipeline.

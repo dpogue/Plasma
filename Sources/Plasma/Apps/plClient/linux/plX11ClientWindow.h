@@ -40,21 +40,30 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#include "plClient.h"
-#include "plClientLoader.h"
+#include "plClientWindow.h"
 
-#include "plPipeline/hsG3DDeviceSelector.h"
-#include "plProgressMgr/plProgressMgr.h"
-
-// Stub all of these on non-Windows for now
-void plClient::IChangeResolution(int width, int height) {}
-void plClient::IUpdateProgressIndicator(plOperationProgress* progress) {}
-void plClient::FlashWindow() {}
-
-static plClientLoader gClient;
-
-// Stub main function so it compiles on non-Windows
-int main(int argc, const char** argv)
+class plX11ClientWindow : public plClientWindow
 {
-    return 0;
-}
+private:
+    struct _XDisplay* fXDisplay;
+    uint32_t fXWindow;
+
+    bool HandleEvent(union _XEvent* evt);
+
+public:
+    plX11ClientWindow() : plClientWindow(), fXDisplay(), fXWindow() { }
+
+    bool PreInit() override;
+    bool CreateClientWindow() override;
+    void ShowClientWindow() override;
+    void ResizeClientWindow(uint16_t width, uint16_t height, bool windowed) override;
+    bool ProcessEvents() override;
+    void DeInit() override;
+
+    hsWindowHndl GetWindowHandle() const override {
+        return (hsWindowHndl)(uintptr_t)fXWindow;
+    }
+    hsWindowHndl GetDisplayHandle() const override {
+        return (hsWindowHndl)fXDisplay;
+    }
+};

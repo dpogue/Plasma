@@ -42,6 +42,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plClientLoader.h"
 #include "plClient.h"
+#include "plClientWindow.h"
 #include "plFileSystem.h"
 #include "plPipeline.h"
 
@@ -65,8 +66,7 @@ void plClientLoader::Run()
     }
     plClientResMgr::Instance().ILoadResources("resource.dat");
 
-    fClient = new plClient;
-    fClient->SetWindowHandle(fWindow);
+    fClient = new plClient(fWindow);
 
     plSimulationMgr::Init();
     if (plSimulationMgr::GetInstance()) {
@@ -76,7 +76,7 @@ void plClientLoader::Run()
         return;
     }
 
-    if (fClient->InitPipeline(fDisplay, fDevType) || !fClient->StartInit()) {
+    if (fClient->InitPipeline(fDevType) || !fClient->StartInit()) {
         fClient->SetDone(true);
     }
 }
@@ -84,7 +84,7 @@ void plClientLoader::Run()
 void plClientLoader::Start()
 {
     fClient->ResizeDisplayDevice(fClient->GetPipeline()->Width(), fClient->GetPipeline()->Height(), !fClient->GetPipeline()->IsFullScreen());
-    fClient->ShowClientWindow();
+    fWindow->ShowClientWindow();
 
     // Now, show the intro video, patch the global ages, etc...
     fClient->BeginGame();
@@ -106,6 +106,10 @@ void plClientLoader::ShutdownEnd()
 {
     if (fClient)
         fClient->Shutdown();
+
+    if (fWindow)
+        fWindow->DeInit();
+
     hsAssert(hsgResMgr::ResMgr()->RefCnt() == 1, "resMgr has too many refs, expect mem leaks");
     hsgResMgr::Shutdown();
 }

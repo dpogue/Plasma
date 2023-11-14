@@ -62,6 +62,7 @@ class plAgeLoaded2Msg;
 struct plAnimDebugList;
 class plAudioSystem;
 class plClientMsg;
+class plClientWindow;
 class pfConsole;
 class pfConsoleEngine;
 class plFactory;
@@ -89,8 +90,6 @@ class plTimerCallbackManager;
 class plTimerShare;
 class plTransitionMgr;
 class plVirtualCam1;
-
-typedef void (*plMessagePumpProc)();
 
 class plClient : public hsKeyedObject
 {
@@ -132,7 +131,7 @@ protected:
     bool                    fDone;
     bool                    fWindowActive;
 
-    hsWindowHndl            fWindowHndl;
+    plClientWindow*         fWindow;
 
     double                  fLastProgressUpdate;
     plOperationProgress     *fProgressBar;
@@ -155,8 +154,6 @@ protected:
     bool                    fQuitIntro;
     std::vector<plMoviePlayer*> fMovies;
 
-    plMessagePumpProc       fMessagePumpProc;
-    
 #ifndef PLASMA_EXTERNAL_RELEASE
     bool                    bPythonDebugConnected;
 #endif
@@ -222,7 +219,6 @@ protected:
     void IWriteDefaultGraphicsSettings(const plFileName& destFile);
 
     // These have platform-dependent implementations
-    void IResizeNativeDisplayDevice(int width, int height, bool windowed);
     void IChangeResolution(int width, int height);
     void IUpdateProgressIndicator(plOperationProgress* progress);
 
@@ -230,7 +226,7 @@ protected:
 
 public:
 
-    plClient();
+    plClient(plClientWindow* window);
     virtual ~plClient();
 
     CLASSNAME_REGISTER( plClient );
@@ -241,7 +237,7 @@ public:
     
     bool MsgReceive(plMessage* msg) override;
     
-    bool        InitPipeline(hsWindowHndl display, uint32_t devType = hsG3DDeviceSelector::kDevTypeUnknown);
+    bool        InitPipeline(uint32_t devType = hsG3DDeviceSelector::kDevTypeUnknown);
 
     void        InitInputs();
 
@@ -273,8 +269,7 @@ public:
     bool HasFlag(int f) const { return fFlags.IsBitSet(f); }
     void SetFlag(int f, bool on=true) { fFlags.SetBit(f, on); }
 
-    virtual plClient& SetWindowHandle(hsWindowHndl hndl) { fWindowHndl=hndl; return *this; }
-    hsWindowHndl    GetWindowHandle() { return fWindowHndl; }
+    hsWindowHndl GetWindowHandle() const;
 
     plInputManager*     GetInputManager() { return fInputManager; }
 
@@ -308,10 +303,8 @@ public:
     bool BeginGame();
 
     // These have platform-dependent implementations
-    void ShowClientWindow();
     void FlashWindow();
 
-    void SetMessagePumpProc(plMessagePumpProc proc) { fMessagePumpProc = proc; }
     void ResetDisplayDevice(int Width, int Height, int ColorDepth, bool Windowed, int NumAASamples, int MaxAnisotropicSamples, bool VSync = false);
     void ResizeDisplayDevice(int Width, int Height, bool Windowed);
 

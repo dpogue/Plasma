@@ -40,21 +40,32 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#include "plClient.h"
-#include "plClientLoader.h"
+#include "plClientWindow.h"
+#include "hsWindows.h"
 
-#include "plPipeline/hsG3DDeviceSelector.h"
-#include "plProgressMgr/plProgressMgr.h"
-
-// Stub all of these on non-Windows for now
-void plClient::IChangeResolution(int width, int height) {}
-void plClient::IUpdateProgressIndicator(plOperationProgress* progress) {}
-void plClient::FlashWindow() {}
-
-static plClientLoader gClient;
-
-// Stub main function so it compiles on non-Windows
-int main(int argc, const char** argv)
+class plWin32ClientWindow : public plClientWindow
 {
-    return 0;
-}
+private:
+    HINSTANCE fInst;
+    HWND fWnd;
+    HDC fDC;
+
+public:
+    plWin32ClientWindow(HINSTANCE inst) : plClientWindow(), fInst(inst), fWnd(), fDC() { }
+
+    bool PreInit() override;
+    bool CreateClientWindow() override;
+    void ShowClientWindow() override;
+    void ResizeClientWindow(uint16_t width, uint16_t height, bool windowed) override;
+    bool ProcessEvents() override;
+    void DeInit() override { }
+
+    std::optional<LRESULT> WndProc(UINT msg, WPARAM wParam, LPARAM lParam);
+
+    hsWindowHndl GetWindowHandle() const override {
+        return (hsWindowHndl)fWnd;
+    }
+    hsWindowHndl GetDisplayHandle() const override {
+        return (hsWindowHndl)fDC;
+    }
+};

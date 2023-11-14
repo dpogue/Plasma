@@ -55,6 +55,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsWindows.h"
 
 #include "plClient.h"
+#include "plClientWindow.h"
 
 #ifdef HS_BUILD_FOR_WIN32
 #   include "plWinDpi/plWinDpi.h"
@@ -175,14 +176,14 @@ bool plClient::fDelayMS = false;
 plClient* plClient::fInstance = nullptr;
 
 
-plClient::plClient()
-    : fPipeline(), fDone(), fQuitIntro(), fWindowHndl(),
+plClient::plClient(plClientWindow* window)
+    : fPipeline(), fDone(), fQuitIntro(), fWindow(window),
       fInputManager(), fConsole(), fCurrentNode(), fNewCamera(),
       fTransitionMgr(), fLinkEffectsMgr(), fProgressBar(),
       fGameGUIMgr(), fWindowActive(), fAnimDebugList(),
       fClampCap(-1), fQuality(), fPageMgr(), fFontCache(),
       fHoldLoadRequests(), fNumLoadingRooms(), fNumPostLoadMsgs(), fPostLoadMsgInc(),
-      fLastProgressUpdate(), fMessagePumpProc()
+      fLastProgressUpdate()
 {
     fClearColor.Set(0.f, 0.f, 0.f, 1.f);
 
@@ -233,6 +234,11 @@ plClient::~plClient()
     plClient::SetInstance(nullptr);
 
     delete fPageMgr;
+}
+
+hsWindowHndl plClient::GetWindowHandle() const
+{
+    return fWindow->GetWindowHandle();
 }
 
 template<typename T>
@@ -439,7 +445,7 @@ void plClient::InitAuxInits()
 void plClient::InitInputs()
 {
     hsStatusMessage("InitInputs client\n");
-    fInputManager = new plInputManager( fWindowHndl );
+    fInputManager = new plInputManager(fWindow->GetWindowHandle());
     fInputManager->CreateInterfaceMod(fPipeline);
     fInputManager->RegisterAs( kInput_KEY );
     plgDispatch::Dispatch()->RegisterForExactType(plIMouseXEventMsg::Index(), fInputManager->GetKey());
@@ -496,13 +502,13 @@ plPipeline* plClient::ICreatePipeline(hsWindowHndl disp, hsWindowHndl hWnd, cons
     return new plNullPipeline(disp, hWnd, devMode);
 }
 
-bool plClient::InitPipeline(hsWindowHndl display, uint32_t devType)
+bool plClient::InitPipeline(uint32_t devType)
 {
     hsStatusMessage("InitPipeline client\n");
 
     hsG3DDeviceModeRecord dmr;
     hsG3DDeviceSelector devSel;
-    devSel.Enumerate(fWindowHndl);
+    devSel.Enumerate(fWindow->GetWindowHandle());
     devSel.RemoveUnusableDevModes(true);
 
     if (!devSel.GetRequested(&dmr, devType))
@@ -550,7 +556,7 @@ bool plClient::InitPipeline(hsWindowHndl display, uint32_t devType)
         plBitmap::SetGlobalLevelChopCount(2 - plPipeline::fInitialPipeParams.TextureQuality);
     }
 
-    plPipeline *pipe = ICreatePipeline(display, fWindowHndl, &dmr);
+    plPipeline* pipe = ICreatePipeline(fWindow->GetDisplayHandle(), fWindow->GetWindowHandle(), &dmr);
     if (!pipe->GetErrorString().empty()) {
         ISetGraphicsDefaults();
 #ifdef PLASMA_EXTERNAL_RELEASE
@@ -560,7 +566,7 @@ bool plClient::InitPipeline(hsWindowHndl display, uint32_t devType)
 #endif
         delete pipe;
         devSel.GetDefault(&dmr);
-        pipe = ICreatePipeline(display, fWindowHndl, &dmr);
+        pipe = ICreatePipeline(fWindow->GetDisplayHandle(), fWindow->GetWindowHandle(), &dmr);
         if (!pipe->GetErrorString().empty()) {
             // not much else we can do
             return true;
@@ -803,7 +809,7 @@ bool plClient::MsgReceive(plMessage* msg)
             }
 #ifdef HS_BUILD_FOR_WIN32
             SetWindowPos(
-                fWindowHndl,
+                fWindow->GetWindowHandle(),
                 nullptr,
                 pDSChangedMsg->GetSuggestedLocation()->fLeft,
                 pDSChangedMsg->GetSuggestedLocation()->fTop,
@@ -1318,7 +1324,7 @@ void plClient::IProgressMgrCallbackProc(plOperationProgress * progress)
         return;
 
     fInstance->IUpdateProgressIndicator(progress);
-    fInstance->fMessagePumpProc();
+    fInstance->fWindow->ProcessEvents();
 
     // HACK HACK HACK HACK!
     // Yes, this is the ORIGINAL, EVIL famerate limit from plClient::IDraw (except I bumped it to 60fps)
@@ -1592,7 +1598,10 @@ bool plClient::MainLoop()
     // Draw the stats
     plProfileManagerFull::Instance().Update();
 
-    return false;
+    if (GetDone())
+        return true;
+
+    return fWindow->ProcessEvents();
 }
 
 plProfile_Extern(DrawTime);
@@ -1880,7 +1889,7 @@ bool plClient::IPlayIntroMovie(const char* movieName, float endDelay, float posX
         while (true)
         {
             if (fInstance)
-                fInstance->fMessagePumpProc();
+                fInstance->fWindow->ProcessEvents();
 
             if (GetDone())
                 return true;
@@ -2006,7 +2015,7 @@ void plClient::ResizeDisplayDevice(int Width, int Height, bool Windowed)
     if (!Windowed)
         IChangeResolution(Width, Height);
 
-    IResizeNativeDisplayDevice(Width, Height, Windowed);
+    fWindow->ResizeClientWindow(Width, Height, Windowed);
 }
 
 void WriteBool(hsStream *stream, const char *name, bool on )
@@ -2037,7 +2046,7 @@ void plClient::IDetectAudioVideoSettings()
     bool devmode = true;
     hsG3DDeviceModeRecord dmr;
     hsG3DDeviceSelector devSel;
-    devSel.Enumerate(fWindowHndl);
+    devSel.Enumerate(fWindow->GetWindowHandle());
     devSel.RemoveUnusableDevModes(true);
 
     if (!devSel.GetDefault(&dmr))
@@ -2058,8 +2067,8 @@ void plClient::IDetectAudioVideoSettings()
 #ifdef HS_BUILD_FOR_WIN32
     if(!plPipeline::fDefaultPipeParams.Windowed)
     {
-        plPipeline::fDefaultPipeParams.Width = plWinDpi::Instance().GetSystemMetrics(SM_CXSCREEN, fWindowHndl);
-        plPipeline::fDefaultPipeParams.Height = plWinDpi::Instance().GetSystemMetrics(SM_CYSCREEN, fWindowHndl);
+        plPipeline::fDefaultPipeParams.Width = plWinDpi::Instance().GetSystemMetrics(SM_CXSCREEN, fWindow->GetWindowHandle());
+        plPipeline::fDefaultPipeParams.Height = plWinDpi::Instance().GetSystemMetrics(SM_CYSCREEN, fWindow->GetWindowHandle());
     }
     else
 #endif
