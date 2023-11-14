@@ -49,6 +49,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <shellapi.h>
 
 #include "plClient.h"
+#include "plClientWindow.h"
 #include "plWinDpi/plWinDpi.h"
 
 #include "pnNetCommon/plNetApp.h"
@@ -56,45 +57,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 extern ITaskbarList3* gTaskbarList;
 
-void plClient::IResizeNativeDisplayDevice(int width, int height, bool windowed)
-{
-    uint32_t winStyle, winExStyle;
-    if (windowed) {
-        // WS_VISIBLE appears necessary to avoid leaving behind framebuffer junk when going from windowed to a smaller window
-        winStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE;
-        winExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-    } else {
-        winStyle = WS_VISIBLE;
-        winExStyle = WS_EX_APPWINDOW;
-    }
-    SetWindowLongPtr(fWindowHndl, GWL_STYLE, winStyle);
-    SetWindowLongPtr(fWindowHndl, GWL_EXSTYLE, winExStyle);
-
-    uint32_t flags = SWP_NOCOPYBITS | SWP_SHOWWINDOW | SWP_FRAMECHANGED;
-
-    // The window rect will be (left, top, width, height)
-    RECT winRect{ 0, 0, width, height };
-    if (windowed) {
-        if (GetClientRect(fWindowHndl, &winRect) != FALSE) {
-            MapWindowPoints(fWindowHndl, nullptr, reinterpret_cast<LPPOINT>(&winRect), 2);
-            winRect.right = winRect.left + width;
-            winRect.bottom = winRect.top + height;
-        }
-
-        UINT dpi = plWinDpi::Instance().GetDpi(fWindowHndl);
-        plWinDpi::Instance().AdjustWindowRectEx(&winRect, winStyle, false, winExStyle, dpi);
-
-        winRect.right = winRect.right - winRect.left;
-        winRect.bottom = winRect.bottom - winRect.top;
-    }
-    SetWindowPos(fWindowHndl, HWND_NOTOPMOST, winRect.left, winRect.top, winRect.right, winRect.bottom, flags);
-}
-
 void plClient::IChangeResolution(int width, int height)
 {
     // First, we need to be mindful that we may not be operating on the primary display device
     // I unfortunately cannot test this works as expected, but it will likely save us some cursing
-    HMONITOR monitor = MonitorFromWindow(fWindowHndl, MONITOR_DEFAULTTONULL);
+    HMONITOR monitor = MonitorFromWindow(fWindow->GetWindowHandle(), MONITOR_DEFAULTTONULL);
     if (!monitor)
         return;
     MONITORINFOEXW moninfo;
@@ -144,19 +111,12 @@ void plClient::IUpdateProgressIndicator(plOperationProgress* progress)
     }
 }
 
-// Show the client window
-void plClient::ShowClientWindow()
-{
-    ShowWindow(fWindowHndl, SW_SHOW);
-    BringWindowToTop(fWindowHndl);
-}
-
 void plClient::FlashWindow()
 {
     FLASHWINFO info;
     info.cbSize = sizeof(info);
     info.dwFlags = FLASHW_TIMERNOFG | FLASHW_ALL;
-    info.hwnd = fWindowHndl;
+    info.hwnd = fWindow->GetWindowHandle();
     info.uCount = -1;
     FlashWindowEx(&info);
 }
