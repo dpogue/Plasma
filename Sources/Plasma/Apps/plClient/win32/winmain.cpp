@@ -58,6 +58,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plClient.h"
 #include "plClientLoader.h"
+#include "plWin32ClientWindow.h"
 #include "res/resource.h"
 
 #include "pnEncryption/plChallengeHash.h"
@@ -143,6 +144,7 @@ static UINT             s_WmTaskbarList = RegisterWindowMessage("TaskbarButtonCr
 FILE *errFP = nullptr;
 HINSTANCE               gHInst = nullptr;      // Instance of this app
 
+static plClientWindow* gWindow = nullptr;
 static const unsigned   AUTH_LOGIN_TIMER    = 1;
 static const unsigned   AUTH_FAILED_TIMER   = 2;
 
@@ -383,19 +385,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
  
-void    PumpMessageQueueProc()
-{
-    MSG msg;
-
-    // Look for a message
-    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-    {
-        // Handle the message
-        TranslateMessage( &msg );
-        DispatchMessage( &msg );
-    }
-}
-
 void InitNetClientComm()
 {
     NetCommStartup();
@@ -1021,50 +1010,6 @@ uint32_t ParseRendererArgument(const ST::string& requested)
 
 PF_CONSOLE_LINK_ALL()
 
-bool WinInit(HINSTANCE hInst)
-{
-    // Initialize the DPI helpers
-    plWinDpi::Instance();
-
-    // Fill out WNDCLASS info
-    WNDCLASS wndClass;
-    wndClass.style = CS_DBLCLKS;   // CS_HREDRAW | CS_VREDRAW;
-    wndClass.lpfnWndProc = WndProc;
-    wndClass.cbClsExtra = 0;
-    wndClass.cbWndExtra = 0;
-    wndClass.hInstance = hInst;
-    wndClass.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_ICON_DIRT));
-
-    wndClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wndClass.hbrBackground = (struct HBRUSH__*) (GetStockObject(BLACK_BRUSH));
-    wndClass.lpszMenuName = CLASSNAME;
-    wndClass.lpszClassName = CLASSNAME;
-
-    // can only run one at a time anyway, so just quit if another is running
-    if (!RegisterClass(&wndClass))
-        return false;
-
-    int winBorderDX = plWinDpi::Instance().GetSystemMetrics(SM_CXSIZEFRAME);
-    int winBorderDY = plWinDpi::Instance().GetSystemMetrics(SM_CYSIZEFRAME);
-    int winMenuDY = plWinDpi::Instance().GetSystemMetrics(SM_CYCAPTION);
-
-    // Create a window
-    HWND hWnd = CreateWindow(
-        CLASSNAME, plProduct::LongName().c_str(),
-        WS_OVERLAPPEDWINDOW,
-        0, 0,
-        800 + winBorderDX * 2,
-        600 + winBorderDY * 2 + winMenuDY,
-        nullptr, nullptr, hInst, nullptr
-        );
-    HDC hDC = GetDC(hWnd);
-
-    gClient.SetClientWindow((hsWindowHndl)hWnd);
-    gClient.SetClientDisplay((hsWindowHndl)hDC);
-    gClient.Init();
-    return true;
-}
-
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
 {
     PF_CONSOLE_INIT_ALL()
@@ -1106,6 +1051,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     plFileName serverIni = "server.ini";
     if (cmdParser.IsSpecified(kArgServerIni))
         serverIni = cmdParser.GetString(kArgServerIni);
+
+    gWindow = new plWin32ClientWindow(hInst);
+    if (!gWindow->PreInit()) {
+        hsMessageBox(ST_LITERAL("Failed to initialize plClient"), ST_LITERAL("Error"), hsMessageBoxNormal);
+        return PARABLE_NORMAL_EXIT;
+    }
 
     // check to see if we were launched from the patcher
     bool eventExists = false;
@@ -1211,10 +1162,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     }
 
     // Begin initializing the client in the background
-    if (!WinInit(hInst)) {
+    if (!gWindow->CreateClientWindow()) {
         hsMessageBox(ST_LITERAL("Failed to initialize plClient"), ST_LITERAL("Error"), hsMessageBoxNormal);
         return PARABLE_NORMAL_EXIT;
     }
+
+    gClient.SetClientWindow(gWindow);
+    gClient.Init();
 
     NetCliAuthAutoReconnectEnable(false);
     InitNetClientComm();
@@ -1294,7 +1248,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
         if (gPendingActivate)
             gClient->WindowActivate(gPendingActivateFlag);
-        gClient->SetMessagePumpProc(PumpMessageQueueProc);
+
         gClient.Start();
 
         // PhysX installs its own exception handler somewhere in PhysXCore.dll. Unfortunately, this code appears to suck
@@ -1302,19 +1256,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         // donkey snot. This can be removed when PhysX is replaced.
         SetUnhandledExceptionFilter(plCustomUnhandledExceptionFilter);
 
-        MSG msg;
-        do {
-            gClient->MainLoop();
-            if (gClient->GetDone())
-                break;
+        while (true) {
+            bool isDone = gClient->MainLoop();
 
-            // Look for a message
-            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-                // Handle the message
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-        } while (WM_QUIT != msg.message);
+            if (isDone)
+                break;
+        }
     }
 
     gClient.ShutdownEnd();
