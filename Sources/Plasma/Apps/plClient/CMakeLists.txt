@@ -58,6 +58,7 @@ set(plClient_HEADERS
     plClientCreatable.h
     plClientLoader.h
     plClientUpdateFormat.h
+    plClientWindow.h
 )
 
 set(plClient_SOURCES
@@ -76,8 +77,12 @@ set(plClient_TEXT
 )
 
 if(WIN32)
+    list(APPEND plClient_HEADERS
+        win32/plWin32ClientWindow.h
+    )
     list(APPEND plClient_SOURCES
         win32/plClient_Win.cpp
+        win32/plWin32ClientWindow.cpp
         win32/winmain.cpp
     )
     list(APPEND plClient_RESOURCES
@@ -121,7 +126,12 @@ elseif(APPLE)
         pfMetalPipelineShadersMSL23
     )
 elseif(UNIX AND NOT APPLE)
+    list(APPEND plClient_HEADERS
+        linux/plX11ClientWindow.h
+    )
+
     list(APPEND plClient_SOURCES
+        linux/plX11ClientWindow.cpp
         linux/main.cpp
     )
 else()
@@ -249,17 +259,6 @@ target_link_libraries(
         $<$<PLATFORM_ID:Darwin>:${LibArchive_LIBRARIES}>
 )
 target_include_directories(plClient PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-
-if(UNIX AND NOT APPLE)
-    target_link_libraries(
-        plClient
-        PRIVATE
-            xcb
-            xcb-xfixes
-            xcb-keysyms
-            X11
-    )
-endif()
 
 if(PLASMA_EXTERNAL_RELEASE)
     set_target_properties(plClient PROPERTIES OUTPUT_NAME "UruExplorer")

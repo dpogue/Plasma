@@ -66,6 +66,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 // Plasma engine
 #include "plClient/plClient.h"
 #include "plClient/plClientLoader.h"
+#include "plClient/plClientWindow.h"
 #include "plCmdParser.h"
 #include "pfConsoleCore/pfConsoleEngine.h"
 #include "pfGameGUIMgr/pfGameGUIMgr.h"
@@ -119,7 +120,7 @@ std::vector<ST::string> args;
 
 @end
 
-void plClient::IResizeNativeDisplayDevice(int width, int height, bool windowed)
+void /*plClient::*/IResizeNativeDisplayDevice(int width, int height, bool windowed)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
         AppDelegate* appDelegate = (AppDelegate*)[NSApp delegate];
@@ -132,7 +133,6 @@ void plClient::IResizeNativeDisplayDevice(int width, int height, bool windowed)
 }
 void plClient::IChangeResolution(int width, int height) {}
 void plClient::IUpdateProgressIndicator(plOperationProgress* progress) {}
-void plClient::ShowClientWindow() {}
 void plClient::FlashWindow()
 {
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -195,9 +195,6 @@ static void* const DeviceDidChangeContext = (void*)&DeviceDidChangeContext;
     self.plsView = view;
     window.contentView = view;
     [window setDelegate:self];
-    
-    gClient.SetClientWindow((__bridge void *)view.layer);
-    gClient.SetClientDisplay((hsWindowHndl)NULL);
 
     self = [super initWithWindow:window];
     self.window.acceptsMouseMovedEvents = YES;
@@ -219,7 +216,6 @@ dispatch_queue_t loadingQueue = dispatch_queue_create("", DISPATCH_QUEUE_SERIAL)
         if (cmdParser.IsSpecified(kArgSkipIntroMovies))
             gClient->SetFlag(plClient::kFlagSkipIntroMovies);
         gClient->WindowActivate(TRUE);
-        gClient->SetMessagePumpProc(PumpMessageQueueProc);
         gClient.Start();
     });
 
@@ -490,12 +486,16 @@ dispatch_queue_t loadingQueue = dispatch_queue_create("", DISPATCH_QUEUE_SERIAL)
     [self.window center];
     [self.window makeKeyAndOrderFront:self];
     self.renderLayer = self.window.contentView.layer;
-    
+
     [self.renderLayer addObserver:self
                        forKeyPath:@"device"
                           options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial
                           context:DeviceDidChangeContext];
-    
+
+    plStubClientWindow* cwnd = new plStubClientWindow((hsWindowHndl)(__bridge void*)self.window, (hsWindowHndl)nullptr);
+    cwnd->SetMessagePumpProc(PumpMessageQueueProc);
+    gClient.SetClientWindow(cwnd);
+
     if (!gClient) {
         exit(0);
     }

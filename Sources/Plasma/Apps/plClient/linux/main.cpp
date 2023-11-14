@@ -48,14 +48,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <regex>
 #include <termios.h>
 #include <unistd.h>
-#include <xcb/xcb.h>
-#include <xcb/xcb_keysyms.h>
-#include <xcb/xfixes.h>
-#include <xcb/xproto.h>
-#include <X11/Xlib-xcb.h>
-
-// Undefine the problematic X11 stuff
-#undef Status
 
 #include "HeadSpin.h"
 #include "plCmdParser.h"
@@ -66,6 +58,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plClient.h"
 #include "plClientLoader.h"
+#include "plX11ClientWindow.h"
 
 #include "pnEncryption/plChallengeHash.h"
 
@@ -88,10 +81,11 @@ extern bool gPythonLocal;
 extern bool gSDLLocal;
 
 static plClientLoader gClient;
-static xcb_connection_t* gXConn;
-static xcb_key_symbols_t* keysyms;
-static pcSmallRect gWindowSize;
-static bool gHasXFixes = false;
+static plClientWindow* gWindow = nullptr;
+//static xcb_connection_t* gXConn;
+//static xcb_key_symbols_t* keysyms;
+//static pcSmallRect gWindowSize;
+//static bool gHasXFixes = false;
 static hsSemaphore statusFlag;
 
 enum
@@ -161,28 +155,8 @@ static void DebugInit()
 }
 
 // Stub all of these on non-Windows for now
-void plClient::IResizeNativeDisplayDevice(int width, int height, bool windowed)
-{
-    hsStatusMessage(ST::format("Setting window size to {}×{}", width, height).c_str());
-
-    const uint32_t values[] = { uint32_t(width), uint32_t(height) };
-    xcb_configure_window(gXConn, (xcb_window_t)(uintptr_t)fWindowHndl,
-            XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT,
-            values);
-
-    gWindowSize.fWidth = width;
-    gWindowSize.fHeight = height;
-}
-
 void plClient::IChangeResolution(int width, int height) {}
 void plClient::IUpdateProgressIndicator(plOperationProgress* progress) {}
-
-void plClient::ShowClientWindow() {
-    /* Map the window on the screen */
-    xcb_map_window(gXConn, (xcb_window_t)(uintptr_t)fWindowHndl);
-    xcb_flush(gXConn);
-}
-
 void plClient::FlashWindow() {}
 
 
@@ -372,79 +346,9 @@ static uint32_t ParseRendererArgument(const ST::string& requested)
     return hsG3DDeviceSelector::kDevTypeUnknown;
 }
 
-static bool XInit(xcb_connection_t* connection)
-{
-    gWindowSize.Set(0, 0, 800, 600);
-
-    /* Get the X11 key mappings */
-    keysyms = xcb_key_symbols_alloc(connection);
-
-    /* Get the first screen */
-    const xcb_setup_t* setup = xcb_get_setup(connection);
-    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
-    xcb_screen_t* screen = iter.data;
-
-    /* Check for XFixes support for hiding the cursor */
-    const xcb_query_extension_reply_t* qe_reply = xcb_get_extension_data(gXConn, &xcb_xfixes_id);
-    if (qe_reply && qe_reply->present)
-    {
-        /* We *must* negotiate the XFixes version with the server */
-        xcb_xfixes_query_version_cookie_t qv_cookie = xcb_xfixes_query_version(gXConn, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
-        xcb_xfixes_query_version_reply_t* qv_reply = xcb_xfixes_query_version_reply(gXConn, qv_cookie, nullptr);
-
-//#ifndef HS_DEBUGGING // Don't hide the cursor when debugging
-        gHasXFixes = qv_reply->major_version >= 4;
-//#endif
-
-        free(qv_reply);
-    }
-
-    const uint32_t event_mask = XCB_EVENT_MASK_EXPOSURE
-                              | XCB_EVENT_MASK_KEY_PRESS
-                              | XCB_EVENT_MASK_KEY_RELEASE
-                              | XCB_EVENT_MASK_POINTER_MOTION
-                              | XCB_EVENT_MASK_BUTTON_PRESS
-                              | XCB_EVENT_MASK_BUTTON_RELEASE
-                              | XCB_EVENT_MASK_ENTER_WINDOW
-                              | XCB_EVENT_MASK_LEAVE_WINDOW
-                              | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
-
-    /* Create the window */
-    xcb_window_t window = xcb_generate_id(connection);
-    xcb_create_window(connection,                    /* Connection          */
-                      XCB_COPY_FROM_PARENT,          /* depth (same as root)*/
-                      window,                        /* window Id           */
-                      screen->root,                  /* parent window       */
-                      /* x, y                */
-                      gWindowSize.fX, gWindowSize.fY,
-                      /* width, height       */
-                      gWindowSize.fWidth, gWindowSize.fHeight,
-                      10,                            /* border_width        */
-                      XCB_WINDOW_CLASS_INPUT_OUTPUT, /* class               */
-                      screen->root_visual,           /* visual              */
-                      XCB_CW_EVENT_MASK,             /* masks               */
-                      &event_mask);                  /* masks               */
-
-    const char* title = ST::format("{}", plProduct::LongName()).c_str();
-    xcb_change_property(connection,
-                        XCB_PROP_MODE_REPLACE,
-                        window,
-                        XCB_ATOM_WM_NAME,
-                        XCB_ATOM_STRING,
-                        8,
-                        strlen(title),
-                        title);
-
-    Display* display = XOpenDisplay(nullptr);
-
-    gClient.SetClientWindow((hsWindowHndl)(uintptr_t)window);
-    gClient.SetClientDisplay((hsWindowHndl)display);
-    gClient.Init();
-    return true;
-}
-
 static void PumpMessageQueueProc()
 {
+#if 0
     static const unsigned char KEYCODE_LINUX_TO_HID[256] = {
         0,41,30,31,32,33,34,35,36,37,38,39,45,46,42,43,20,26,8,21,23,28,24,12,18,19,
         47,48,158,224,4,22,7,9,10,11,13,14,15,51,52,53,225,49,29,27,6,25,5,17,16,54,
@@ -643,9 +547,9 @@ static void PumpMessageQueueProc()
 
         free(event);
     }
+#endif
 }
 
-// Stub main function so it compiles on non-Windows
 int main(int argc, const char** argv)
 {
     PF_CONSOLE_INIT_ALL();
@@ -689,6 +593,12 @@ int main(int argc, const char** argv)
     if (cmdParser.IsSpecified(kArgServerIni))
         serverIni = cmdParser.GetString(kArgServerIni);
 
+    gWindow = new plX11ClientWindow();
+    if (!gWindow->PreInit()) {
+        hsMessageBox(ST_LITERAL("Failed to pre-initialize plClient"), ST_LITERAL("Error"), hsMessageBoxNormal);
+        return 1;
+    }
+
     // Load an optional general.ini
     plFileName gipath = plFileName::Join(plFileSystem::GetInitPath(), "general.ini");
     FILE *generalini = plFileSystem::Open(gipath, "rb");
@@ -712,22 +622,17 @@ int main(int argc, const char** argv)
     }
     else
     {
-        hsMessageBox("No server.ini file found.  Please check your URU installation.", "Error", hsMessageBoxNormal);
+        hsMessageBox(ST_LITERAL("No server.ini file found.  Please check your URU installation."), ST_LITERAL("Error"), hsMessageBoxNormal);
         return 1;
     }
 
-    if (!XInitThreads()) {
-        hsMessageBox("Failed to initialize plClient", "Error", hsMessageBoxNormal);
+    if (!gWindow->CreateClientWindow()) {
+        hsMessageBox(ST_LITERAL("Failed to initialize plClient"), ST_LITERAL("Error"), hsMessageBoxNormal);
         return 1;
     }
 
-    /* Open the connection to the X server */
-    gXConn = xcb_connect(nullptr, nullptr);
-
-    if (!XInit(gXConn)) {
-        hsMessageBox("Failed to initialize plClient", "Error", hsMessageBoxNormal);
-        return 1;
-    }
+    gClient.SetClientWindow(gWindow);
+    gClient.Init();
 
     NetCliAuthAutoReconnectEnable(false);
     NetCommStartup();
@@ -739,8 +644,6 @@ int main(int argc, const char** argv)
         gClient.ShutdownStart();
         gClient.ShutdownEnd();
         NetCommShutdown();
-
-        xcb_disconnect(gXConn);
 
         return 0;
     }
@@ -763,24 +666,20 @@ int main(int argc, const char** argv)
         if (cmdParser.IsSpecified(kArgSkipIntroMovies))
             gClient->SetFlag(plClient::kFlagSkipIntroMovies);
 
-        gClient->SetMessagePumpProc(PumpMessageQueueProc);
         gClient.Start();
 
-        do {
-            gClient->MainLoop();
-            if (gClient->GetDone()) {
+        while (true) {
+            bool isDone = gClient->MainLoop();
+
+            if (isDone) {
                 gClient.ShutdownStart();
                 break;
             }
-
-            PumpMessageQueueProc();
-        } while (true);
+        }
     }
 
     gClient.ShutdownEnd();
     NetCommShutdown();
-
-    xcb_disconnect(gXConn);
 
     return 0;
 }
