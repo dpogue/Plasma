@@ -51,6 +51,8 @@ if(_HOST_IS_WINDOWS AND NOT DEFINED VCPKG_TARGET_TRIPLET)
         set(VCPKG_TARGET_TRIPLET "x86-windows-plasma" CACHE STRING "")
     elseif(CMAKE_GENERATOR_PLATFORM MATCHES "[Xx]64")
         set(VCPKG_TARGET_TRIPLET "x64-windows-plasma" CACHE STRING "")
+    elseif(CMAKE_GENERATOR_PLATFORM MATCHES "[Aa][Rr][Mm]64")
+        set(VCPKG_TARGET_TRIPLET "arm64-windows-plasma" CACHE STRING "")
     elseif(NOT CMAKE_GENERATOR_PLATFORM)
         # This is probably the Ninja generator. Unfortunately, we can't try_compile() anything
         # right now, so we'll just steal part of the vcpkg toolchain to maybe guess the triplet.
