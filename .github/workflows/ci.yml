@@ -101,6 +101,13 @@ jobs:
         run: |
           cmake --build build --target check --config "${{ matrix.cfg.type }}" -j 2
 
+      - name: vcpkg logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: vcpkg-logs-${{ matrix.platform.str }}-${{ matrix.cfg.str }}
+          path: vcpkg/buildtrees/libffi/*.log
+
   max:
     # Can only run if we have a token for our super seekrit Max SDK repo. Sad.
     needs: ["max-secrets"]
