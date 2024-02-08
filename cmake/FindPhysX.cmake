@@ -79,14 +79,8 @@ set(_PHYSX_PVD_LIBRARY_NAMES
 )
 
 # Stoopid vcpkg build debug and optimized libraries with the same name but in different directories.
-foreach(prefix_path IN LISTS CMAKE_PREFIX_PATH)
-    if(${prefix_path} MATCHES "[Dd][Ee][Bb][Uu][Gg]\/?$")
-        list(APPEND _PHYSX_DEBUG_PATHS ${prefix_path})
-    else()
-        list(APPEND _PHYSX_RELEASE_PATHS ${prefix_path})
-    endif()
-    list(APPEND _PHYSX_PREFIX ${prefix_path})
-endforeach()
+set(_PHYSX_DEBUG_PATHS "lib" "debug/lib")
+set(_PHYSX_RELEASE_PATHS "lib")
 
 # For non-vcpkg builds... *Gulp*
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -123,26 +117,22 @@ elseif(NOT VCPKG_TOOLCHAIN)
 endif()
 
 if(_PHYSX_DIR)
-    foreach(prefix_path ${CMAKE_PREFIX_PATH})
-        if(_PHYSX_BIN_DIR)
-            list(APPEND _PHYSX_DEBUG_PATHS "${prefix_path}/${_PHYSX_DIR}/PhysX/bin/${_PHYSX_BIN_DIR}/debug")
-            list(APPEND _PHYSX_RELEASE_PATHS "${prefix_path}/${_PHYSX_DIR}/PhysX/bin/${_PHYSX_BIN_DIR}/release")
-        elseif(NOT VCPKG_TOOLCHAIN)
-            list(APPEND _PHYSX_DEBUG_PATHS ${prefix_path})
-            list(APPEND _PHYSX_RELEASE_PATHS ${prefix_path})
-        endif()
-        list(APPEND _PHYSX_PREFIX "${prefix_path}/${_PHYSX_DIR}/PhysX")
-        list(APPEND _PHYSX_PREFIX "${prefix_path}/${_PHYSX_DIR}/PxShared")
-    endforeach()
-elseif(NOT VCPKG_TOOLCHAIN)
-    set(_PHYSX_DEBUG_PATHS ${CMAKE_PREFIX_PATH})
-    set(_PHYSX_RELEASE_PATHS ${CMAKE_PREFIX_PATH})
+    if(_PHYSX_BIN_DIR)
+        list(APPEND _PHYSX_DEBUG_PATHS "${_PHYSX_DIR}/PhysX/bin/${_PHYSX_BIN_DIR}/debug")
+        list(APPEND _PHYSX_RELEASE_PATHS "${_PHYSX_DIR}/PhysX/bin/${_PHYSX_BIN_DIR}/release")
+    endif()
+
+    set(_PHYSX_PATHS
+        "include"
+        "include/physx"
+        "${_PHYSX_DIR}/PhysX/include"
+        "${_PHYSX_DIR}/PxShared/include"
+        "${_PHYSX_DIR}/PxShared/include"
+    )
 endif()
 
 find_path(PHYSX_INCLUDE_DIR NAMES PxPhysicsAPI.h
-          PATHS ${_PHYSX_PREFIX}
-          PATH_SUFFIXES include/physx include
-          NO_CMAKE_PATH
+          PATH_SUFFIXES ${_PHYSX_PATHS}
 )
 mark_as_advanced(PHYSX_INCLUDE_DIR)
 
@@ -151,9 +141,7 @@ mark_as_advanced(PHYSX_INCLUDE_DIR)
 if(PHYSX_INCLUDE_DIR)
     if(NOT EXISTS ${PHYSX_INCLUDE_DIR}/foundation/Px.h)
         find_path(PHYSX_FOUNDATION_INCLUDE_DIR NAMES foundation/Px.h
-                  PATHS ${_PHYSX_PREFIX}
-                  PATH_SUFFIXES include/physx include
-                  NO_CMAKE_PATHS
+                  PATH_SUFFIXES ${_PHYSX_PATHS}
         )
         mark_as_advanced(PHYSX_FOUNDATION_INCLUDE_DIR)
     else()
@@ -170,15 +158,13 @@ macro(_find_physx_library SUFFIX)
 
     find_library(${VAR_NAME}_LIBRARY_RELEASE
                  NAMES ${_${VAR_NAME}_LIBRARY_NAMES}
-                 PATHS ${_PHYSX_RELEASE_PATHS}
-                 PATH_SUFFIXES lib
-                 NO_CMAKE_PATH
+                 NAMES_PER_DIR
+                 PATH_SUFFIXES ${_PHYSX_RELEASE_PATHS}
     )
     find_library(${VAR_NAME}_LIBRARY_DEBUG
                  NAMES ${_${VAR_NAME}_LIBRARY_NAMES}
-                 PATHS ${_PHYSX_DEBUG_PATHS}
-                 PATH_SUFFIXES lib
-                 NO_CMAKE_PATH
+                 NAMES_PER_DIR
+                 PATH_SUFFIXES ${_PHYSX_DEBUG_PATHS}
     )
     select_library_configurations(${VAR_NAME})
 
