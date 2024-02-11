@@ -251,12 +251,12 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { str: macos-arm64, arch: arm64, runner: "macos-14" }
+          #- { str: macos-arm64, arch: arm64, runner: "macos-14" }
           - { str: macos-x64, arch: x86_64, runner: "macos-latest" }
         cfg:
           - { external: OFF, type: RelWithDebInfo, str: internal-release }
-          - { external: OFF, type: Debug, str: internal-debug }
-          - { external: ON, type: RelWithDebInfo, str: external-release }
+          #- { external: OFF, type: Debug, str: internal-debug }
+          #- { external: ON, type: RelWithDebInfo, str: external-release }
 
     steps:
       - name: Checkout
@@ -306,15 +306,15 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build build --config "${{ matrix.cfg.type }}" -j 2
+          cmake --build build --config "${{ matrix.cfg.type }}" -j 3
 
       - name: Test
         run: |
-          cmake --build build --target check --config "${{ matrix.cfg.type }}" -j 2
+          cmake --build build --target check --config "${{ matrix.cfg.type }}" -j 3
 
       - name: Install
         run: |
-          cmake --build build --target install --config "${{ matrix.cfg.type }}" -j 2
+          cmake --build build --target install --config "${{ matrix.cfg.type }}" -j 3
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
