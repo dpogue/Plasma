@@ -47,14 +47,6 @@ jobs:
           token: ${{ secrets.MACHINE_USER_REPO_READ }}
           path: maxsdk
 
-      - name: Install Qt
-        continue-on-error: true
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: ${{ matrix.platform.qt-version }}
-          arch: ${{ matrix.platform.qt-arch }}
-          dir: ${{ github.workspace }}/qt
-
       - name: Setup NuGet
         run: |
           nuget sources add `
@@ -78,6 +70,7 @@ jobs:
             -DPLASMA_EXTERNAL_RELEASE=${{ matrix.cfg.external }} `
             -D3dsm_PATH="${{ github.workspace }}/maxsdk/${{ matrix.platform.max-version }}" `
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build `
+            -DVCPKG_MANIFEST_FEATURES=qt5-tools `
             -S . -B build
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
@@ -86,19 +79,19 @@ jobs:
         run: |
           cmake --build build --config "${{ matrix.cfg.type }}" -j 4
 
+      - name: Test
+        run: |
+          cmake --build build --target check --config "${{ matrix.cfg.type }}" -j 4
+
       - name: Install
         run: |
           cmake --build build --target INSTALL --config "${{ matrix.cfg.type }}" -j 4
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: plasma-${{ matrix.platform.str }}-${{ matrix.cfg.str }}
           path: build/install
-
-      - name: Test
-        run: |
-          cmake --build build --target check --config "${{ matrix.cfg.type }}" -j 4
 
   max:
     # Can only run if we have a token for our super seekrit Max SDK repo. Sad.
@@ -164,7 +157,7 @@ jobs:
           cmake --build build --target INSTALL --config Release -j 4
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: plasma-${{ matrix.cfg.str }}-max-${{ matrix.cfg.sdk-version }}
           path: build/install
@@ -192,11 +185,18 @@ jobs:
               autoconf \
               cmake \
               libcairo2 \
+              libgl1-mesa-dev \
               libsecret-1-dev \
               libtool \
+              libx11-xcb-dev \
+              '^libxcb.*-dev' \
+              libxi-dev \
+              libxkbcommon-dev \
+              libxkbcommon-x11-dev \
+              libxrender-dev \
               nasm \
-              ninja-build \
-              qtbase5-dev
+              ninja-build
+
 
       - name: Setup NuGet
         run: |
@@ -221,6 +221,7 @@ jobs:
             -DPLASMA_BUILD_TOOLS=ON \
             -DPLASMA_EXTERNAL_RELEASE=${{ matrix.cfg.external }} \
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build \
+            -DVCPKG_MANIFEST_FEATURES=qt5-tools \
             -S . -B build
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
@@ -238,7 +239,7 @@ jobs:
           cmake --build build --target install -j 4
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: plasma-${{ matrix.platform.str }}-${{ matrix.cfg.str }}
           path: build/install
@@ -264,7 +265,6 @@ jobs:
       - name: Install dependencies
         run: |
           brew install \
-              qt@5 \
               autoconf \
               automake \
               libtool \
@@ -298,8 +298,8 @@ jobs:
             -DPLASMA_BUILD_TESTS=ON \
             -DPLASMA_BUILD_TOOLS=ON \
             -DPLASMA_EXTERNAL_RELEASE=${{ matrix.cfg.external }} \
-            -DQt5_ROOT=$(brew --prefix qt@5) \
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build \
+            -DVCPKG_MANIFEST_FEATURES=qt5-tools \
             -S . -B build
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
@@ -309,7 +309,6 @@ jobs:
           cmake --build build --config "${{ matrix.cfg.type }}" -j 2
 
       - name: Test
-        if: matrix.platform.arch == 'x86_64'
         run: |
           cmake --build build --target check --config "${{ matrix.cfg.type }}" -j 2
 
@@ -318,7 +317,7 @@ jobs:
           cmake --build build --target install --config "${{ matrix.cfg.type }}" -j 2
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: plasma-${{ matrix.platform.str }}-${{ matrix.cfg.str }}
           path: build/install

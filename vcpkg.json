@@ -52,6 +52,12 @@
             "host": true
           }
         ]
+      },
+      "qt5-tools": {
+        "description": "Installs Qt5 with vcpkg for building tools.",
+        "dependencies": [
+          "qt5-base"
+        ]
       }
     },
     "builtin-baseline": "53bef8994c541b6561884a8395ea35715ece75db",

@@ -8,6 +8,7 @@ set(_PLASMA_DYNAMIC_LIBRARIES
     cairo
     python2
     python3
+    qt5-base
 )
 
 cmake_policy(SET CMP0057 NEW)
