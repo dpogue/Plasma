@@ -48,12 +48,15 @@ class plDetectorLog
 {
     static plStatusLog* fLog;
 
+    static void EnsureLogInit();
+
 public:
     static void Output();
 
     template<typename... _Args>
     static void Log(const char* format, _Args&&... args)
     {
+        EnsureLogInit();
         if (fLog)
             fLog->AddLineF(format, std::forward<_Args>(args)...);
     }
@@ -61,6 +64,7 @@ public:
     template<typename... _Args>
     static void Special(const char* format, _Args&&... args)
     {
+        EnsureLogInit();
         if (fLog)
             fLog->AddLineF(plStatusLog::kGreen, format, std::forward<_Args>(args)...);
     }
@@ -68,6 +72,7 @@ public:
     template<typename... _Args>
     static void Red(const char* format, _Args&&... args)
     {
+        EnsureLogInit();
         if (fLog)
             fLog->AddLineF(plStatusLog::kRed, format, std::forward<_Args>(args)...);
     }
@@ -75,6 +80,7 @@ public:
     template<typename... _Args>
     static void Yellow(const char* format, _Args&&... args)
     {
+        EnsureLogInit();
         if (fLog)
             fLog->AddLineF(plStatusLog::kYellow, format, std::forward<_Args>(args)...);
     }
