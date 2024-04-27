@@ -42,15 +42,21 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plDetectorLog.h"
 
-#ifdef PLASMA_EXTERNAL_RELEASE
 plStatusLog* plDetectorLog::fLog = nullptr;
-#else
-plStatusLog* plDetectorLog::fLog = plStatusLogMgr::GetInstance().CreateStatusLog(
-    20,
-    "Detector.log",
-    plStatusLog::kFilledBackground | plStatusLog::kDeleteForMe |
-    plStatusLog::kDontWriteFile | plStatusLog::kAlignToTop);
+
+void plDetectorLog::EnsureLogInit()
+{
+    if (fLog)
+        return;
+
+#ifndef PLASMA_EXTERNAL_RELEASE
+    fLog = plStatusLogMgr::GetInstance().CreateStatusLog(
+        20,
+        "Detector.log",
+        plStatusLog::kFilledBackground | plStatusLog::kDeleteForMe |
+        plStatusLog::kDontWriteFile | plStatusLog::kAlignToTop);
 #endif
+}
 
 void plDetectorLog::Output()
 {
