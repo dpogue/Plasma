@@ -122,6 +122,14 @@ public:
     void CheckStaticVertexBuffer(VertexBufferRef* vRef, plGBufferGroup* owner, uint32_t idx);
     void FillStaticVertexBufferRef(VertexBufferRef* ref, plGBufferGroup* group, uint32_t idx);
     void FillVolatileVertexBufferRef(VertexBufferRef* ref, plGBufferGroup* group, uint32_t idx);
+
+    /**
+     * Only software skinned objects, dynamic decals, and particle systems
+     * currently use the dynamic vertex buffer.
+     */
+    void RefreshDynamicVertexBufferRef(VertexBufferRef* ref, plGBufferGroup* group);
+
+    void FillGLVertexBuffer(VertexBufferRef* ref, GLsizeiptr size, const void* data, GLenum usage);
     void SetupIndexBufferRef(plGBufferGroup* owner, uint32_t idx, IndexBufferRef* iRef);
     void CheckIndexBuffer(IndexBufferRef* iRef);
     void FillIndexBufferRef(IndexBufferRef* iRef, plGBufferGroup* owner, uint32_t idx);

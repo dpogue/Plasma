@@ -99,6 +99,11 @@ plGLVertexBufferRef::~plGLVertexBufferRef()
 
 void plGLVertexBufferRef::Release()
 {
+    if (plGLVersion() >= 30 && fRefVAO) {
+        glDeleteVertexArrays(1, &fRefVAO);
+        fRefVAO = 0;
+    }
+
     if (fRef) {
         glDeleteBuffers(1, &fRef);
         fRef = 0;

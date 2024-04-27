@@ -752,13 +752,6 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const std::vector<int16_t>&
             fDevice.SetCurrentProgram(mRef->fRef);
             LOG_GL_ERROR_CHECK(ST::format("Use Program with material \"{}\" failed", material->GetKeyName()));
 
-            GLuint vao = 0;
-            if (plGLVersion() >= 30) {
-                // TODO: Figure out how to use VAOs properly :(
-                glGenVertexArrays(1, &vao);
-                glBindVertexArray(vao);
-            }
-
             // What do we change?
 
             plProfile_BeginTiming(SpanTransforms);
@@ -783,9 +776,6 @@ void plGLPipeline::RenderSpans(plDrawableSpans* ice, const std::vector<int16_t>&
                                 material,
                                 tempIce.fVStartIdx, tempIce.fVLength,   // These are used as our accumulated range
                                 tempIce.fIPackedIdx, tempIce.fILength );
-
-            if (plGLVersion() >= 30)
-                glDeleteVertexArrays(1, &vao);
         }
 
         // Restart our search...
@@ -857,56 +847,66 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span,
         return;
     }
 
+    if (vRef->Volatile())
+        return;
+
     LOG_GL_ERROR_CHECK("PRE Render failed");
 
     hsRefCnt_SafeAssign(fCurrMaterial, material);
     mRef->SetupTextureRefs();
 
-    /* Vertex Buffer stuff */
-    glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
+    if (plGLVersion() >= 30) {
+        glBindVertexArray(vRef->fRefVAO);
 
-    glEnableVertexAttribArray(kVtxPosition);
-    glVertexAttribPointer(kVtxPosition, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, 0);
+        LOG_GL_ERROR_CHECK("Vertex Array Bind failed")
+    } else {
+        /* Vertex Buffer stuff */
+        glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
 
-    size_t weight_offset = 0;
-    switch (vRef->fFormat & plGBufferGroup::kSkinWeightMask)
-    {
-        case plGBufferGroup::kSkinNoWeights:
-            break;
-        case plGBufferGroup::kSkin1Weight:
-            weight_offset += sizeof(float);
-            break;
-        case plGBufferGroup::kSkin2Weights:
-            weight_offset += sizeof(float) * 2;
-            break;
-        case plGBufferGroup::kSkin3Weights:
-            weight_offset += sizeof(float) * 3;
-            break;
-        default:
-            hsAssert( false, "Bad skin weight value in GBufferGroup" );
+        glEnableVertexAttribArray(kVtxPosition);
+        glVertexAttribPointer(kVtxPosition, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, (void*)(sizeof(float) * 0));
+
+        size_t weight_offset = 0;
+        switch (vRef->fFormat & plGBufferGroup::kSkinWeightMask)
+        {
+            case plGBufferGroup::kSkinNoWeights:
+                break;
+            case plGBufferGroup::kSkin1Weight:
+                weight_offset += sizeof(float);
+                break;
+            case plGBufferGroup::kSkin2Weights:
+                weight_offset += sizeof(float) * 2;
+                break;
+            case plGBufferGroup::kSkin3Weights:
+                weight_offset += sizeof(float) * 3;
+                break;
+            default:
+                hsAssert( false, "Bad skin weight value in GBufferGroup" );
+        }
+
+        if (vRef->fFormat & plGBufferGroup::kSkinIndices) {
+            weight_offset += sizeof(uint32_t);
+        }
+
+        glEnableVertexAttribArray(kVtxNormal);
+        glVertexAttribPointer(kVtxNormal, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, (void*)((sizeof(float) * 3) + weight_offset));
+
+        glEnableVertexAttribArray(kVtxColor);
+        glVertexAttribPointer(kVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, vRef->fVertexSize, (void*)((sizeof(float) * 3 * 2) + weight_offset));
+
+        int numUVs = vRef->fOwner->GetNumUVs();
+        for (int i = 0; i < numUVs; i++) {
+            glEnableVertexAttribArray(kVtxUVWSrc + i);
+            glVertexAttribPointer(kVtxUVWSrc + i, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, (void*)((sizeof(float) * 3 * 2) + (sizeof(uint32_t) * 2) + (sizeof(float) * 3 * i) + weight_offset));
+        }
+
+        LOG_GL_ERROR_CHECK("Vertex Attributes failed")
+
+        /* Index Buffer stuff */
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
     }
 
-    if (vRef->fFormat & plGBufferGroup::kSkinIndices) {
-        weight_offset += sizeof(uint32_t);
-    }
-
-    glEnableVertexAttribArray(kVtxNormal);
-    glVertexAttribPointer(kVtxNormal, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, (void*)((sizeof(float) * 3) + weight_offset));
-
-    glEnableVertexAttribArray(kVtxColor);
-    glVertexAttribPointer(kVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, vRef->fVertexSize, (void*)((sizeof(float) * 3 * 2) + weight_offset));
-
-    int numUVs = vRef->fOwner->GetNumUVs();
-    for (int i = 0; i < numUVs; i++) {
-        glEnableVertexAttribArray(kVtxUVWSrc + i);
-        glVertexAttribPointer(kVtxUVWSrc + i, 3, GL_FLOAT, GL_FALSE, vRef->fVertexSize, (void*)((sizeof(float) * 3 * 2) + (sizeof(uint32_t) * 2) + (sizeof(float) * 3 * i) + weight_offset));
-    }
-
-    LOG_GL_ERROR_CHECK("Vertex Attributes failed")
-
-    /* Index Buffer stuff and drawing */
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
-
+    /* Set up the Render function */
     plGLRenderTriListFunc render(&fDevice, 0, vStart, vLength, iStart, iLength);
 
     plProfile_EndTiming(RenderBuff);
@@ -971,6 +971,9 @@ void plGLPipeline::IRenderBufferSpan(const plIcicle& span,
     }
 
     LOG_GL_ERROR_CHECK("Render failed")
+
+    if (plGLVersion() >= 30)
+        glBindVertexArray(0);
 }
 
 bool plGLPipeline::ICheckDynBuffers(plDrawableSpans* drawable, plGBufferGroup* group, const plSpan* spanBase)
@@ -994,8 +997,10 @@ bool plGLPipeline::ICheckDynBuffers(plDrawableSpans* drawable, plGBufferGroup* g
 
     // If our vertex buffer ref is volatile and the timestamp is off
     // then it needs to be refilled
-    if (vRef->Expired(fVtxRefTime))
-        IRefreshDynVertices(group, vRef);
+    if (vRef->Expired(fVtxRefTime)) {
+        fDevice.RefreshDynamicVertexBufferRef(vRef, group);
+        vRef->fRefTime = fVtxRefTime;
+    }
 
     if (iRef->IsDirty()) {
         fDevice.FillIndexBufferRef(iRef, group, span->fIBufferIdx);
@@ -1005,6 +1010,7 @@ bool plGLPipeline::ICheckDynBuffers(plDrawableSpans* drawable, plGBufferGroup* g
     return false; // No error
 }
 
+/*
 bool plGLPipeline::IRefreshDynVertices(plGBufferGroup* group, plGLVertexBufferRef* vRef)
 {
     ptrdiff_t size = (group->GetVertBufferEnd(vRef->fIndex) - group->GetVertBufferStart(vRef->fIndex)) * vRef->fVertexSize;
@@ -1013,10 +1019,23 @@ bool plGLPipeline::IRefreshDynVertices(plGBufferGroup* group, plGLVertexBufferRe
 
     hsAssert(size > 0, "Bad start and end counts in a group");
 
-    if (!vRef->fRef)
-        glGenBuffers(1, &vRef->fRef);
+    if (!vRef->fRef) {
+        if (plGLVersion() >= 30 && vRef->fRefVAO) {
+            glDeleteVertexArrays(1, &vRef->fRefVAO);
+            vRef->fRefVAO = 0;
+        }
 
-    glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
+        if (plGLVersion() >= 45) {
+            glCreateBuffers(1, &vRef->fRef);
+            glCreateVertexArrays(1, &vRef->fRefVAO);
+        } else {
+            glGenBuffers(1, &vRef->fRef);
+
+            if (plGLVersion() >= 30) {
+                glGenVertexArrays(1, &vRef->fRefVAO);
+            }
+        }
+    }
 
     uint8_t* vData;
     if (vRef->fData)
@@ -1024,13 +1043,27 @@ bool plGLPipeline::IRefreshDynVertices(plGBufferGroup* group, plGLVertexBufferRe
     else
         vData = group->GetVertBufferData(vRef->fIndex) + group->GetVertBufferStart(vRef->fIndex) * vRef->fVertexSize;
 
-    glBufferData(GL_ARRAY_BUFFER, size, vData, GL_DYNAMIC_DRAW);
+    if (plGLVersion() >= 45) {
+        glNamedBufferData(vRef->fRef, size, vData, GL_DYNAMIC_DRAW);
+    } else {
+        if (plGLVersion() >= 30) {
+            glBindVertexArray(vRef->fRefVAO);
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, vRef->fRef);
+        glBufferData(GL_ARRAY_BUFFER, size, vData, GL_DYNAMIC_DRAW);
+
+        if (plGLVersion() >= 30) {
+            glBindVertexArray(0);
+        }
+    }
 
     vRef->fRefTime = fVtxRefTime;
     vRef->SetDirty(false);
 
     return false;
 }
+*/
 
 void plGLPipeline::IHandleZMode(hsGMatState flags)
 {

@@ -122,7 +122,7 @@ protected:
      * Only software skinned objects, dynamic decals, and particle systems
      * currently use the dynamic vertex buffer.
      */
-    bool IRefreshDynVertices(plGBufferGroup* group, plGLVertexBufferRef* vRef);
+    //bool IRefreshDynVertices(plGBufferGroup* group, plGLVertexBufferRef* vRef);
 
     /**
      * Make sure the buffers underlying this span are ready to be rendered.
