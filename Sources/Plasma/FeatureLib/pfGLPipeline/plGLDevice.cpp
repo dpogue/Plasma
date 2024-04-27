@@ -288,10 +288,20 @@ void plGLDevice::CheckStaticVertexBuffer(VertexBufferRef* vRef, plGBufferGroup* 
     hsAssert(!vRef->Volatile(), "Creating a managed vertex buffer for a volatile buffer ref");
 
     if (!vRef->fRef) {
+        if (plGLVersion() >= 30 && vRef->fRefVAO) {
+            glDeleteVertexArrays(1, &vRef->fRefVAO);
+            vRef->fRefVAO = 0;
+        }
+
         if (plGLVersion() >= 45) {
             glCreateBuffers(1, &vRef->fRef);
+            glCreateVertexArrays(1, &vRef->fRefVAO);
         } else {
             glGenBuffers(1, &vRef->fRef);
+
+            if (plGLVersion() >= 30) {
+                glGenVertexArrays(1, &vRef->fRefVAO);
+            }
         }
 
         // Fill in the vertex data.
@@ -317,12 +327,7 @@ void plGLDevice::FillStaticVertexBufferRef(VertexBufferRef* ref, plGBufferGroup*
 
 
     if (ref->fData) {
-        if (plGLVersion() >= 45) {
-            glNamedBufferData(ref->fRef, size, ref->fData + vertStart, GL_STATIC_DRAW);
-        } else {
-            glBindBuffer(GL_ARRAY_BUFFER, ref->fRef);
-            glBufferData(GL_ARRAY_BUFFER, size, ref->fData + vertStart, GL_STATIC_DRAW);
-        }
+        FillGLVertexBuffer(ref, size, ref->fData + vertStart, GL_STATIC_DRAW);
     } else {
         hsAssert(0 == vertStart, "Offsets on non-interleaved data not supported");
         hsAssert(group->GetVertBufferCount(idx) * vertSize == size, "Trailing dead space on non-interleaved data not supported");
@@ -368,15 +373,12 @@ void plGLDevice::FillStaticVertexBufferRef(VertexBufferRef* ref, plGBufferGroup*
         }
 
         hsAssert((ptr - buffer) == size, "Didn't fill the buffer?");
-        if (plGLVersion() >= 45) {
-            glNamedBufferData(ref->fRef, size, buffer, GL_STATIC_DRAW);
-        } else {
-            glBindBuffer(GL_ARRAY_BUFFER, ref->fRef);
-            glBufferData(GL_ARRAY_BUFFER, size, buffer, GL_STATIC_DRAW);
-        }
+        FillGLVertexBuffer(ref, size, buffer, GL_STATIC_DRAW);
 
         delete[] buffer;
     }
+
+    LOG_GL_ERROR_CHECK("Vertex Buffer Static Fill failed");
 
     /// Unlock and clean up
     ref->SetRebuiltSinceUsed(true);
@@ -413,6 +415,127 @@ void plGLDevice::FillVolatileVertexBufferRef(VertexBufferRef* ref, plGBufferGrou
         memcpy(dst, src, uvChanSize);
         src += uvChanSize;
         dst += uvChanSize;
+    }
+}
+
+void plGLDevice::RefreshDynamicVertexBufferRef(VertexBufferRef* ref, plGBufferGroup* group)
+{
+    ptrdiff_t size = (group->GetVertBufferEnd(ref->fIndex) - group->GetVertBufferStart(ref->fIndex)) * ref->fVertexSize;
+    if (!size)
+        return; // No error, just nothing to do.
+
+    hsAssert(size > 0, "Bad start and end counts in a group");
+
+    if (!ref->fRef) {
+        if (plGLVersion() >= 30 && ref->fRefVAO) {
+            glDeleteVertexArrays(1, &ref->fRefVAO);
+            ref->fRefVAO = 0;
+        }
+
+        if (plGLVersion() >= 45) {
+            glCreateBuffers(1, &ref->fRef);
+            glCreateVertexArrays(1, &ref->fRefVAO);
+        } else {
+            glGenBuffers(1, &ref->fRef);
+
+            if (plGLVersion() >= 30) {
+                glGenVertexArrays(1, &ref->fRefVAO);
+            }
+        }
+    }
+
+    uint8_t* vData;
+    if (ref->fData)
+        vData = ref->fData;
+    else
+        vData = group->GetVertBufferData(ref->fIndex) + group->GetVertBufferStart(ref->fIndex) * ref->fVertexSize;
+
+    FillGLVertexBuffer(ref, size, vData, GL_DYNAMIC_DRAW);
+
+    LOG_GL_ERROR_CHECK("Vertex Buffer Dynamic Fill failed");
+
+    ref->SetDirty(false);
+}
+
+void plGLDevice::FillGLVertexBuffer(VertexBufferRef* ref, GLsizeiptr size, const void* data, GLenum usage)
+{
+    // VertexAttrib setup
+    const GLuint kVtxPosition = 0; // TEMP
+    const GLuint kVtxNormal = 1; // TEMP
+    const GLuint kVtxColor = 2; // TEMP
+    const GLuint kVtxUVWSrc = 3; // TEMP
+
+    const uint32_t vertSize = ref->fVertexSize;
+    const int numUVs = ref->fOwner->GetNumUVs();
+
+    size_t weight_offset = 0;
+    switch (ref->fFormat & plGBufferGroup::kSkinWeightMask)
+    {
+        case plGBufferGroup::kSkinNoWeights:
+            break;
+        case plGBufferGroup::kSkin1Weight:
+            weight_offset += sizeof(float);
+            break;
+        case plGBufferGroup::kSkin2Weights:
+            weight_offset += sizeof(float) * 2;
+            break;
+        case plGBufferGroup::kSkin3Weights:
+            weight_offset += sizeof(float) * 3;
+            break;
+        default:
+            hsAssert(false, "Bad skin weight value in GBufferGroup");
+    }
+    if (ref->fFormat & plGBufferGroup::kSkinIndices) {
+        weight_offset += sizeof(uint32_t);
+    }
+
+    if (plGLVersion() >= 45) {
+        glNamedBufferData(ref->fRef, size, data, usage);
+
+        glVertexArrayVertexBuffer(ref->fRefVAO, 0, ref->fRef, 0, vertSize);
+
+        glEnableVertexArrayAttrib(ref->fRefVAO, kVtxPosition);
+        glVertexArrayAttribFormat(ref->fRefVAO, kVtxPosition, 3, GL_FLOAT, GL_FALSE, 0);
+        glVertexArrayAttribBinding(ref->fRefVAO, kVtxPosition, 0);
+
+        glEnableVertexArrayAttrib(ref->fRefVAO, kVtxNormal);
+        glVertexArrayAttribFormat(ref->fRefVAO, kVtxNormal, 3, GL_FLOAT, GL_FALSE, (sizeof(float) * 3) + weight_offset);
+        glVertexArrayAttribBinding(ref->fRefVAO, kVtxNormal, 0);
+
+        glEnableVertexArrayAttrib(ref->fRefVAO, kVtxColor);
+        glVertexArrayAttribFormat(ref->fRefVAO, kVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, (sizeof(float) * 3 * 2) + weight_offset);
+        glVertexArrayAttribBinding(ref->fRefVAO, kVtxColor, 0);
+
+        for (int i = 0; i < numUVs; i++) {
+            glEnableVertexArrayAttrib(ref->fRefVAO, kVtxUVWSrc + i);
+            glVertexArrayAttribFormat(ref->fRefVAO, kVtxUVWSrc + i, 3, GL_FLOAT, GL_FALSE, (sizeof(float) * 3 * 2) + (sizeof(uint32_t) * 2) + (sizeof(float) * 3 * i) + weight_offset);
+            glVertexArrayAttribBinding(ref->fRefVAO, kVtxUVWSrc + i, 0);
+        }
+    } else {
+        if (plGLVersion() >= 30) {
+            glBindVertexArray(ref->fRefVAO);
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, ref->fRef);
+        glBufferData(GL_ARRAY_BUFFER, size, data, usage);
+
+        if (plGLVersion() >= 30) {
+            glEnableVertexAttribArray(kVtxPosition);
+            glVertexAttribPointer(kVtxPosition, 3, GL_FLOAT, GL_FALSE, vertSize, (void*)(sizeof(float) * 0));
+
+            glEnableVertexAttribArray(kVtxNormal);
+            glVertexAttribPointer(kVtxNormal, 3, GL_FLOAT, GL_FALSE, vertSize, (void*)((sizeof(float) * 3) + weight_offset));
+
+            glEnableVertexAttribArray(kVtxColor);
+            glVertexAttribPointer(kVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, vertSize, (void*)((sizeof(float) * 3 * 2) + weight_offset));
+
+            for (int i = 0; i < numUVs; i++) {
+                glEnableVertexAttribArray(kVtxUVWSrc + i);
+                glVertexAttribPointer(kVtxUVWSrc + i, 3, GL_FLOAT, GL_FALSE, vertSize, (void*)((sizeof(float) * 3 * 2) + (sizeof(uint32_t) * 2) + (sizeof(float) * 3 * i) + weight_offset));
+            }
+
+            glBindVertexArray(0);
+        }
     }
 }
 
@@ -453,15 +576,28 @@ void plGLDevice::FillIndexBufferRef(IndexBufferRef* iRef, plGBufferGroup* owner,
 {
     uint32_t startIdx = owner->GetIndexBufferStart(idx);
     uint32_t size = (owner->GetIndexBufferEnd(idx) - startIdx) * sizeof(uint16_t);
+    plGLVertexBufferRef* vRef = static_cast<plGLVertexBufferRef*>(owner->GetVertexBufferRef(idx));
 
     if (!size)
         return;
 
     if (plGLVersion() >= 45) {
         glNamedBufferData(iRef->fRef, size, owner->GetIndexBufferData(idx) + startIdx, GL_STATIC_DRAW);
+
+        if (vRef && vRef->fRefVAO) {
+            glVertexArrayElementBuffer(vRef->fRefVAO, iRef->fRef);
+        }
     } else {
+        if (plGLVersion() >= 30 && vRef && vRef->fRefVAO) {
+            glBindVertexArray(vRef->fRefVAO);
+        }
+
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iRef->fRef);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, owner->GetIndexBufferData(idx) + startIdx, GL_STATIC_DRAW);
+
+        if (plGLVersion() >= 30) {
+            glBindVertexArray(0);
+        }
     }
 
     iRef->SetDirty(false);

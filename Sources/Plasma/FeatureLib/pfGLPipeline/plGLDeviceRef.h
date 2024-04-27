@@ -113,6 +113,7 @@ public:
 
     plGBufferGroup* fOwner;
     uint8_t*        fData;
+    GLuint          fRefVAO;
 
     uint32_t        fRefTime;
 
@@ -142,7 +143,7 @@ public:
 
     plGLVertexBufferRef()
         : plGLDeviceRef(), fCount(), fIndex(), fVertexSize(), fOffset(),
-        fFormat(), fOwner(), fData(), fRefTime()
+        fFormat(), fOwner(), fData(), fRefVAO(), fRefTime()
     {}
 
     virtual ~plGLVertexBufferRef();
