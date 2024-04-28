@@ -323,6 +323,14 @@ jobs:
         env:
           VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
 
+      - name: vcpkg logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: vcpkg-python-logs-linux
+          path: |
+            vcpkg/buildtrees/python3/*.log
+
       - name: Build
         run: |
           cmake --build build --config "${{ matrix.cfg.type }}" -j 2
