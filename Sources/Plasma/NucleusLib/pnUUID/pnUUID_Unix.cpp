@@ -50,26 +50,24 @@ static_assert(sizeof(plUUID) == sizeof(uuid_t), "plUUID and uuid_t types differ 
 
 struct plUUIDHelper
 {
-    static inline void CopyToPlasma( plUUID * dst, const uuid_t & src )
+    static inline void CopyToPlasma(plUUID* dst, const uuid_t& src)
     {
-        hsAssert(sizeof(uuid_t) == sizeof(dst->fData), "sizeof(uuid_t) != sizeof(plUUID)");
-        memcpy((void*)dst->fData, (const void*)src, sizeof(plUUID));
+        memcpy(dst->fData, src, sizeof(plUUID));
 
         // plUUIDs need to always be encoded in little endian, but the uuid_t struct is big endian
-        // This isn't memory-aligned, so casting to pointers is technically UB
+        // This isn't guaranteed to be 32-bit-aligned, so casting to uint16_t/uint32_t pointers is UB
         std::swap(dst->fData[0], dst->fData[3]);
         std::swap(dst->fData[1], dst->fData[2]);
         std::swap(dst->fData[4], dst->fData[5]);
         std::swap(dst->fData[6], dst->fData[7]);
     }
 
-    static inline void CopyToNative( uuid_t & dst, const plUUID * src )
+    static inline void CopyToNative(uuid_t& dst, const plUUID* src)
     {
-        hsAssert(sizeof(uuid_t) == sizeof(src->fData), "sizeof(uuid_t) != sizeof(plUUID)");
-        memcpy((void*)dst, (const void*)src->fData, sizeof(plUUID));
+        memcpy(dst, src->fData, sizeof(plUUID));
 
         // uuid_t struct is big endian, but plUUIDs are always encoded in little endian
-        // This isn't memory-aligned, so casting to pointers is technically UB
+        // This isn't guaranteed to be 32-bit-aligned, so casting to uint16_t/uint32_t pointers is UB
         std::swap(dst[0], dst[3]);
         std::swap(dst[1], dst[2]);
         std::swap(dst[4], dst[5]);
