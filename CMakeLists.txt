@@ -209,6 +209,8 @@ add_subdirectory(Scripts)
 add_subdirectory(Sources/Plasma)
 add_subdirectory(Sources/Tools)
 
+add_subdirectory(Sources/ModDLLs)
+
 if(PLASMA_BUILD_TESTS)
     enable_testing()
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIGURATION>)
