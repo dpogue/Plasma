@@ -99,17 +99,17 @@ plProgressMgr::~plProgressMgr()
 
 //// RegisterOperation ///////////////////////////////////////////////////////
 
-plOperationProgress* plProgressMgr::RegisterOperation(float length, const char *title, StaticText staticTextType, bool isRetry, bool alwaysDrawText)
+plOperationProgress* plProgressMgr::RegisterOperation(float length, const ST::string& title, StaticText staticTextType, bool isRetry, bool alwaysDrawText)
 {
     return IRegisterOperation(length, title, staticTextType, isRetry, false, alwaysDrawText);
 }
 
-plOperationProgress* plProgressMgr::RegisterOverallOperation(float length, const char *title, StaticText staticTextType, bool alwaysDrawText)
+plOperationProgress* plProgressMgr::RegisterOverallOperation(float length, const ST::string& title, StaticText staticTextType, bool alwaysDrawText)
 {
     return IRegisterOperation(length, title, staticTextType, false, true, alwaysDrawText);
 }
 
-plOperationProgress* plProgressMgr::IRegisterOperation(float length, const char *title, StaticText staticTextType, bool isRetry, bool isOverall, bool alwaysDrawText)
+plOperationProgress* plProgressMgr::IRegisterOperation(float length, const ST::string& title, StaticText staticTextType, bool isRetry, bool isOverall, bool alwaysDrawText)
 {
     if (fOperations == nullptr)
     {

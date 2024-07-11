@@ -618,10 +618,7 @@ void plClient::IDispatchMsgReceiveCallback()
     if (fInstance->fProgressBar)
         fInstance->fProgressBar->Increment(1);
 
-    static char buf[30];
-    sprintf(buf, "Msg %d", fInstance->fNumPostLoadMsgs);
-    fInstance->IIncProgress(fInstance->fPostLoadMsgInc, buf);
-
+    fInstance->IIncProgress(fInstance->fPostLoadMsgInc, ST::format("Msg {}", fInstance->fNumPostLoadMsgs));
     fInstance->fNumPostLoadMsgs++;
 }
 
@@ -1338,13 +1335,13 @@ void plClient::IProgressMgrCallbackProc(plOperationProgress * progress)
 }
 
 //============================================================================
-void plClient::IIncProgress (float byHowMuch, const char * text)
+void plClient::IIncProgress(float byHowMuch, const ST::string& text)
 {
     if (fProgressBar) {
 #ifndef PLASMA_EXTERNAL_RELEASE
-        fProgressBar->SetStatusText( text );
+        fProgressBar->SetStatusText(text);
 #endif
-        fProgressBar->Increment( byHowMuch );
+        fProgressBar->Increment(byHowMuch);
     }
 }
 
@@ -2011,25 +2008,19 @@ void plClient::ResizeDisplayDevice(int Width, int Height, bool Windowed)
     IResizeNativeDisplayDevice(Width, Height, Windowed);
 }
 
-void WriteBool(hsStream *stream, const char *name, bool on )
+void WriteBool(hsStream* stream, const char* name, bool on)
 {
-    char command[256];
-    sprintf(command, "%s %s\r\n", name, on ? "true" : "false");
-    stream->WriteString(command);
+    stream->WriteString(ST::format("{} {}\r\n", name, on ? ST_LITERAL("true") : ST_LITERAL("false")));
 }
 
-void WriteInt(hsStream *stream, const char *name, int val )
+void WriteInt(hsStream* stream, const char* name, int val)
 {
-    char command[256];
-    sprintf(command, "%s %d\r\n", name, val);
-    stream->WriteString(command);
+    stream->WriteString(ST::format("{} {}\r\n", name, val));
 }
 
-void WriteString(hsStream *stream, const char *name, const char *val)
+void WriteString(hsStream* stream, const char* name, const char* val)
 {
-    char command[256];
-    sprintf(command, "%s %s\r\n", name, val);
-    stream->WriteString(command);
+    stream->WriteString(ST::format("{} {}\r\n", name, val));
 }
 
 // Detect audio/video settings and save them to their respective ini file, if ini files don't exist

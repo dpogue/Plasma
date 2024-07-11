@@ -198,7 +198,7 @@ protected:
     void                    IServiceMovies();
 
     void    IStartProgress( const char *title, float len );
-    void    IIncProgress( float byHowMuch, const char *text );
+    void    IIncProgress(float byHowMuch, const ST::string& text);
     void    IStopProgress();
 
     static plPipeline* ICreatePipeline(hsWindowHndl disp, hsWindowHndl hWnd, const hsG3DDeviceModeRecord* devMode);

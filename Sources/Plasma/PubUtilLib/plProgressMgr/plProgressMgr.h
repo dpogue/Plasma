@@ -221,7 +221,7 @@ class plProgressMgr
 
         void IUpdateFlags(plOperationProgress* progress);
 
-        plOperationProgress* IRegisterOperation(float length, const char *title, StaticText staticTextType, bool isRetry, bool isOverall, bool alwaysDrawText);
+        plOperationProgress* IRegisterOperation(float length, const ST::string& title, StaticText staticTextType, bool isRetry, bool isOverall, bool alwaysDrawText);
         // Called by the operation
         void IUnregisterOperation(plOperationProgress* op);
 
@@ -235,14 +235,14 @@ class plProgressMgr
         virtual ~plProgressMgr();
 
         static plProgressMgr* GetInstance() { return fManager; }
-        static const ST::string GetLoadingFrameID(uint32_t index);
-        uint32_t NumLoadingFrames() const;
+        static const ST::string GetLoadingFrameID(size_t index);
+        size_t NumLoadingFrames() const;
         static const ST::string GetStaticTextID(StaticText staticTextType);
 
         virtual void    Draw( plPipeline *p ) { }
 
-        plOperationProgress* RegisterOperation(float length, const char *title = nullptr, StaticText staticTextType = kNone, bool isRetry = false, bool alwaysDrawText = false);
-        plOperationProgress* RegisterOverallOperation(float length, const char *title = nullptr, StaticText staticTextType = kNone, bool alwaysDrawText = false);
+        plOperationProgress* RegisterOperation(float length, const ST::string& title = ST_LITERAL(""), StaticText staticTextType = kNone, bool isRetry = false, bool alwaysDrawText = false);
+        plOperationProgress* RegisterOverallOperation(float length, const ST::string& title = ST_LITERAL(""), StaticText staticTextType = kNone, bool alwaysDrawText = false);
 
 
         plProgressMgrCallbackProc SetCallbackProc( plProgressMgrCallbackProc proc );

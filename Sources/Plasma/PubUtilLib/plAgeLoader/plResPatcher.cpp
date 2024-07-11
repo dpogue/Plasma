@@ -160,7 +160,7 @@ pfPatcher* plResPatcher::CreatePatcher()
 void plResPatcher::InitProgress()
 {
     // this is deleted in plAgeLoader::MsgReceive for thread safety
-    fProgress = plProgressMgr::GetInstance()->RegisterOperation(0.f, nullptr, plProgressMgr::kUpdateText);
+    fProgress = plProgressMgr::GetInstance()->RegisterOperation(0.f, ST_LITERAL(""), plProgressMgr::kUpdateText);
 }
 
 /////////////////////////////////////////////////////////////////////////////
