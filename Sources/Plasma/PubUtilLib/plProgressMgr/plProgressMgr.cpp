@@ -233,7 +233,7 @@ void    plProgressMgr::CancelAllOps()
     fCurrentStaticText = kNone;
 }
 
-const ST::string plProgressMgr::GetLoadingFrameID(uint32_t index)
+const ST::string plProgressMgr::GetLoadingFrameID(size_t index)
 {
     if (index < fImageRotation.size())
         return fImageRotation[index];
@@ -241,7 +241,7 @@ const ST::string plProgressMgr::GetLoadingFrameID(uint32_t index)
         return fImageRotation[0];
 }
 
-uint32_t plProgressMgr::NumLoadingFrames() const
+size_t plProgressMgr::NumLoadingFrames() const
 {
     return fImageRotation.size();
 }

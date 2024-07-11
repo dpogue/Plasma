@@ -61,8 +61,8 @@ public:
     GETINTERFACE_ANY( plNetOwnershipMsg, plMessage );
     
     // getters
-    int GetNumGroups() const { return fGroups.size(); }
-    plNetMsgGroupOwner::GroupInfo GetGroupInfo(int i) const { return fGroups[i]; }
+    size_t GetNumGroups() const { return fGroups.size(); }
+    plNetMsgGroupOwner::GroupInfo GetGroupInfo(size_t i) const { return fGroups[i]; }
     
     // setters
     void AddGroupInfo(plNetMsgGroupOwner::GroupInfo gi) { fGroups.emplace_back(std::move(gi)); }

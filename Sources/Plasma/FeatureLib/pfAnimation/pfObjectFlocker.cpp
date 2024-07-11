@@ -765,8 +765,8 @@ fMinSpeed(4.0f)
 
 pfFlock::~pfFlock()
 {
-    int flock_size = fBoids.size();
-    for (int i = 0; i < flock_size; i++)
+    size_t flock_size = fBoids.size();
+    for (size_t i = 0; i < flock_size; i++)
     {
         delete fBoids[i];
         fBoids[i] = nullptr;
@@ -779,57 +779,56 @@ pfFlock::~pfFlock()
 
 void pfFlock::SetGoalWeight(float goalWeight)
 {
-    for (int i = 0; i < fBoids.size(); i++)
+    for (size_t i = 0; i < fBoids.size(); i++)
         fBoids[i]->SetGoalWeight(goalWeight);
     fGoalWeight = goalWeight;
 }
 
 void pfFlock::SetWanderWeight(float wanderWeight)
 {
-    for (int i = 0; i < fBoids.size(); i++)
+    for (size_t i = 0; i < fBoids.size(); i++)
         fBoids[i]->SetWanderWeight(wanderWeight);
     fRandomWeight = wanderWeight;
 }
 
 void pfFlock::SetSeparationWeight(float weight)
 {
-    for (int i = 0; i < fBoids.size(); i++)
+    for (size_t i = 0; i < fBoids.size(); i++)
         fBoids[i]->SetSeparationWeight(weight);
     fSeparationWeight = weight;
 }
 
 void pfFlock::SetSeparationRadius(float radius)
 {
-    for (int i = 0; i < fBoids.size(); i++)
+    for (size_t i = 0; i < fBoids.size(); i++)
         fBoids[i]->SetSeparationRadius(radius);
     fSeparationRadius = radius;
 }
 
 void pfFlock::SetCohesionWeight(float weight)
 {
-    for (int i = 0; i < fBoids.size(); i++)
+    for (size_t i = 0; i < fBoids.size(); i++)
         fBoids[i]->SetCohesionWeight(weight);
     fCohesionWeight = weight;
 }
 
 void pfFlock::SetCohesionRadius(float radius)
 {
-    for (int i = 0; i < fBoids.size(); i++)
+    for (size_t i = 0; i < fBoids.size(); i++)
         fBoids[i]->SetCohesionRadius(radius);
     fCohesionRadius = radius;
 }
 
 void pfFlock::SetMaxForce(float force)
 {
-    for (int i = 0; i < fBoids.size(); i++)
+    for (size_t i = 0; i < fBoids.size(); i++)
         fBoids[i]->SetMaxForce(force);
     fMaxForce = force;
 }
 
 void pfFlock::SetMaxSpeed(float speed)
 {
-    for (int i = 0; i < fBoids.size(); i++)
-    {
+    for (size_t i = 0; i < fBoids.size(); i++) {
         float speedAdjust = (fMaxSpeed - fMinSpeed) * RAND();
         fBoids[i]->SetMaxSpeed(speed - speedAdjust);
     }
@@ -874,7 +873,7 @@ void pfFlock::AddBoid(pfObjectFlocker *flocker, plKey &key, hsPoint3 &pos)
     fBoids.push_back(newBoid);
 }
 
-pfBoid *pfFlock::GetBoid(int i)
+pfBoid *pfFlock::GetBoid(size_t i)
 {
     if (i >= 0 && i < fBoids.size())
         return fBoids[i];

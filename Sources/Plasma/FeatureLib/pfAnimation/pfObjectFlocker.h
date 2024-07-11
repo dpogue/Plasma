@@ -396,7 +396,7 @@ public:
     // setup/run functions
     void AddBoid(pfObjectFlocker *flocker, plKey &key, hsPoint3 &pos);
     void Update(plSceneObject *goal, float deltaTime);
-    pfBoid *GetBoid(int i);
+    pfBoid *GetBoid(size_t i);
 
     friend class pfObjectFlocker;
 };

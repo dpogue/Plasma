@@ -411,7 +411,7 @@ public:
 
     void Write(hsStream * stream, hsResMgr* mgr)
     {
-        int count;
+        uint32_t count;
         stream->WriteLE32(fID);
         stream->WriteLE32(fValueType);
         switch ( fValueType )
@@ -430,8 +430,8 @@ public:
 
             case kString:
             case kAnimationName:
-                if ( !fString.empty() )
-                    count = fString.size()+1;
+                if (!fString.empty())
+                    count = uint32_t(fString.size() + 1);
                 else
                     count = 0;
                 stream->WriteLE32(count);

@@ -230,8 +230,8 @@ class plGBufferGroup
         void    SetIndexBufferEnd(uint32_t idx, uint32_t e) { fIdxBuffEnds[idx] = e; }
         ///////////////////////////////////////////////////////////////////////////////
 
-        uint32_t  GetNumVertexBuffers() const { return fVertBuffStorage.size(); }
-        uint32_t  GetNumIndexBuffers() const { return fIdxBuffStorage.size(); }
+        size_t  GetNumVertexBuffers() const { return fVertBuffStorage.size(); }
+        size_t  GetNumIndexBuffers() const { return fIdxBuffStorage.size(); }
 
         uint8_t           *GetVertBufferData( uint32_t idx ) { return fVertBuffStorage[ idx ]; }
         uint16_t          *GetIndexBufferData( uint32_t idx ) { return fIdxBuffStorage[ idx ]; }

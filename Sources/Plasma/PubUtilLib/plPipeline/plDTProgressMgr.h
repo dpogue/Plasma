@@ -61,7 +61,7 @@ class plPipeline;
 class plDTProgressMgr : public plProgressMgr
 {
     protected:
-        uint32_t    fCurrentImage;
+        size_t    fCurrentImage;
         float       fLastDraw;
         plPlate*    fActivePlate;
         plPlate*    fStaticTextPlate;

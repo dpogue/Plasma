@@ -229,8 +229,8 @@ public:
     void DelMem(uint32_t memAmount) { fValue -= memAmount; }
 
     // For Counting
-    void Inc(int i = 1) { fValue += i;}
-    void Dec(int i = 1) { fValue -= i;}
+    void Inc(uint64_t i = 1) { fValue += i;}
+    void Dec(uint64_t i = 1) { fValue -= i;}
 
     void Set(uint64_t value) { fValue = value; }
 
