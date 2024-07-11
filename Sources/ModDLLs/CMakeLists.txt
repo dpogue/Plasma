@@ -1,0 +1,10 @@
+include_directories("${PLASMA_SOURCE_ROOT}/Apps")
+include_directories("${PLASMA_SOURCE_ROOT}/FeatureLib")
+include_directories("${PLASMA_SOURCE_ROOT}/NucleusLib")
+include_directories("${PLASMA_SOURCE_ROOT}/PubUtilLib")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/inc")
+
+option(PLASMA_BUILD_MOD_CONSOLE_COMMANDER "Build the Console Commander ModDLL?" OFF)
+if(PLASMA_BUILD_MOD_CONSOLE_COMMANDER)
+    add_subdirectory(modConsoleCommander)
+endif()
