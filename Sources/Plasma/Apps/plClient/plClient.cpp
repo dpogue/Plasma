@@ -409,6 +409,8 @@ void plClient::InitDLLs() {
             (*initGlobals)(hsgResMgr::ResMgr(), plFactory::GetTheFactory(), plgTimerCallbackMgr::Mgr(),
                 hsTimer::GetTheTimer(), plNetClientApp::GetInstance());
             fLoadedDLLs.emplace_back(mod);
+        } else {
+            hsStatusMessage(ST::format("Failed to load lib: {}", dlerror()).c_str());
         }
     }
 }

@@ -61,10 +61,10 @@ static pmConsoleCommander cmdr;
 #endif
 
 extern "C" {
-    DLLEXPORT void InitGlobals(hsResMgr *resMgr, plFactory *factory, plTimerCallbackManager *timer, plTimerShare *time, plNetClientApp* nc);
+    DLLEXPORT void InitGlobals(hsResMgr* resMgr, plFactory* factory, plTimerCallbackManager* timer, plTimerShare* time, plNetClientApp* nc);
 }
 
-DLLEXPORT void InitGlobals(hsResMgr *resMgr, plFactory *factory, plTimerCallbackManager *timer, plTimerShare *time, plNetClientApp* nc)
+DLLEXPORT void InitGlobals(hsResMgr* resMgr, plFactory* factory, plTimerCallbackManager* timer, plTimerShare* time, plNetClientApp* nc)
 {
     hsgResMgr::SetTheResMgr(resMgr);
     plFactory::SetTheFactory(factory);
@@ -72,5 +72,7 @@ DLLEXPORT void InitGlobals(hsResMgr *resMgr, plFactory *factory, plTimerCallback
     hsTimer::SetTheTimer(time);
     plNetClientApp::SetInstance(nc);
 
-    cmdr.Init();
+    hsStatusMessage("Loaded the Console Commander");
+
+    cmdr.Init(factory);
 }

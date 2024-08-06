@@ -46,6 +46,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsThread.h"
 #include "crow_all.h"
 
+class plFactory;
+
 class pmConsoleCommander : public hsThread
 {
 protected:
@@ -55,7 +57,7 @@ protected:
 public:
     pmConsoleCommander() : fServer() { }
 
-    void Init();
+    void Init(plFactory* factory);
 
     void Run() override;
     void OnQuit() override;
