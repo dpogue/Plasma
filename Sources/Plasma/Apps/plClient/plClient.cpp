@@ -410,7 +410,11 @@ void plClient::InitDLLs() {
                 hsTimer::GetTheTimer(), plNetClientApp::GetInstance());
             fLoadedDLLs.emplace_back(mod);
         } else {
+#ifdef HS_BUILD_FOR_WIN32
+            hsStatusMessage(ST::format("Failed to load lib: {}", hsCOMError(hsLastWin32Error, GetLastError())).c_str());
+#else
             hsStatusMessage(ST::format("Failed to load lib: {}", dlerror()).c_str());
+#endif
         }
     }
 }
