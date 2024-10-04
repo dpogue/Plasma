@@ -60,18 +60,11 @@ jobs:
         with:
           cmake-version: '3.29.2'
 
-      - name: Setup NuGet
-        run: |
-          nuget sources add `
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" `
-              -storepasswordincleartext `
-              -name "GitHub" `
-              -username "${{ github.repository_owner }}" `
-              -password "${{ secrets.GITHUB_TOKEN }}"
-
-          nuget setapikey `
-              "${{ secrets.GITHUB_TOKEN }}" `
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Configure
         run: |
@@ -85,7 +78,7 @@ jobs:
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build `
             -S . -B build
         env:
-          VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
       - name: Build
         run: |
@@ -143,18 +136,11 @@ jobs:
         with:
           cmake-version: '3.29.2'
 
-      - name: Setup NuGet
-        run: |
-          nuget sources add `
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" `
-              -storepasswordincleartext `
-              -name "GitHub" `
-              -username "${{ github.repository_owner }}" `
-              -password "${{ secrets.GITHUB_TOKEN }}"
-
-          nuget setapikey `
-              "${{ secrets.GITHUB_TOKEN }}" `
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Configure
         run: |
@@ -169,7 +155,7 @@ jobs:
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build `
             -S . -B build
         env:
-          VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
       - name: Build
         run: |
@@ -215,18 +201,11 @@ jobs:
         with:
           cmake-version: '3.29.2'
 
-      - name: Setup NuGet
-        run: |
-          nuget sources add \
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
-              -storepasswordincleartext \
-              -name "GitHub" \
-              -username "${{ github.repository_owner }}" \
-              -password "${{ secrets.GITHUB_TOKEN }}"
-
-          nuget setapikey \
-              "${{ secrets.GITHUB_TOKEN }}" \
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Configure
         run: |
@@ -240,7 +219,7 @@ jobs:
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build \
             -S . -B build
         env:
-          VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
       - name: Build
         run: |
@@ -295,18 +274,11 @@ jobs:
         with:
           cmake-version: '3.29.2'
 
-      - name: Setup NuGet
-        run: |
-          nuget sources add \
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
-              -storepasswordincleartext \
-              -name "GitHub" \
-              -username "${{ github.repository_owner }}" \
-              -password "${{ secrets.GITHUB_TOKEN }}"
-
-          nuget setapikey \
-              "${{ secrets.GITHUB_TOKEN }}" \
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - name: Configure
         run: |
@@ -323,7 +295,7 @@ jobs:
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build \
             -S . -B build
         env:
-          VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
       - name: Build
         run: |
