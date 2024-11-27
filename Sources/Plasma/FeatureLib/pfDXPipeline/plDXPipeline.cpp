@@ -7762,11 +7762,16 @@ void    plDXPipeline::IGetD3DTextureFormat( plBitmap *b, D3DFORMAT &formatType, 
     }
     else if( b->GetFlags() & plMipmap::kBumpEnvMap )
     {
-        texSize = 16;
-        if( b->GetFlags() & plMipmap::kAlphaChannelFlag )
-            formatType = D3DFMT_L6V5U5;
-        else
-            formatType = D3DFMT_V8U8;
+        if (b->GetPixelSize() == 32) {
+            texSize = 32;
+            formatType = D3DFMT_X8L8V8U8;
+        } else {
+            texSize = 16;
+            if( b->GetFlags() & plMipmap::kAlphaChannelFlag )
+                formatType = D3DFMT_L6V5U5;
+            else
+                formatType = D3DFMT_V8U8;
+        }
     }
     else if( b->GetPixelSize() == 16 )
     {
