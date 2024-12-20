@@ -348,3 +348,10 @@ jobs:
         with:
           name: plasma-${{ matrix.platform.str }}-${{ matrix.cfg.str }}
           path: build/install
+
+      - name: vcpkg logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vcpkg-logs-${{ matrix.platform.str }}-${{ matrix.cfg.str }}
+          path: vcpkg/buildtrees/openal-soft/*.log
