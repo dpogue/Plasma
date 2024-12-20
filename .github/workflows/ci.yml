@@ -215,7 +215,11 @@ jobs:
         with:
           cmake-version: '3.29.2'
 
-      - name: Setup NuGet
+      - uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: latest
+
+      - name: Configure NuGet
         run: |
           nuget sources add \
               -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
