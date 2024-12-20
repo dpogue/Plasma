@@ -197,6 +197,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Install Mono on Ubuntu to run nuget.exe (due to this issue on Ubuntu 24 that hasn't been fixed yet - https://github.com/NuGet/setup-nuget/issues/168)
+      - name: Set up Mono on Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https dirmngr gnupg ca-certificates
+          sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+          echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -206,6 +214,7 @@ jobs:
               libcairo2 \
               libsecret-1-dev \
               libtool \
+              mono-complete \
               nasm \
               ninja-build \
               qtbase5-dev
@@ -214,6 +223,8 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.29.2'
+
+      - uses: nuget/setup-nuget@v2
 
       - name: Setup NuGet
         run: |
