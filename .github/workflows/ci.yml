@@ -215,22 +215,12 @@ jobs:
         with:
           cmake-version: '3.29.2'
 
-      - uses: nuget/setup-nuget@v2
+      - uses: actions/setup-dotnet@v4
         with:
-          nuget-version: latest
-
-      - name: Configure NuGet
-        run: |
-          nuget sources add \
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
-              -storepasswordincleartext \
-              -name "GitHub" \
-              -username "${{ github.repository_owner }}" \
-              -password "${{ secrets.GITHUB_TOKEN }}"
-
-          nuget setapikey \
-              "${{ secrets.GITHUB_TOKEN }}" \
-              -source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+          dotnet-version: '3.1.x'
+          source-url: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: Configure
         run: |
@@ -244,7 +234,7 @@ jobs:
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build \
             -S . -B build
         env:
-          VCPKG_BINARY_SOURCES: "clear;nuget,GitHub,readwrite"
+          VCPKG_BINARY_SOURCES: "clear;nuget,Source,readwrite"
 
       - name: Build
         run: |
