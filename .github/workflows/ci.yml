@@ -58,7 +58,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: '3.29.2'
+          cmake-version: '4.0.0-rc4'
 
       - name: Setup NuGet
         run: |
@@ -141,7 +141,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: '3.29.2'
+          cmake-version: '4.0.0-rc4'
 
       - name: Setup NuGet
         run: |
@@ -213,7 +213,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: '3.29.2'
+          cmake-version: '4.0.0-rc4'
 
       - name: Setup NuGet
         run: |
@@ -293,7 +293,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: '3.29.2'
+          cmake-version: '4.0.0-rc4'
 
       - name: Setup NuGet
         run: |
