@@ -1222,8 +1222,8 @@ void    pfJournalBook::Show( bool startOpened /*= false */)
                 else
                 {
                     // it's a cover movie, not a decal, so we make a layer, thinking it's at 0,0 and a left map (which gives us the results we want)
-                    plLayerAVI *movieLayer = IMakeMovieLayer(decalChunk, 0, 0, mip, pfJournalDlgProc::kTagLeftDTMap, false);
-                    loadedMovie *movie = new loadedMovie;
+                    plLayerMovie* movieLayer = IMakeMovieLayer(decalChunk, 0, 0, mip, pfJournalDlgProc::kTagLeftDTMap, false);
+                    loadedMovie* movie = new loadedMovie;
                     movie->movieLayer = movieLayer;
                     movie->movieChunk = decalChunk;
                     fLoadedMovies.emplace_back(movie);
@@ -1290,7 +1290,7 @@ void    pfJournalBook::Hide()
             // nuke the movies so they don't stay in memory (they're big!)
             for (loadedMovie* lm : fLoadedMovies)
             {
-                plLayerAVI *movie = lm->movieLayer;
+                plLayerMovie* movie = lm->movieLayer;
                 movie->GetKey()->UnRefObject();
                 delete lm;
             }
@@ -2183,7 +2183,7 @@ void    pfJournalBook::IFreeSource()
 
     for (loadedMovie* lm : fLoadedMovies)
     {
-        plLayerAVI *movie = lm->movieLayer;
+        plLayerMovie* movie = lm->movieLayer;
         movie->GetKey()->UnRefObject();
         delete lm;
     }
@@ -2291,7 +2291,7 @@ void    pfJournalBook::IRenderPage( uint32_t page, uint32_t whichDTMap, bool sup
         for (size_t i = 0; i < material->GetNumLayers(); i++) // remove all plLayerMovie layers
         {
             plLayerInterface *matLayer = material->GetLayer(i);
-            plLayerAVI *movie = plLayerAVI::ConvertNoRef(matLayer);
+            plLayerMovie* movie = plLayerMovie::ConvertNoRef(matLayer);
             if (movie) // if it was a movie layer
             {
                 plMatRefMsg* refMsg = new plMatRefMsg(material->GetKey(), plRefMsg::kOnRemove, i, plMatRefMsg::kLayer); // remove it
@@ -2479,7 +2479,7 @@ void    pfJournalBook::IRenderPage( uint32_t page, uint32_t whichDTMap, bool sup
 
                 case pfEsHTMLChunk::kMovie:
                     movieAlreadyLoaded = (IMovieAlreadyLoaded(chunk) != nullptr); // have we already cached it?
-                    plLayerAVI *movieLayer = IMakeMovieLayer(chunk, x, y, (plMipmap*)dtMap, whichDTMap, suppressRendering);
+                    plLayerMovie* movieLayer = IMakeMovieLayer(chunk, x, y, (plMipmap*)dtMap, whichDTMap, suppressRendering);
                     if (movieLayer)
                     {
                         // adjust the starting height of the movie if we are keeping it inline with the text
@@ -2542,14 +2542,14 @@ void    pfJournalBook::IRenderPage( uint32_t page, uint32_t whichDTMap, bool sup
 
 void    pfJournalBook::IMoveMovies( hsGMaterial *source, hsGMaterial *dest )
 {
-    std::vector<plLayerAVI*> moviesOnPage;
+    std::vector<plLayerMovie*> moviesOnPage;
     if (source && dest)
     {
         // clear any exiting layers (movies) from the material and save them to our local array
         for (size_t i = 0; i < source->GetNumLayers(); i++) // remove all plLayerMovie layers
         {
             plLayerInterface *matLayer = source->GetLayer(i);
-            plLayerAVI *movie = plLayerAVI::ConvertNoRef(matLayer);
+            plLayerMovie* movie = plLayerMovie::ConvertNoRef(matLayer);
             if (movie) // if it was a movie layer
             {
                 plMatRefMsg* refMsg = new plMatRefMsg(source->GetKey(), plRefMsg::kOnRemove, i, plMatRefMsg::kLayer); // remove it
@@ -2561,7 +2561,7 @@ void    pfJournalBook::IMoveMovies( hsGMaterial *source, hsGMaterial *dest )
         for (size_t i = 0; i < dest->GetNumLayers(); i++) // remove all plLayerMovie layers
         {
             plLayerInterface *matLayer = dest->GetLayer(i);
-            plLayerAVI *movie = plLayerAVI::ConvertNoRef(matLayer);
+            plLayerMovie* movie = plLayerMovie::ConvertNoRef(matLayer);
             if (movie) // if it was a movie layer
             {
                 plMatRefMsg* refMsg = new plMatRefMsg(dest->GetKey(), plRefMsg::kOnRemove, i, plMatRefMsg::kLayer); // remove it
@@ -2569,7 +2569,7 @@ void    pfJournalBook::IMoveMovies( hsGMaterial *source, hsGMaterial *dest )
             }
         }
         // put the movies we ripped off the old page onto the new one
-        for (plLayerAVI* movie : moviesOnPage)
+        for (plLayerMovie* movie : moviesOnPage)
             dest->AddLayerViaNotify(movie);
     }
 }
@@ -2698,12 +2698,12 @@ pfJournalBook::loadedMovie *pfJournalBook::IGetMovieByIndex(uint8_t index)
     return nullptr;
 }
 
-plLayerAVI *pfJournalBook::IMakeMovieLayer(pfEsHTMLChunk *chunk, uint16_t x, uint16_t y, plMipmap *baseMipmap, uint32_t whichDTMap, bool dontRender)
+plLayerMovie* pfJournalBook::IMakeMovieLayer(pfEsHTMLChunk *chunk, uint16_t x, uint16_t y, plMipmap *baseMipmap, uint32_t whichDTMap, bool dontRender)
 {
     // see if it's already loaded
     loadedMovie *movie = IMovieAlreadyLoaded(chunk);
     plLayer* layer = nullptr;
-    plLayerAVI* movieLayer = nullptr;
+    plLayerMovie* movieLayer = nullptr;
     uint16_t movieWidth=0,movieHeight=0;
     if (movie)
     {
