@@ -189,7 +189,7 @@ class plLayerInterface;
 class plMipmap;
 class pfGUIProgressCtrl;
 class hsGMaterial;
-class plLayerAVI;
+class plLayerMovie;
 class pfGUIMultiLineEditCtrl;
 
 class pfJournalBook;
@@ -461,8 +461,8 @@ class pfJournalBook : public hsKeyedObject
 
         struct loadedMovie
         {
-            pfEsHTMLChunk *movieChunk;
-            plLayerAVI *movieLayer;
+            pfEsHTMLChunk* movieChunk;
+            plLayerMovie* movieLayer;
         };
 
         friend class pfJournalDlgProc;
@@ -583,7 +583,7 @@ class pfJournalBook : public hsKeyedObject
         // Movie functions
         loadedMovie         *IMovieAlreadyLoaded(pfEsHTMLChunk *chunk);
         loadedMovie         *IGetMovieByIndex(uint8_t index);
-        plLayerAVI          *IMakeMovieLayer(pfEsHTMLChunk *chunk, uint16_t x, uint16_t y, plMipmap *baseMipmap, uint32_t whichDTMap, bool dontRender);
+        plLayerMovie        *IMakeMovieLayer(pfEsHTMLChunk *chunk, uint16_t x, uint16_t y, plMipmap *baseMipmap, uint32_t whichDTMap, bool dontRender);
 
         // Cover functions
         plLayerInterface    *IMakeBaseLayer(plMipmap *image);
