@@ -5,6 +5,7 @@ set(pfSurface_SOURCES
     plGrabCubeMap.cpp
     plLayerAVI.cpp
     plLayerMovie.cpp
+    plLayerWebM.cpp
 )
 
 set(pfSurface_HEADERS
@@ -15,6 +16,7 @@ set(pfSurface_HEADERS
     plGrabCubeMap.h
     plLayerAVI.h
     plLayerMovie.h
+    plLayerWebM.h
 )
 
 plasma_library(pfSurface
@@ -37,6 +39,7 @@ target_link_libraries(
         plGImage
         plMessage
         plScene
+        pfMoviePlayer
         $<$<PLATFORM_ID:Windows>:vfw32>
     INTERFACE
         pnFactory
