@@ -70,7 +70,7 @@ QString Factory_Name(unsigned type)
         "plPortalDrawable", "plPortalPhysical", "plSpawnModifier",
         "plFacingConditionalObject", "plPXPhysical", "plViewFaceModifier",
         "plLayerInterface", "plLayerWrapper", "plLayerAnimation", "plLayerDepth",
-        "plLayerMovie", "plLayerBink", "plLayerAVI", "plSound", "plWin32Sound",
+        "plLayerMovie", "plLayerWebM", "plLayerAVI", "plSound", "plWin32Sound",
         "plLayerOr", "plAudioSystem", "plDrawableSpans", "UNUSED_plDrawablePatchSet",
         "plInputManager", "plLogicModBase", "plFogEnvironment", "plNetApp",
         "plNetClientMgr", "pl2WayWinAudible", "plLightInfo", "plDirectionalLightInfo",
