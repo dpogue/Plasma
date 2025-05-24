@@ -40,27 +40,26 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#ifndef pfSurfaceCreatable_inc
-#define pfSurfaceCreatable_inc
-
-#include "pnFactory/plCreator.h"
-
-#include "plDistOpacityMod.h"
-REGISTER_CREATABLE(plDistOpacityMod);
-
-#include "plFadeOpacityLay.h"
-REGISTER_CREATABLE(plFadeOpacityLay);
-
-#include "plFadeOpacityMod.h"
-REGISTER_CREATABLE(plFadeOpacityMod);
-
-#include "plLayerAVI.h"
-REGISTER_CREATABLE(plLayerAVI);
+#ifndef plLayerWebM_inc
+#define plLayerWebM_inc
 
 #include "plLayerMovie.h"
-REGISTER_NONCREATABLE(plLayerMovie);
 
-#include "plLayerWebM.h"
-REGISTER_CREATABLE(plLayerWebM);
+class plLayerWebM : public plLayerMovie
+{
+protected:
+    int32_t             ISecsToFrame(float secs) override;
+    bool                IInit() override;
+    bool                IGetCurrentFrame() override;
+    bool                IRelease() override;
 
-#endif //  pfSurfaceCreatable_inc
+public:
+    plLayerWebM();
+    virtual ~plLayerWebM();
+
+    CLASSNAME_REGISTER(plLayerWebM);
+    GETINTERFACE_ANY(plLayerWebM, plLayerMovie);
+};
+
+#endif // plLayerWebM_inc
+
