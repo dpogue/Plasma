@@ -49,6 +49,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #ifdef HS_BUILD_FOR_APPLE
 #include <CoreFoundation/CoreFoundation.h>
+#include <objc/message.h>
 
 template<typename T, typename U>
 inline T bridge_cast(U* obj)
