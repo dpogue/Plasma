@@ -54,7 +54,7 @@ TEST(pfPasswordStore, service)
 
 #if defined(HS_BUILD_FOR_WIN32)
     EXPECT_EQ(typeid(*store), typeid(pfWin32PasswordStore));
-#elif defined(HAVE_SECURITY)
+#elif defined(HS_BUILD_FOR_APPLE)
     EXPECT_EQ(typeid(*store), typeid(pfApplePasswordStore));
 #elif defined(HAVE_LIBSECRET)
     EXPECT_EQ(typeid(*store), typeid(pfUnixPasswordStore));
@@ -78,7 +78,7 @@ TEST(pfWin32PasswordStore, storing_and_retrieval)
 }
 #endif
 
-#if defined(HAVE_SECURITY)
+#if defined(HS_BUILD_FOR_APPLE)
 TEST(pfApplePasswordStore, storing_and_retrieval)
 {
     pfApplePasswordStore store;

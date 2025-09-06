@@ -12,10 +12,8 @@ target_link_libraries(
         pfPasswordStore
 )
 
-if(TARGET PkgConfig::LIBSECRET AND NOT TARGET Security::Security)
+if(TARGET PkgConfig::LIBSECRET)
     target_compile_definitions(test_pfPasswordStore PRIVATE HAVE_LIBSECRET)
-elseif(TARGET Security::Security)
-    target_compile_definitions(test_pfPasswordStore PRIVATE HAVE_SECURITY)
 endif()
 
 add_test(NAME test_pfPasswordStore COMMAND test_pfPasswordStore)
