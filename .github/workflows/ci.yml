@@ -270,7 +270,7 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { str: macos-arm64, arch: arm64, runner: "macos-15", qt-version: 6, min-deploy-target: 11.0 }
+          - { str: macos-arm64, arch: arm64, runner: "macos-26", qt-version: 6, min-deploy-target: 11.0 }
           - { str: macos-x64, arch: x86_64, runner: "macos-15-intel", qt-version: 5, min-deploy-target: 10.14 }
         cfg:
           - { external: OFF, type: RelWithDebInfo, str: internal-release }
@@ -355,7 +355,7 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { str: macos-arm64, runner: "macos-15" }
+          - { str: macos-arm64, runner: "macos-26" }
           - { str: macos-x64, runner: "macos-15-intel" }
           - { str: linux-x64, runner: "ubuntu-22.04" }
           - { str: windows-x64, runner: "windows-2022" }
