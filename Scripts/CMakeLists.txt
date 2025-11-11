@@ -27,7 +27,14 @@ install(
     FILES_MATCHING PATTERN "*.age" PATTERN "*.fni"
 )
 
-file(TO_CMAKE_PATH "${Python3_STDARCH}" Scripts_SYSTEM_PATH)
+file(TO_CMAKE_PATH "${Python3_LIBRARY_DIRS}" Scripts_SYSTEM_LIBRARY_DIRS)
+list(GET Scripts_SYSTEM_LIBRARY_DIRS 0 Scripts_SYSTEM_PATH_PREFIX)
+file(TO_CMAKE_PATH "${Python3_INCLUDE_DIRS}" Scripts_INCLUDE_SYSTEM_PATH)
+get_filename_component(Scripts_SYSTEM_PATH_SUFFIX "${Scripts_INCLUDE_SYSTEM_PATH}" NAME)
+set(Scripts_SYSTEM_PATH "${Scripts_SYSTEM_PATH_PREFIX}/${Scripts_SYSTEM_PATH_SUFFIX}")
+
+message(NOTICE "Scripts_SYSTEM_PATH is ${Scripts_SYSTEM_PATH}")
+
 install(
     DIRECTORY "${Scripts_SYSTEM_PATH}/"
     DESTINATION client/python/system
