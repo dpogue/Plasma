@@ -55,7 +55,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #endif
 
 // Cocoa client
-#import "NSString+StringTheory.h"
 #import "PLSKeyboardEventMonitor.h"
 #import "PLSLoginWindowController.h"
 #import "PLSPatcherWindowController.h"
@@ -127,13 +126,13 @@ public:
 #if !defined(HS_BUILD_FOR_MACOS) || MAC_OS_X_VERSION_MIN_REQUIRED >= 1090
         fActivity = [[NSProcessInfo processInfo]
                         beginActivityWithOptions:(NSActivityUserInitiated | NSActivityIdleDisplaySleepDisabled | NSActivityBackground)
-                                          reason:NSStringCreateWithSTString(plProduct::LongName())];
+                                          reason:[NSString stringWithSTString:plProduct::LongName()]];
 #else
 #   if MAC_OS_X_VERSION_MAX_ALLOWED >= 1090 && defined(HAVE_BUILTIN_AVAILABLE)
         if (__builtin_available(macOS 10.9, *)) {
             fActivity = [[NSProcessInfo processInfo]
                             beginActivityWithOptions:(NSActivityUserInitiated | NSActivityIdleDisplaySleepDisabled | NSActivityBackground)
-                                              reason:NSStringCreateWithSTString(plProduct::LongName())];
+                                              reason:[NSString stringWithSTString:plProduct::LongName()]];
         }
         else
 #   endif

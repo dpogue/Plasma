@@ -93,7 +93,6 @@ elseif(APPLE)
     list(APPEND plClient_SOURCES
         Mac-Cocoa/main.mm
         Mac-Cocoa/plMacDisplayHelper.mm
-        Mac-Cocoa/NSString+StringTheory.mm
         Mac-Cocoa/PLSKeyboardEventMonitor.mm
         Mac-Cocoa/PLSView.mm
         Mac-Cocoa/PLSLoginController.mm
@@ -103,7 +102,6 @@ elseif(APPLE)
         Mac-Cocoa/PLSServerStatus.mm
     )
     list(APPEND plClient_HEADERS
-        Mac-Cocoa/NSString+StringTheory.h
         Mac-Cocoa/plMacDisplayHelper.h
         Mac-Cocoa/PLSKeyboardEventMonitor.h
         Mac-Cocoa/PLSView.h

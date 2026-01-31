@@ -43,16 +43,16 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <regex>
 
 #include "PLSLoginController.h"
-
-#include "hsEndian.h"
-#include "NSString+StringTheory.h"
-#include "pfPasswordStore/pfPasswordStore.h"
 #include "PLSServerStatus.h"
+
+#include "hsDarwin.h"
+#include "hsEndian.h"
+#include "plProduct.h"
+#include "pnEncryption/plChallengeHash.h"
 #include "pnNetBase/pnNbSrvs.h"
 #include "plNetGameLib/plNetGameLib.h"
-#include "plProduct.h"
 #include "plNetClient/plNetClientMgr.h"
-#include "pnEncryption/plChallengeHash.h"
+#include "pfPasswordStore/pfPasswordStore.h"
 
 #define FAKE_PASS_STRING @"********"
 

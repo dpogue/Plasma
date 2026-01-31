@@ -42,11 +42,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "PLSLoginWindowController.h"
 
-#include "NSString+StringTheory.h"
 #include "PLSServerStatus.h"
+
+#include "hsDarwin.h"
+#include "plProduct.h"
 #include "pnNetBase/pnNbError.h"
 #include "pnNetBase/pnNbSrvs.h"
-#include "plProduct.h"
 
 @interface PLSLoginWindowController ()
 

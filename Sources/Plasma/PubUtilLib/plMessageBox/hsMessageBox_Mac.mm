@@ -52,8 +52,8 @@ hsMessageBoxResult hsMessageBox(const ST::string& message, const ST::string& cap
         return hsMBoxOk;
 
     @autoreleasepool {
-        NSString* nsMessage = NSStringCreateWithSTString(message);
-        NSString* nsCaption = NSStringCreateWithSTString(caption);
+        NSString* nsMessage = [NSString stringWithSTString:message];
+        NSString* nsCaption = [NSString stringWithSTString:caption];
 
         __block NSModalResponse response;
         NSCondition* lock = [NSCondition new];

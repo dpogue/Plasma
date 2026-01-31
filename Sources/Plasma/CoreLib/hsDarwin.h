@@ -44,15 +44,27 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define _hsDarwin_inc_
 
 #include "HeadSpin.h"
-#include <string_theory/string>
-#include <string_theory/format>
 
 #ifdef HS_BUILD_FOR_APPLE
+#include <string_theory/string>
+#include <string_theory/format>
 #include <CoreFoundation/CoreFoundation.h>
 #include <objc/message.h>
 
+#if !__has_feature(nullability)
+#   ifndef _Nullable
+#       define _Nullable
+#   endif
+#   ifndef _Nonnull
+#       define _Nonnull
+#   endif
+#   ifndef _Null_unspecified
+#       define _Null_unspecified
+#   endif
+#endif
+
 template<typename T, typename U>
-inline T bridge_cast(U* obj)
+inline T bridge_cast(U* _Nullable obj)
 {
 #if defined(__OBJC__) && __has_feature(objc_arc)
     return (__bridge T)(obj);
@@ -92,40 +104,34 @@ inline void format_type(const ST::format_spec &format, ST::format_writer &output
 #ifdef __OBJC__
 #import <Foundation/Foundation.h>
 
-[[nodiscard]]
-#if __has_feature(attribute_ns_returns_retained)
-__attribute__((ns_returns_retained))
+#if !__has_feature(objc_instancetype)
+#   undef instancetype
+#   define instancetype id
 #endif
-inline NSString* NSStringCreateWithSTString(const ST::string& str)
-{
-#if __has_feature(objc_arc)
-    return (NSString*)CFBridgingRelease(CFStringCreateWithSTString(str));
-#else
-    return (NSString*)CFStringCreateWithSTString(str);
-#endif
-}
 
-inline ST::string STStringFromNSString(NSString* str, ST::utf_validation_t validation = ST_DEFAULT_VALIDATION)
-{
-    return STStringFromCFString(bridge_cast<CFStringRef>(str), validation);
-}
+@interface NSString (StringTheory)
++ (instancetype _Nullable)stringWithSTString:(const ST::string&)string;
+- (instancetype _Nullable)initWithSTString:(const ST::string&)string;
+- (const ST::string)STString;
+@end
 
-inline void format_type(const ST::format_spec &format, ST::format_writer &output, NSString* str)
+
+inline void format_type(const ST::format_spec &format, ST::format_writer &output, NSString* _Nonnull str)
 {
-    ST::char_buffer utf8 = STStringFromNSString(str).to_utf8();
+    ST::char_buffer utf8 = STStringFromCFString(bridge_cast<CFStringRef>(str)).to_utf8();
     ST::format_string(format, output, utf8.data(), utf8.size());
 }
 
 
 #if __has_feature(objc_arc) || (MAC_OS_X_VERSION_MIN_REQUIRED >= 1070 && defined(__clang__))
-    extern "C" void* objc_autoreleasePoolPush(void);
-    extern "C" void  objc_autoreleasePoolPop(void* pool);
+    extern "C" void* _Nonnull objc_autoreleasePoolPush(void);
+    extern "C" void  objc_autoreleasePoolPop(void* _Nonnull pool);
 #endif
 
 class hsAutoreleasePool
 {
 private:
-    void* const fPool;
+    void* _Nonnull const fPool;
 
 public:
     hsAutoreleasePool()

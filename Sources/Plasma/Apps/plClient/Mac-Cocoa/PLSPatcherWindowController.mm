@@ -41,8 +41,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #import "PLSPatcherWindowController.h"
-#import "NSString+StringTheory.h"
 #include "PLSServerStatus.h"
+#include "hsDarwin.h"
 #include "plProduct.h"
 
 @interface PLSPatcherWindowController ()

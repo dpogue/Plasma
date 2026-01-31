@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #import "PLSPatcher.h"
-#import "NSString+StringTheory.h"
 
 #include <archive.h>
 #include <archive_entry.h>

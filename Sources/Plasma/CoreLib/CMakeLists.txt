@@ -2,6 +2,7 @@ set(CoreLib_SOURCES
     hsBitVector.cpp
     hsBounds.cpp
     hsCpuID.cpp
+    $<$<PLATFORM_ID:Darwin,iOS,visionOS>:hsDarwin.mm>
     hsDebug.cpp
     hsExceptions.cpp
     hsExceptionStack.cpp
@@ -88,8 +89,9 @@ target_link_libraries(
         string_theory
         Threads::Threads
         $<$<AND:$<CONFIG:Debug>,$<BOOL:${USE_VLD}>>:VLD::VLD>
-        "$<$<PLATFORM_ID:Darwin>:-framework Accelerate>"
-        "$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"
+        "$<$<PLATFORM_ID:Darwin,iOS,visionOS>:-framework Accelerate>"
+        "$<$<PLATFORM_ID:Darwin,iOS,visionOS>:-framework CoreFoundation>"
+        "$<$<PLATFORM_ID:Darwin,iOS,visionOS>:-framework Foundation>"
 )
 target_include_directories(
     CoreLib

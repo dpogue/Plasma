@@ -41,7 +41,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #import "PLSServerStatus.h"
-#import "NSString+StringTheory.h"
+#include "hsDarwin.h"
 #include "pnNetBase/pnNbSrvs.h"
 
 @interface PLSServerStatus () <NSURLSessionDelegate>
