@@ -51,7 +51,7 @@
     "overrides": [
       {
         "name": "physx",
-        "version": "4.1.2#6",
+        "version": "4.1.2#7",
         "$comment": "Upstream vcpkg updated to PhysX 5, which drops support for several target platforms. Stick with 4.1.2 for now."
       }
     ],
@@ -61,12 +61,13 @@
         "dependencies": [
           {
             "name": "python3-cairosvg",
-            "host": true
+            "host": true,
+            "platform": "!(windows & arm64)"
           }
         ]
       }
     },
-    "builtin-baseline": "f7423ee180c4b7f40d43402c2feb3859161ef625",
+    "builtin-baseline": "dd3097e305afa53f7b4312371f62058d2e665320",
     "vcpkg-configuration": {
       "overlay-ports": ["./Scripts/Ports"],
       "overlay-triplets": ["./Scripts/Triplets"]

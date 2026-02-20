@@ -21,14 +21,14 @@ jobs:
           MACHINE_USER_TOKEN: ${{ secrets.MACHINE_USER_REPO_READ }}
 
   windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     name: ${{ matrix.platform.str }}-${{ matrix.cfg.str }}
     needs: ["max-secrets"]
     strategy:
       matrix:
         platform:
-          - { generator: Visual Studio 16 2019, max-version: 7, arch: Win32, qt-arch: win32_msvc2019, qt-version: 5.15.2,  str: windows-x86 }
-          - { generator: Visual Studio 16 2019, max-version: 2022, arch: x64, qt-arch: win64_msvc2019_64, qt-version: 5.15.2,  str: windows-x64 }
+          - { generator: Visual Studio 17 2022, max-version: 7, arch: Win32, qt-arch: win32_msvc2019, qt-version: 5.15.2,  str: windows-x86 }
+          - { generator: Visual Studio 17 2022, max-version: 2022, arch: x64, qt-arch: win64_msvc2022_64, qt-version: 6.9.1,  str: windows-x64 }
         cfg:
           - { external: OFF, type: RelWithPDB, str: internal-release }
           - { external: OFF, type: Debug, str: internal-debug }
@@ -112,20 +112,20 @@ jobs:
     needs: ["max-secrets"]
     if: github.event_name == 'push' && needs.max-secrets.outputs.HAS_MACHINE_USER_TOKEN == 'true'
 
-    runs-on: windows-2019
+    runs-on: windows-2022
     name: maxplugin-${{ matrix.cfg.str }}-${{ matrix.cfg.sdk-version }}
     strategy:
       matrix:
         cfg:
           # Max 7 and 2022 are tested in the x86 and x64 windows build jobs, respectively.
-          - { sdk-version: 2008, generator: Visual Studio 16 2019, arch: Win32, str: windows-x86 }
-          - { sdk-version: 2012, generator: Visual Studio 16 2019, arch: Win32, str: windows-x86 }
-          - { sdk-version: 2013, generator: Visual Studio 16 2019, arch: x64, str: windows-x64 }
-          - { sdk-version: 2017, generator: Visual Studio 16 2019, arch: x64, str: windows-x64 }
-          - { sdk-version: 2019, generator: Visual Studio 16 2019, arch: x64, str: windows-x64 }
-          - { sdk-version: 2020, generator: Visual Studio 16 2019, arch: x64, str: windows-x64 }
-          - { sdk-version: 2023, generator: Visual Studio 16 2019, arch: x64, str: windows-x64 }
-          - { sdk-version: 2024, generator: Visual Studio 16 2019, arch: x64, str: windows-x64 }
+          - { sdk-version: 2008, generator: Visual Studio 17 2022, arch: Win32, str: windows-x86 }
+          - { sdk-version: 2012, generator: Visual Studio 17 2022, arch: Win32, str: windows-x86 }
+          - { sdk-version: 2013, generator: Visual Studio 17 2022, arch: x64, str: windows-x64 }
+          - { sdk-version: 2017, generator: Visual Studio 17 2022, arch: x64, str: windows-x64 }
+          - { sdk-version: 2019, generator: Visual Studio 17 2022, arch: x64, str: windows-x64 }
+          - { sdk-version: 2020, generator: Visual Studio 17 2022, arch: x64, str: windows-x64 }
+          - { sdk-version: 2023, generator: Visual Studio 17 2022, arch: x64, str: windows-x64 }
+          - { sdk-version: 2024, generator: Visual Studio 17 2022, arch: x64, str: windows-x64 }
 
     steps:
       - name: Checkout Plasma
@@ -202,6 +202,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
               autoconf \
+              autoconf-archive \
               cmake \
               libcairo2 \
               libsecret-1-dev \
@@ -269,8 +270,8 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { str: macos-arm64, arch: arm64, runner: "macos-14" }
-          - { str: macos-x64, arch: x86_64, runner: "macos-13" }
+          - { str: macos-arm64, arch: arm64, runner: "macos-15", qt-version: 6, min-deploy-target: 11.0 }
+          - { str: macos-x64, arch: x86_64, runner: "macos-15-intel", qt-version: 5, min-deploy-target: 10.14 }
         cfg:
           - { external: OFF, type: RelWithDebInfo, str: internal-release }
           - { external: OFF, type: Debug, str: internal-debug }
@@ -283,11 +284,13 @@ jobs:
       - name: Install dependencies
         run: |
           brew install -q \
-              qt@5 \
+              qt@${{ matrix.platform.qt-version }} \
               autoconf \
+              autoconf-archive \
               automake \
               libtool \
               nasm \
+              nuget \
               python-setuptools
 
       - name: Setup cmake
@@ -314,12 +317,12 @@ jobs:
             -G Xcode \
             -DUSE_VCPKG=ON \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.platform.arch }} \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ matrix.platform.min-deploy-target }} \
             -DCMAKE_FIND_FRAMEWORK=LAST \
             -DPLASMA_BUILD_TESTS=ON \
             -DPLASMA_BUILD_TOOLS=ON \
             -DPLASMA_EXTERNAL_RELEASE=${{ matrix.cfg.external }} \
-            -DQt5_ROOT=$(brew --prefix qt@5) \
+            -DQt${{ matrix.platform.qt-version }}_ROOT=$(brew --prefix qt@${{ matrix.platform.qt-version }}) \
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build \
             -S . -B build
         env:
@@ -344,3 +347,42 @@ jobs:
         with:
           name: plasma-${{ matrix.platform.str }}-${{ matrix.cfg.str }}
           path: build/install
+
+  stubs:
+    needs: [linux, macos, windows]
+    runs-on: ${{ matrix.platform.runner }}
+    name: stubs-${{ matrix.platform.str }}
+    strategy:
+      matrix:
+        platform:
+          - { str: macos-arm64, runner: "macos-15" }
+          - { str: macos-x64, runner: "macos-15-intel" }
+          - { str: linux-x64, runner: "ubuntu-22.04" }
+          - { str: windows-x64, runner: "windows-2022" }
+          - { str: windows-x86, runner: "windows-2022" }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: plasma-${{ matrix.platform.str }}-internal-release
+          path: build/install
+
+      - name: Set Permissions
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x build/install/tools/plGeneratePythonStubs
+
+      - name: Check Python Stubs
+        shell: bash
+        run: |
+          build/install/tools/plGeneratePythonStubs -Client build/install/client -Stubs Scripts/Python/plasma
+          diff_output=$(git diff -- Scripts/Python/plasma)
+          if [[ -n "$diff_output" ]]; then
+            echo "::error::The Python stubs are out of date. Please run 'plGeneratePythonStubs' and commit the changes."
+            echo "$diff_output"
+            exit 1
+          fi
