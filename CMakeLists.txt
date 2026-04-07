@@ -219,7 +219,10 @@ include_directories(${PROJECT_BINARY_DIR})
 if(PLASMA_BUILD_TOOLS)
     # Custom dummy target for compiling all tools
     add_custom_target(tools)
-    set_target_properties(tools PROPERTIES XCODE_GENERATE_SCHEME TRUE)
+    set_target_properties(tools PROPERTIES
+        FOLDER Tools
+        XCODE_GENERATE_SCHEME TRUE
+    )
 endif()
 
 include(TestBigEndian)
@@ -247,6 +250,7 @@ endif()
 if(PLASMA_BUILD_TESTS)
     enable_testing()
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIGURATION>)
+    set_target_properties(check PROPERTIES FOLDER Tests)
     add_subdirectory(Sources/Tests EXCLUDE_FROM_ALL)
 endif(PLASMA_BUILD_TESTS)
 
