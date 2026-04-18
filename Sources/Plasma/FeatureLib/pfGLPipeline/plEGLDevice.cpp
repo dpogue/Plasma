@@ -77,7 +77,8 @@ bool plEGLDevice::Enumerate(hsG3DDeviceRecord& record)
             break;
 
         EGLint ctx_attrs[] = {
-            EGL_CONTEXT_MAJOR_VERSION, 3,
+            EGL_CONTEXT_MAJOR_VERSION, 2,
+            EGL_CONTEXT_MINOR_VERSION, 1,
             EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
             EGL_NONE
         };
@@ -99,7 +100,7 @@ bool plEGLDevice::Enumerate(hsG3DDeviceRecord& record)
         if (!eglMakeCurrent(display, surface, surface, context))
             break;
 
-        if (epoxy_gl_version() < 33)
+        if (epoxy_gl_version() < 21)
             break;
 
         record.SetG3DDeviceType(hsG3DDeviceSelector::kDevTypeOpenGL);
@@ -168,7 +169,8 @@ plEGLDevice* plEGLDevice::TryInit(hsWindowHndl window, hsDisplayHndl device, ST:
 
         /* Set up the GL context */
         EGLint ctx_attrs[] = {
-            EGL_CONTEXT_MAJOR_VERSION, 3,
+            EGL_CONTEXT_MAJOR_VERSION, 2,
+            EGL_CONTEXT_MINOR_VERSION, 1,
             EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
             EGL_NONE
         };

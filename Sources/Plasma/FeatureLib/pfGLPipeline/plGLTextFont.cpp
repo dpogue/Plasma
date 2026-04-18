@@ -85,16 +85,16 @@ void plGLTextFont::ICreateTexture(uint16_t* data)
     }
 }
 
-static const char* TEXTFONT_VERTEX_SHADER_STRING = R"(#version 430
+static const char* TEXTFONT_VERTEX_SHADER_STRING = R"(#version 120
 
-layout(location = 0) in vec3 aVtxPosition;
-layout(location = 1) in vec4 aVtxColor;
-layout(location = 2) in highp vec3 aVtxUV;
+attribute vec3 aVtxPosition;
+attribute vec4 aVtxColor;
+attribute vec3 aVtxUV;
 
-layout(location = 1) uniform vec2 uPipeSize;
+uniform vec2 uPipeSize;
 
-out vec4 vVtxColor;
-out vec3 vVtxUV;
+varying vec4 vVtxColor;
+varying vec3 vVtxUV;
 
 void main() {
     mat4 projMatrix = mat4(1.0);
@@ -109,17 +109,15 @@ void main() {
     gl_Position = projMatrix * vec4(aVtxPosition, 1.0);
 })";
 
-static const char* TEXTFONT_FRAGMENT_SHADER_STRING = R"(#version 430
-precision mediump float;
+static const char* TEXTFONT_FRAGMENT_SHADER_STRING = R"(#version 120
 
-layout(location = 0) uniform sampler2D uTex;
+uniform sampler2D uTex;
 
-in vec4 vVtxColor;
-in highp vec3 vVtxUV;
-out vec4 fragColor;
+varying vec4 vVtxColor;
+varying vec3 vVtxUV;
 
 void main() {
-    fragColor = texture(uTex, vec2(vVtxUV.x, vVtxUV.y)) * vVtxColor;
+    gl_FragColor = texture2D(uTex, vec2(vVtxUV.x, vVtxUV.y)) * vVtxColor;
 })";
 
 void plGLTextFont::IInitStateBlocks()
@@ -129,10 +127,44 @@ void plGLTextFont::IInitStateBlocks()
     glCompileShader(vshader);
     LOG_GL_ERROR_CHECK("Vertex Shader compile failed");
 
+    #ifdef HS_DEBUGGING
+    {
+        GLint compiled = 0;
+        glGetShaderiv(vshader, GL_COMPILE_STATUS, &compiled);
+        if (compiled == 0) {
+            GLint length = 0;
+            glGetShaderiv(vshader, GL_INFO_LOG_LENGTH, &length);
+            if (length) {
+                char* log = new char[length];
+                glGetShaderInfoLog(vshader, length, &length, log);
+                hsStatusMessage(log);
+                delete[] log;
+            }
+        }
+    }
+    #endif
+
     GLuint fshader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fshader, 1, &TEXTFONT_FRAGMENT_SHADER_STRING, nullptr);
     glCompileShader(fshader);
-    LOG_GL_ERROR_CHECK("Vertex Shader compile failed");
+    LOG_GL_ERROR_CHECK("Fragment Shader compile failed");
+
+    #ifdef HS_DEBUGGING
+    {
+        GLint compiled = 0;
+        glGetShaderiv(fshader, GL_COMPILE_STATUS, &compiled);
+        if (compiled == 0) {
+            GLint length = 0;
+            glGetShaderiv(fshader, GL_INFO_LOG_LENGTH, &length);
+            if (length) {
+                char* log = new char[length];
+                glGetShaderInfoLog(fshader, length, &length, log);
+                hsStatusMessage(log);
+                delete[] log;
+            }
+        }
+    }
+    #endif
 
     GLuint program = glCreateProgram();
     LOG_GL_ERROR_CHECK("Create Program failed");
@@ -147,6 +179,13 @@ void plGLTextFont::IInitStateBlocks()
 
     glAttachShader(program, fshader);
     LOG_GL_ERROR_CHECK("Attach Fragment Shader failed");
+
+    glBindAttribLocation(program, 0, "aVtxPosition");
+    LOG_GL_ERROR_CHECK("glBindAttribLocation 0 failed");
+    glBindAttribLocation(program, 1, "aVtxColor");
+    LOG_GL_ERROR_CHECK("glBindAttribLocation 1 failed");
+    glBindAttribLocation(program, 2, "aVtxUV");
+    LOG_GL_ERROR_CHECK("glBindAttribLocation 2 failed");
 
     glLinkProgram(program);
     LOG_GL_ERROR_CHECK("Program Link failed");
@@ -258,10 +297,10 @@ void plGLTextFont::SaveStates()
     glDepthRange(0.0, 1.0);
 
     glUseProgram(fShader);
-    LOG_GL_ERROR_CHECK("Use Program failed");
+    LOG_GL_ERROR_CHECK("Use Program failed for plGLTextFont");
 
-    glUniform1i(0, 0);
-    glUniform2f(1, float(fPipe->Width()), float(fPipe->Height()));
+    glUniform1i(glGetUniformLocation(fShader, "uTex"), 0);
+    glUniform2f(glGetUniformLocation(fShader, "uPipeSize"), float(fPipe->Width()), float(fPipe->Height()));
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthFunc(GL_ALWAYS);
     glDepthMask(GL_TRUE);
