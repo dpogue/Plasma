@@ -1496,6 +1496,7 @@ void plGLPipeline::IDrawPlate(plPlate* plate)
         mRef->Link(&fMatRefList);
 
     glUseProgram(mRef->fRef);
+    LOG_GL_ERROR_CHECK(ST::format("Use Program with material \"{}\" (for plate) failed", material->GetKeyName()));
     fDevice.SetCurrentProgram(mRef->fRef);
 
     mRef->SetupTextureRefs();
@@ -1540,29 +1541,27 @@ struct plAVTexVert
     float fUv[2];
 };
 
-static const char* AVATAR_VERTEX_SHADER_STRING = R"(#version 430
+static const char* AVATAR_VERTEX_SHADER_STRING = R"(#version 120
 
-layout(location = 0) in vec2 aVtxPosition;
-layout(location = 1) in vec2 aVtxUV;
+attribute vec2 aVtxPosition;
+attribute vec2 aVtxUV;
 
-out vec2 vVtxUV;
+varying vec2 vVtxUV;
 
 void main() {
     vVtxUV = aVtxUV;
     gl_Position = vec4(aVtxPosition, 0.0, 1.0);
 })";
 
-static const char* AVATAR_FRAGMENT_SHADER_STRING = R"(#version 430
-precision mediump float;
+static const char* AVATAR_FRAGMENT_SHADER_STRING = R"(#version 120
 
-layout(location = 0) uniform sampler2D uTex;
-layout(location = 1) uniform vec4 uColor;
+uniform sampler2D uTex;
+uniform vec4 uColor;
 
-in highp vec2 vVtxUV;
-out vec4 fragColor;
+varying vec2 vVtxUV;
 
 void main() {
-    fragColor = texture(uTex, vVtxUV.xy) * uColor;
+    gl_FragColor = texture2D(uTex, vVtxUV.xy) * uColor;
 })";
 
 void plGLPipeline::IPreprocessAvatarTextures()
@@ -1589,6 +1588,23 @@ void plGLPipeline::IPreprocessAvatarTextures()
         glCompileShader(vshader);
         LOG_GL_ERROR_CHECK("Vertex Shader compile failed");
 
+        #ifdef HS_DEBUGGING
+        {
+            GLint compiled = 0;
+            glGetShaderiv(vshader, GL_COMPILE_STATUS, &compiled);
+            if (compiled == 0) {
+                GLint length = 0;
+                glGetShaderiv(vshader, GL_INFO_LOG_LENGTH, &length);
+                if (length) {
+                    char* log = new char[length];
+                    glGetShaderInfoLog(vshader, length, &length, log);
+                    hsStatusMessage(log);
+                    delete[] log;
+                }
+            }
+        }
+        #endif
+
         sVertShader = vshader;
     }
 
@@ -1597,6 +1613,23 @@ void plGLPipeline::IPreprocessAvatarTextures()
         glShaderSource(fshader, 1, &AVATAR_FRAGMENT_SHADER_STRING, nullptr);
         glCompileShader(fshader);
         LOG_GL_ERROR_CHECK("Vertex Shader compile failed");
+
+        #ifdef HS_DEBUGGING
+        {
+            GLint compiled = 0;
+            glGetShaderiv(fshader, GL_COMPILE_STATUS, &compiled);
+            if (compiled == 0) {
+                GLint length = 0;
+                glGetShaderiv(fshader, GL_INFO_LOG_LENGTH, &length);
+                if (length) {
+                    char* log = new char[length];
+                    glGetShaderInfoLog(fshader, length, &length, log);
+                    hsStatusMessage(log);
+                    delete[] log;
+                }
+            }
+        }
+        #endif
 
         sFragShader = fshader;
     }
@@ -1615,6 +1648,11 @@ void plGLPipeline::IPreprocessAvatarTextures()
 
         glAttachShader(program, sFragShader);
         LOG_GL_ERROR_CHECK("Attach Fragment Shader failed");
+
+        glBindAttribLocation(program, 0, "aVtxPosition");
+        LOG_GL_ERROR_CHECK("glBindAttribLocation 0 failed");
+        glBindAttribLocation(program, 1, "aVtxUV");
+        LOG_GL_ERROR_CHECK("glBindAttribLocation 1 failed");
 
         glLinkProgram(program);
         LOG_GL_ERROR_CHECK("Program Link failed");
@@ -1665,8 +1703,8 @@ void plGLPipeline::IPreprocessAvatarTextures()
         LOG_GL_ERROR_CHECK("Use Program failed");
         fDevice.SetCurrentProgram(sProgram);
 
-        glUniform1i(0, 0);
-        glUniform4f(1, 1.f, 1.f, 1.f, 1.f);
+        glUniform1i(glGetUniformLocation(sProgram, "uTex"), 0);
+        glUniform4f(glGetUniformLocation(sProgram, "uColor"), 1.f, 1.f, 1.f, 1.f);
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_TRUE);
 

@@ -66,8 +66,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 // From plGLDevice.cpp
 extern GLfloat* hsMatrix2GL(const hsMatrix44& src, GLfloat* dst);
 
-const char* VERTEX_SHADER_STRING = R"(#version 330
-precision lowp int;
+const char* VERTEX_SHADER_STRING = R"(#version 120
 
 struct lightSource {
     vec4 position;
@@ -84,10 +83,18 @@ struct lightSource {
 
 
 // Input Attributes
-layout(location =  0) in vec3 aVtxPosition;
-layout(location =  1) in vec3 aVtxNormal;
-layout(location =  2) in vec4 aVtxColor;
-layout(location =  3) in vec3 aVtxUVWSrc[8];
+attribute vec3 aVtxPosition;
+attribute vec3 aVtxNormal;
+attribute vec4 aVtxColor;
+//attribute vec3 aVtxUVWSrc[8];
+attribute vec3 aVtxUVWSrc0;
+attribute vec3 aVtxUVWSrc1;
+attribute vec3 aVtxUVWSrc2;
+attribute vec3 aVtxUVWSrc3;
+attribute vec3 aVtxUVWSrc4;
+attribute vec3 aVtxUVWSrc5;
+attribute vec3 aVtxUVWSrc6;
+attribute vec3 aVtxUVWSrc7;
 
 uniform mat4 uMatrixL2W;
 uniform mat4 uMatrixW2L;
@@ -109,10 +116,10 @@ uniform float uInvertVtxAlpha; // Effectively boolean, 0.0 or 1.0
 uniform lightSource uLampSources[8];
 
 // Varying outputs
-out vec4 vCamPosition;
-out vec4 vCamNormal;
-out vec4 vVtxColor;
-out vec3 vVtxUVWSrc[8];
+varying vec4 vCamPosition;
+varying vec4 vCamNormal;
+varying vec4 vVtxColor;
+varying vec3 vVtxUVWSrc[8];
 
 void main() {
     vec4 MAmbient = mix(aVtxColor.bgra, uAmbientCol, uAmbientSrc);
@@ -125,9 +132,16 @@ void main() {
 
     vec3 Ndirection = normalize(mat3(uMatrixW2L) * aVtxNormal);
 
-    for (int i = 0; i < 8; i++) {
-        vVtxUVWSrc[i] = aVtxUVWSrc[i];
+    vVtxUVWSrc[0] = aVtxUVWSrc0;
+    vVtxUVWSrc[1] = aVtxUVWSrc1;
+    vVtxUVWSrc[2] = aVtxUVWSrc2;
+    vVtxUVWSrc[3] = aVtxUVWSrc3;
+    vVtxUVWSrc[4] = aVtxUVWSrc4;
+    vVtxUVWSrc[5] = aVtxUVWSrc5;
+    vVtxUVWSrc[6] = aVtxUVWSrc6;
+    vVtxUVWSrc[7] = aVtxUVWSrc7;
 
+    for (int i = 0; i < 8; i++) {
         float attenuation;
         vec3 direction;
 
@@ -171,9 +185,7 @@ void main() {
 })";
 
 
-const char* FRAGMENT_SHADER_STRING = R"(#version 330
-precision mediump float;
-precision lowp int;
+const char* FRAGMENT_SHADER_STRING = R"(#version 120
 
 uniform mat4 uLayerMat0;
 
@@ -187,17 +199,17 @@ uniform sampler2D uTexture0;
 
 uniform float uAlphaThreshold;
 uniform int uFogExponential;
-uniform highp vec2 uFogValues;
+uniform vec2 uFogValues;
 uniform vec3 uFogColor;
 
 // Varying inputs
-in highp vec4 vCamPosition;
-in highp vec4 vCamNormal;
-in vec4 vVtxColor;
-in highp vec3 vVtxUVWSrc[8];
+varying vec4 vCamPosition;
+varying vec4 vCamNormal;
+varying vec4 vVtxColor;
+varying vec3 vVtxUVWSrc[8];
 
 // Rendered outputs
-out vec4 fragColor;
+//out vec4 fragColor;
 
 void main() {
     float baseAlpha;
@@ -208,27 +220,27 @@ void main() {
 
     baseAlpha = vVtxColor.a;
     coords0 = uLayerMat0 * vec4(vVtxUVWSrc[0], 1.0);
-    image0 = texture(uTexture0, coords0.xy);
+    image0 = texture2D(uTexture0, coords0.xy);
     currColor = image0.rgb;
     currAlpha = image0.a * baseAlpha;
     currColor = vVtxColor.rgb * currColor;
 
     if (currAlpha < uAlphaThreshold) { discard; };
 
-    highp float fogFactor = 1.0;
+    float fogFactor = 1.0;
     if (uFogExponential > 0) {
         fogFactor = exp(-pow(uFogValues.y * length(vCamPosition.xyz), uFogValues.x));
     } else {
         if (uFogValues.y > 0.0) {
-            highp float start = uFogValues.x;
-            highp float end = uFogValues.y;
+            float start = uFogValues.x;
+            float end = uFogValues.y;
             fogFactor = (end - length(vCamPosition.xyz)) / (end - start);
         }
     }
 
     currColor = mix(currColor, uFogColor, 1.0 - clamp(fogFactor, 0.0, 1.0));
 
-    fragColor = vec4(currColor, currAlpha);
+    gl_FragColor = vec4(currColor, currAlpha);
 })";
 
 plGLMaterialShaderRef::plGLMaterialShaderRef(hsGMaterial* mat, plGLPipeline* pipe)
@@ -416,6 +428,23 @@ void plGLMaterialShaderRef::ICompile()
 
     glAttachShader(fRef, fFragShaderRef);
     LOG_GL_ERROR_CHECK("Attach Fragment Shader failed")
+
+    glBindAttribLocation(fRef, 0, "aVtxPosition");
+    LOG_GL_ERROR_CHECK("glBindAttribLocation 0 failed");
+    glBindAttribLocation(fRef, 1, "aVtxNormal");
+    LOG_GL_ERROR_CHECK("glBindAttribLocation 1 failed");
+    glBindAttribLocation(fRef, 2, "aVtxColor");
+    LOG_GL_ERROR_CHECK("glBindAttribLocation 2 failed");
+    glBindAttribLocation(fRef, 3, "aVtxUVWSrc0");
+    LOG_GL_ERROR_CHECK("glBindAttribLocation 3 failed");
+    glBindAttribLocation(fRef, 4, "aVtxUVWSrc1");
+    glBindAttribLocation(fRef, 5, "aVtxUVWSrc2");
+    glBindAttribLocation(fRef, 6, "aVtxUVWSrc3");
+    glBindAttribLocation(fRef, 7, "aVtxUVWSrc4");
+    glBindAttribLocation(fRef, 8, "aVtxUVWSrc5");
+    glBindAttribLocation(fRef, 9, "aVtxUVWSrc6");
+    glBindAttribLocation(fRef, 10, "aVtxUVWSrc7");
+    LOG_GL_ERROR_CHECK("glBindAttribLocation 10 failed");
 }
 
 
@@ -423,6 +452,21 @@ void plGLMaterialShaderRef::ISetShaderVariableLocs()
 {
     glLinkProgram(fRef);
     LOG_GL_ERROR_CHECK("Program Link failed");
+
+    GLint isLinked = 0;
+    glGetProgramiv(fRef, GL_LINK_STATUS, &isLinked);
+    if (isLinked == GL_FALSE)
+    {
+        GLint maxLength = 0;
+        glGetProgramiv(fRef, GL_INFO_LOG_LENGTH, &maxLength);
+        
+        // The maxLength includes the NULL character
+        char* log = new char[maxLength];
+        glGetProgramInfoLog(fRef, maxLength, &maxLength, log);
+        
+        hsStatusMessage(log);
+        delete[] log;
+    }
 
     uPassNumber       = glGetUniformLocation(fRef, "uPassNumber");
     uAlphaThreshold   = glGetUniformLocation(fRef, "uAlphaThreshold");
