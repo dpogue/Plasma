@@ -341,9 +341,9 @@ void plClusterUtil::IAddTemplates(plMaxNode* templNode, plSpanTemplTab& templs)
     plLightMapGen::Instance().Open(::GetCOREInterface(), ::GetCOREInterface()->GetTime(), false);
     hsVertexShader::Instance().Open();
 
-    hsVertexShader::Instance().ShadeNode(templNode, 
-                templNode->GetLocalToWorld44(), templNode->GetWorldToLocal44(), 
-                spanArray);
+    hsMatrix44 l2w = templNode->GetLocalToWorld44();
+    hsMatrix44 w2l = templNode->GetWorldToLocal44();
+    hsVertexShader::Instance().ShadeNode(templNode, l2w, w2l, spanArray);
 
     plLightMapGen::Instance().Close();
     hsVertexShader::Instance().Close();

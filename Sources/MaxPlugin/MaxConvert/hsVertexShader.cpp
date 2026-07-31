@@ -388,7 +388,8 @@ void hsVertexShader::IShadeVertices( plGeometrySpan *span, hsBitVector *dirtyVec
 
     TimeValue t = fInterface->GetTime();
     Box3 bbox;
-    node->EvalWorldState(t).obj->GetDeformBBox(t, bbox, &node->GetObjectTM(t));
+    auto objectTM = node->GetObjectTM(t);
+    node->EvalWorldState(t).obj->GetDeformBBox(t, bbox, &objectTM);
     plMaxLightContext ctx(bbox, t);
 
     for( index = 0; index < span->fNumVerts; index++ )

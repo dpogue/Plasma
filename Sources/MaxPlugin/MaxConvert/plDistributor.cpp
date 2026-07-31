@@ -1354,7 +1354,8 @@ void plDistributor::IDistributeOverFace(int iFace, plDistribInstTab& reps, plMes
                     // If |projGridPt - GridPt| < gridCubeRadius
                     // and probBitmap->GetPixel(src->UVW(bary)) < RandomZeroToOne()
                     // Also a generic random factor.
-                    if( IProbablyDoIt(iFace, pt - plnPt, bary) )
+                    Point3 del = pt - plnPt;
+                    if( IProbablyDoIt(iFace, del, bary) )
                     {
                         IReplicate(l2w, iRepNode, reps, cache[iCacheNode]);
 

@@ -1049,8 +1049,11 @@ static void FindRecursiveBounds(plMaxNode* node, hsBounds3Ext& bnd)
 
         if( !box.IsEmpty() )
         {
-            bnd.Union(&hsPoint3(box.Min().x, box.Min().y, box.Min().z));
-            bnd.Union(&hsPoint3(box.Max().x, box.Max().y, box.Max().z));
+            hsPoint3 minPoint = hsPoint3(box.Min().x, box.Min().y, box.Min().z);
+            bnd.Union(&minPoint);
+
+            hsPoint3 maxPoint = hsPoint3(box.Max().x, box.Max().y, box.Max().z);
+            bnd.Union(&maxPoint);
         }
 
         if( meshObj != obj )
@@ -1087,7 +1090,8 @@ static bool FindMaxBounds(plMaxNode* node, hsBounds3Ext& bnd)
     hsMatrix44 l2w = node->GetLocalToWorld44();
 
     // Expand them to be symmetric about local origin.
-    bnd.MakeSymmetric(&l2w.GetTranslate());
+    auto xlate = l2w.GetTranslate();
+    bnd.MakeSymmetric(&xlate);
 
     return true;
 }

@@ -56,14 +56,16 @@ plExportLogErrorMsg::~plExportLogErrorMsg()
     if ( fErrfile )
     {
         fErrfile->WriteString(ST::format("\n{d} total number of error!!!! ", fNumberErrors));
-        if ( fNumberErrors > 10 )
-            if ( fNumberErrors > 20 )
+        if ( fNumberErrors > 10 ) {
+            if ( fNumberErrors > 20 ) {
                 if ( fNumberErrors > 50 )
                     fErrfile->WriteString("(CRISIS CRISIS!)");
                 else
                     fErrfile->WriteString("(which is a disaster!)");
-            else
+            } else {
                 fErrfile->WriteString("(which is way too many!)");
+            }
+        }
     }
 #ifdef ERRORLOG_ALWAYS_WRITE_SOMETHING
     else

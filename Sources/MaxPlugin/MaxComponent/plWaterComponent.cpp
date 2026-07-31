@@ -655,7 +655,7 @@ bool plWaterComponent::IMakeWaveSet(plMaxNode* node, plErrorMsg* pErrMsg)
     ws.fDepthFalloff = hsVector3(fCompPB->GetFloat(kDepthOpac), fCompPB->GetFloat(kDepthRefl), fCompPB->GetFloat(kDepthWave));
     ws. fWaterOffset = hsVector3(-fCompPB->GetFloat(kZeroOpac), -fCompPB->GetFloat(kZeroRefl), -fCompPB->GetFloat(kZeroWave));
     ws.fMaxAtten = hsVector3(1.f, 1.f, 1.f);
-    ws.fMinAtten = {};
+    //ws.fMinAtten = {};
 
     IReadEnvObject(node, pErrMsg, ws);
 
