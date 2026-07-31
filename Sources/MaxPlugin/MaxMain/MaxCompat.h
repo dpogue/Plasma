@@ -310,4 +310,6 @@ public:
 #   define plMaxMessageBox MessageBox
 #endif
 
+#define MAX_SILENCE_DEPRECATED_MATRIX_BOOL_CTOR
+
 #endif // _PLASMA_MAXCOMPAT_H
