@@ -675,7 +675,7 @@ void    plStaticEnvLayer::RenderCubicMap( INode *node )
         vp.affineTM = tm;
 
         // Construct filename
-        thisFilename.printf( _T( "%s\\%s%s%s" ), path, filename, suffixes[ i ], ext );
+        thisFilename.printf( _T( "%s\\%s%s%s" ), path.data(), filename.data(), suffixes[ i ], ext.data() );
 
         res = ip->CurRendererRenderFrame(ip->GetTime(), bm, nullptr, 1.0f, &vp);
         if( !res ) 
@@ -697,7 +697,7 @@ fail:
         for(int i = 0; i < 6; i++ )
         {
             BitmapInfo  bi;
-            thisFilename.printf( _T( "%s\\%s%s%s" ), path, filename, suffixes[ i ], ext );
+            thisFilename.printf( _T( "%s\\%s%s%s" ), path.data(), filename.data(), suffixes[ i ], ext.data() );
             bi.SetName( thisFilename );
 
             PBBitmap    pbBitmap( bi );
