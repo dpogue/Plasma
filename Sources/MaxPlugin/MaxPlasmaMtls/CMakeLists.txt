@@ -61,8 +61,8 @@ set(MaxPlasmaMtls_HEADERS_Materials
 )
 
 set(MaxPlasmaMtls_RESOURCES
-    MaxPlasmaMtls.rc
-    resource.h
+    res/MaxPlasmaMtls.rc
+    res/resource.h
     
     res/detailBgnd8bit.bmp
     res/dmtlbut.bmp

@@ -54,7 +54,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnKeyedObject/plKey.h"
 
-#include "../resource.h"
+#include "../res/resource.h"
 
 #include "plAnimStealthNode.h"
 #include "plPassMtlBase.h"

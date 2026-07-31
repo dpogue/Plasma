@@ -49,7 +49,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "MaxMain/MaxAPI.h"
 
-#include "../resource.h"
+#include "../res/resource.h"
 
 #include "MaxMain/plMaxNode.h"
 

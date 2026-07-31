@@ -61,6 +61,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "MaxMain/plMaxNode.h"
 
 // Local
-#include "resource.h"
+#include "res/resource.h"
 
 #endif // _MaxPlasmaMtls_Pch_inc_

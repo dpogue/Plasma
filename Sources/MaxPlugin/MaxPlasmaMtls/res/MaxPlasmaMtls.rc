@@ -1062,9 +1062,9 @@ END
 // Bitmap
 //
 
-IDB_MASKBUTTONS         BITMAP                  "..\\MaxPlasmaMtls\\res\\dmtlmsk.bmp"
-IDB_DETAILBGND          BITMAP                  "..\\MaxPlasmaMtls\\res\\detailBgnd8bit.bmp"
-IDB_BUTTONS             BITMAP                  "..\\MaxPlasmaMtls\\res\\dmtlbut.bmp"
+IDB_MASKBUTTONS         BITMAP                  "dmtlmsk.bmp"
+IDB_DETAILBGND          BITMAP                  "detailBgnd8bit.bmp"
+IDB_BUTTONS             BITMAP                  "dmtlbut.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
