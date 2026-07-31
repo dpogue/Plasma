@@ -236,7 +236,7 @@ bool plLightMapGen::Open(Interface* ip, TimeValue t, bool forceRegen)
 
         tobm->DeleteThis();
 
-#else MF_NEW_RGC
+#else // MF_NEW_RGC
 
         fRGC = new plRenderGlobalContext(fInterface, fTime);
         fRGC->MakeRenderInstances((plMaxNode*)fInterface->GetRootNode(), fTime);
@@ -1055,7 +1055,7 @@ bool plLightMapGen::IPrepLight(plLightMapInfo* liInfo, INode* node)
                 liObj->SetShadowType(0);
                 liInfo->fNewRender = true;
             }
-#endif MF_NO_RAY_SHADOW
+#endif // MF_NO_RAY_SHADOW
             if( fMapRange > 0 )
             {
                 if( liInfo->fMapRange != fMapRange )

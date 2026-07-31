@@ -54,7 +54,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #if !HS_BUILD_FOR_WIN32
 #define PL_NULL_ERRMSG
-#endif !HS_BUILD_FOR_WIN32
+#endif // !HS_BUILD_FOR_WIN32
 
 #ifndef PL_NULL_ERRMSG
 

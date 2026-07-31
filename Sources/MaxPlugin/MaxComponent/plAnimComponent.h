@@ -47,7 +47,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plComponent.h"
 #include "plComponentReg.h"
 #include "plAnimObjInterface.h"
-#include "plNotetrackDlgComp.h"
+#include "plNoteTrackDlgComp.h"
 
 #include <iparamm2.h>
 #include <map>

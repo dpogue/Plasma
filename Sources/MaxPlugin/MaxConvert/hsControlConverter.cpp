@@ -63,7 +63,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsControlConverter.h"
 #include "hsMaterialConverter.h"
 #include "MaxExport/plErrorMsg.h"
-#include "MaxComponent/plNoteTrackAnim.h"
+#include "MaxComponent/plNotetrackAnim.h"
 #include "MaxComponent/plCameraComponents.h"
 #include "MaxComponent/plAnimComponent.h"
 #include "pnSceneObject/plSceneObject.h"

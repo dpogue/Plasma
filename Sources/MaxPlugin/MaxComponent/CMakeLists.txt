@@ -50,7 +50,7 @@ set(MaxComponent_HEADERS
     plMultistageStage.h
     plNavigableComponents.h
     plNotetrackAnim.h
-    plNotetrackDlg.h
+    plNoteTrackDlg.h
     plNoteTrackDlgComp.h
     plNPCSpawnComp.h
     plObjectFlockerComponent.h
@@ -134,7 +134,7 @@ set(MaxComponent_SOURCES
     plMultistageStage.cpp
     plNavigableComponents.cpp
     plNotetrackAnim.cpp
-    plNotetrackDlg.cpp
+    plNoteTrackDlg.cpp
     plNoteTrackDlgComp.cpp
     plNPCSpawnComp.cpp
     plObjectFlockerComponent.cpp
