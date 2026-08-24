@@ -34,6 +34,7 @@ set(PATCHES
     0018-fix-sysconfig-include.patch
     0019-fix-ssl-linkage.patch
     0020-Py_NO_LINK_LIB.patch # Remove in 3.14 https://github.com/python/cpython/pull/19740
+    0021-macos-fix-dup3-pipe2.patch
 )
 
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
