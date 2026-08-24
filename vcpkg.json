@@ -54,6 +54,11 @@
         "name": "physx",
         "version": "4.1.2#7",
         "$comment": "Upstream vcpkg updated to PhysX 5, which drops support for several target platforms. Stick with 4.1.2 for now."
+      },
+      {
+        "name": "openal-soft",
+        "version": "1.24.3#1",
+        "$comment": "1.25.x causes a bunch of compiler issues on multiple platforms :("
       }
     ],
     "features": {
