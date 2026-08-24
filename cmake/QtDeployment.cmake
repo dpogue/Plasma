@@ -45,11 +45,38 @@ if(WIN32 AND TARGET ${_qt_qmake_target} AND NOT TARGET Qt::windeployqt)
     endif()
 endif()
 
+
+if(APPLE AND TARGET ${_qt_qmake_target} AND NOT TARGET Qt::macdeployqt)
+    get_target_property(_qt_qmake_location ${_qt_qmake_target} IMPORTED_LOCATION)
+
+    execute_process(
+        COMMAND "${_qt_qmake_location}" -query QT_INSTALL_PREFIX
+        RESULT_VARIABLE return_code
+        OUTPUT_VARIABLE qt_install_prefix
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if(EXISTS "${qt_install_prefix}/bin/macdeployqt")
+        add_executable(Qt::macdeployqt IMPORTED)
+
+        set_target_properties(
+            Qt::macdeployqt PROPERTIES
+            IMPORTED_LOCATION "${qt_install_prefix}/bin/macdeployqt"
+        )
+    endif()
+endif()
+
 # Allow opting into all this crazy Qt copying mess.
-cmake_dependent_option(PLASMA_APPLOCAL_QT "Deploy Qt libraries into tool binary directories" OFF "TARGET Qt::windeployqt" OFF)
-cmake_dependent_option(PLASMA_INSTALL_QT "Deploy Qt libraries when installing Plasma" ON "TARGET Qt::windeployqt" OFF)
+if(WIN32)
+    cmake_dependent_option(PLASMA_APPLOCAL_QT "Deploy Qt libraries into tool binary directories" OFF "TARGET Qt::windeployqt" OFF)
+    cmake_dependent_option(PLASMA_INSTALL_QT "Deploy Qt libraries when installing Plasma" ON "TARGET Qt::windeployqt" OFF)
+elseif(APPLE)
+    # On macOS, we can't just copy the Qt libs into a folder, we need to embed them as Frameworks inside each application bundle
+    cmake_dependent_option(PLASMA_APPLOCAL_QT "Deploy Qt libraries into tool binary directories" ON "TARGET Qt::macdeployqt" OFF)
+endif()
 
 function(plasma_deploy_qt)
+    # Note: These flags are only used for windeployqt
     set(_DEPLOY_ARGS
         --no-translations
         --no-opengl-sw
@@ -64,17 +91,25 @@ function(plasma_deploy_qt)
     get_property(gui_tools GLOBAL PROPERTY _PLASMA_GUI_TOOLS)
     foreach(i IN LISTS gui_tools)
         if(PLASMA_APPLOCAL_QT)
-            add_custom_target(
-                ${i}_deployqt ALL
-                COMMAND Qt::windeployqt ${_DEPLOY_ARGS} --dir "$<TARGET_FILE_DIR:${i}>" "$<TARGET_FILE:${i}>"
-                WORKING_DIRECTORY "$<TARGET_FILE_DIR:Qt::windeployqt>"
-            )
+            if(WIN32)
+                add_custom_target(
+                    ${i}_deployqt ALL
+                    COMMAND Qt::windeployqt ${_DEPLOY_ARGS} --dir "$<TARGET_FILE_DIR:${i}>" "$<TARGET_FILE:${i}>"
+                    WORKING_DIRECTORY "$<TARGET_FILE_DIR:Qt::windeployqt>"
+                )
+            elseif(APPLE)
+                add_custom_target(
+                    ${i}_deployqt ALL
+                    COMMAND Qt::macdeployqt "$<TARGET_BUNDLE_DIR:${i}>" $<$<CONFIG:Debug>:-use-debug-libs>
+                    WORKING_DIRECTORY "$<TARGET_FILE_DIR:Qt::macdeployqt>"
+                )
+            endif()
             add_dependencies(${i}_deployqt ${i})
         endif()
         list(APPEND _INSTALL_DEPLOY "$<TARGET_FILE:${i}>")
     endforeach()
 
-    # Deploy only once on install
+    # Deploy only once on install (preferred on Windows)
     if(PLASMA_INSTALL_QT AND _INSTALL_DEPLOY)
         string(JOIN [[" "]] _DEPLOY_ARG ${_INSTALL_DEPLOY})
         install(

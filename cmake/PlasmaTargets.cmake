@@ -84,7 +84,7 @@ function(plasma_executable TARGET)
                 ${CMAKE_CURRENT_SOURCE_DIR}
         )
 
-        # Add to the list of tools which need windeployqt
+        # Add to the list of tools which need Qt deployed
         set_property(GLOBAL APPEND PROPERTY _PLASMA_GUI_TOOLS ${TARGET})
     endif()
 
