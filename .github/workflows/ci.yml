@@ -6,7 +6,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CMAKE_VERSION: "4.2.7"
+  CMAKE_VERSION: "4.4.2"
 
 jobs:
   # HACK to enable/disable the max CI based on presence/absence of secret. See also:
