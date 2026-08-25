@@ -31,7 +31,7 @@ jobs:
       matrix:
         platform:
           - { generator: Visual Studio 17 2022, max-version: 7, arch: Win32, qt-arch: win32_msvc2019, qt-version: 5.15.2, runner: "windows-2022", str: windows-x86 }
-          - { generator: Visual Studio 18 2026, max-version: 2022, arch: x64, qt-arch: win64_msvc2022_64, qt-version: 6.11.1, runner: "windows-2025-vs2026", str: windows-x64 }
+          - { generator: Visual Studio 18 2026, max-version: 2022, arch: x64, qt-arch: win64_msvc2022_64, qt-version: 6.9.1, runner: "windows-2025-vs2026", str: windows-x64 }
           - { generator: Visual Studio 18 2026, arch: arm64, qt-arch: win64_msvc2022_arm64, qt-version: 6.9.1, runner: "windows-11-vs2026-arm", str: windows-arm64 }
         cfg:
           - { external: OFF, type: RelWithPDB, str: internal-release }
