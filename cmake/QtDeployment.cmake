@@ -20,6 +20,10 @@ if(NOT Qt6_FOUND)
     endif()
 endif()
 
+if(PLASMA_REQUIRE_QT AND NOT Qt6_FOUND AND NOT Qt5_FOUND)
+    message(FATAL_ERROR "Qt libraries flagged as required but could not be found.")
+endif()
+
 # Based on https://stackoverflow.com/a/41199492 for easily deploying Qt DLLs on Windows.
 if(WIN32 AND TARGET ${_qt_qmake_target} AND NOT TARGET Qt::windeployqt)
     get_target_property(_qt_qmake_location ${_qt_qmake_target} IMPORTED_LOCATION)

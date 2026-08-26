@@ -84,6 +84,7 @@ jobs:
             -DPLASMA_BUILD_MAX_PLUGIN=${{ case(matrix.platform.max-version != '', 'ON', 'OFF') }} `
             -DPLASMA_BUILD_TESTS=ON `
             -DPLASMA_BUILD_TOOLS=ON `
+            -DPLASMA_REQUIRE_QT=ON `
             -DPLASMA_EXTERNAL_RELEASE=${{ matrix.cfg.external }} `
             -D3dsm_PATH="${{ github.workspace }}/maxsdk/${{ matrix.platform.max-version }}" `
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build `
@@ -252,6 +253,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.cfg.type }} \
             -DPLASMA_BUILD_TESTS=ON \
             -DPLASMA_BUILD_TOOLS=ON \
+            -DPLASMA_REQUIRE_QT=ON \
             -DPLASMA_EXTERNAL_RELEASE=${{ matrix.cfg.external }} \
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build \
             -S . -B build
@@ -344,6 +346,7 @@ jobs:
             -DCMAKE_FIND_FRAMEWORK=LAST \
             -DPLASMA_BUILD_TESTS=ON \
             -DPLASMA_BUILD_TOOLS=ON \
+            -DPLASMA_REQUIRE_QT=ON \
             -DPLASMA_EXTERNAL_RELEASE=${{ matrix.cfg.external }} \
             -DVCPKG_INSTALL_OPTIONS=--clean-after-build \
             -S . -B build
