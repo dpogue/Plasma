@@ -42,6 +42,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <chrono>
 #include <string_theory/stdio>
+#include <string_theory/codecs>
 
 #include "hsMain.inl"
 #include "plCreatableIndex.h"
@@ -75,6 +76,13 @@ public:
     }
 };
 
+struct plSkinnedBufferGroup {
+    size_t fSize;
+    uint8_t* fData;
+
+    plSkinnedBufferGroup(size_t s, uint8_t* d) : fSize(s), fData(d) {}
+};
+
 static uint32_t IGetBufferFormatSize(uint8_t format)
 {
     uint32_t size = sizeof(float) * 6 + sizeof(uint32_t) * 2; // Position and normal, and two packed colors
@@ -93,17 +101,18 @@ static uint32_t IGetBufferFormatSize(uint8_t format)
 }
 
 template <skin_vert_ptr T>
-void SkinningBenchmark(const ST::string& benchmarkName, const char blendBuffers[kMaxBufferGroups][kMaxVertexBuffers], plDrawableSpans* drawable, const std::vector<plSpan*>& spans)
+void SkinningBenchmark(const ST::string& benchmarkName, const char blendBuffers[kMaxBufferGroups][kMaxVertexBuffers], plDrawableSpans* drawable, const std::vector<plSpan*>& spans, plSkinnedBufferGroup** result)
 {
     auto elapsed = ClockT::duration::zero();
 
-    for (int32_t i = 0; i < kIterationCount; ++i) {
+    for (int32_t iter = 0; iter < kIterationCount; ++iter) {
         auto begin = ClockT::now();
 
         // Now go through each of the group/buffer (= a real vertex buffer) pairs we found,
         // and blend into it. We'll lock the buffer once, and then for each span that
         // uses it, set the matrix palette and and then do the blend for that span.
         // When we've done all the spans for a group/buffer, we unlock it and move on.
+        size_t k = 0;
         for (size_t i = 0; i < kMaxBufferGroups; i++) {
             for (size_t j = 0; j < kMaxVertexBuffers; j++) {
                 if (blendBuffers[i][j]) {
@@ -137,6 +146,12 @@ void SkinningBenchmark(const ST::string& benchmarkName, const char blendBuffers[
                                 span.fLocalUVWChans);
                         }
                     }
+
+                    if (iter == 0 && result) {
+                        result[k++] = new plSkinnedBufferGroup(vertSize * group->GetVertBufferCount(j), destPtr);
+                    } else {
+                        delete[] destPtr;
+                    }
                     // Unlock and move on.
                 }
             }
@@ -152,6 +167,23 @@ void SkinningBenchmark(const ST::string& benchmarkName, const char blendBuffers[
     auto avg_sec = std::chrono::duration_cast<std::chrono::duration<double>>(elapsed / kIterationCount);
 
     ST::printf("{}\t{.4f}s\t\t{.4f}s\n", benchmarkName, total_sec.count(), avg_sec.count());
+}
+
+int compareBuffers(plSkinnedBufferGroup** fpu, plSkinnedBufferGroup** test)
+{
+    for (size_t i = 0; i < kMaxBufferGroups * kMaxVertexBuffers; i++) {
+        if (!fpu[i] || !test[i])
+            return -1;
+
+        for (size_t j = 0; j < fpu[i]->fSize; j += 16) {
+            if (std::memcmp(fpu[i]->fData + j, test[i]->fData + j, 16)) {
+                ST::printf("{}  |  {}\n", ST::hex_encode(fpu[i]->fData + j, 16), ST::hex_encode(test[i]->fData + j, 16));
+                return 1;
+            }
+        }
+    }
+
+    return 0;
 }
 
 static int hsMain(std::vector<ST::string> args)
@@ -200,14 +232,15 @@ static int hsMain(std::vector<ST::string> args)
     ST::printf("Running {} iterations...\n\n", kIterationCount);
     ST::printf("    \tTotal\t\tAverage\n");
 
-    SkinningBenchmark<ISkinVertexFPU>(ST_LITERAL("FPU"), blendBuffers, drawable, spans);
+    plSkinnedBufferGroup** fpuResult = new plSkinnedBufferGroup*[kMaxBufferGroups * kMaxVertexBuffers];
+    SkinningBenchmark<ISkinVertexFPU>(ST_LITERAL("FPU"), blendBuffers, drawable, spans, nullptr /*fpuResult*/);
 
 #ifdef HAVE_SSE3
-    SkinningBenchmark<ISkinVertexSSE3>(ST_LITERAL("SSE3"), blendBuffers, drawable, spans);
+    SkinningBenchmark<ISkinVertexSSE3>(ST_LITERAL("SSE3"), blendBuffers, drawable, spans, nullptr);
 #endif
 
 #ifdef HAVE_NEON
-    SkinningBenchmark<ISkinVertexNEON>(ST_LITERAL("NEON"), blendBuffers, drawable, spans);
+    SkinningBenchmark<ISkinVertexNEON>(ST_LITERAL("NEON"), blendBuffers, drawable, spans, nullptr);
 #endif
 
     return 0;
