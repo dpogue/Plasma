@@ -45,8 +45,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pyGlueDefinitions.h"
 
 #include <Python.h>
-
-namespace ST { class string; }
+#include <string_theory/string>
 
 // Useful string functions
 ST::string PyUnicode_AsSTString(PyObject* obj);
