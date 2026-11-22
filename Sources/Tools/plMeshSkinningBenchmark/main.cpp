@@ -56,7 +56,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plResMgr/plRegistryNode.h"
 #include "plResMgr/plResManager.h"
 
-using ClockT = std::chrono::steady_clock;
+using ClockT = std::chrono::high_resolution_clock;
 using namespace plSoftwareMeshSkinner;
 using namespace plSoftwareMeshSkinner::_detail;
 
