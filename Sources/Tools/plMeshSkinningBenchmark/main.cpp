@@ -169,6 +169,75 @@ void SkinningBenchmark(const ST::string& benchmarkName, const char blendBuffers[
     ST::printf("{}\t{.4f}s\t\t{.4f}s\n", benchmarkName, total_sec.count(), avg_sec.count());
 }
 
+template <blend_vert_buffer_ptr T>
+void SkinningBenchmark2(const ST::string& benchmarkName, const char blendBuffers[kMaxBufferGroups][kMaxVertexBuffers], plDrawableSpans* drawable, const std::vector<plSpan*>& spans, plSkinnedBufferGroup** result)
+{
+    auto elapsed = ClockT::duration::zero();
+
+    for (int32_t iter = 0; iter < kIterationCount; ++iter) {
+        auto begin = ClockT::now();
+
+        // Now go through each of the group/buffer (= a real vertex buffer) pairs we found,
+        // and blend into it. We'll lock the buffer once, and then for each span that
+        // uses it, set the matrix palette and and then do the blend for that span.
+        // When we've done all the spans for a group/buffer, we unlock it and move on.
+        size_t k = 0;
+        for (size_t i = 0; i < kMaxBufferGroups; i++) {
+            for (size_t j = 0; j < kMaxVertexBuffers; j++) {
+                if (blendBuffers[i][j]) {
+                    plGBufferGroup* group = drawable->GetBufferGroup(i);
+
+                    uint8_t format = group->GetVertexFormat();
+
+                    // All indexed skinning is currently done on CPU, so the source data
+                    // will have indices, but we strip them out for the D3D buffer.
+                    if (format & plGBufferGroup::kSkinIndices) {
+                        format &= ~(plGBufferGroup::kSkinWeightMask | plGBufferGroup::kSkinIndices);
+                        format |= plGBufferGroup::kSkinNoWeights;       // Should do nothing, but just in case...
+                    }
+
+                    uint32_t vertSize = IGetBufferFormatSize(format); // vertex stride
+
+                    uint8_t* destPtr = new uint8_t[vertSize * group->GetVertBufferCount(j)];
+
+                    for (size_t idx = 0; idx < spans.size(); idx++) {
+                        const plIcicle& span = *(plIcicle*)spans[idx];
+                        if ((span.fGroupIdx == i) && (span.fVBufferIdx == j)) {
+                            hsMatrix44* matrixPalette = drawable->GetMatrixPalette(span.fBaseMatrix);
+                            matrixPalette[0] = span.fLocalToWorld;
+
+                            uint8_t* ptr = group->GetVertBufferData(j);
+                            ptr += span.fVStartIdx * group->GetVertexSize();
+
+                            T(&span, matrixPalette, span.fNumMatrices,
+                                ptr, group->GetVertexFormat(), group->GetVertexSize(),
+                                destPtr + span.fVStartIdx * vertSize, vertSize, span.fVLength,
+                                span.fLocalUVWChans);
+                        }
+                    }
+
+                    if (iter == 0 && result) {
+                        result[k++] = new plSkinnedBufferGroup(vertSize * group->GetVertBufferCount(j), destPtr);
+                    } else {
+                        delete[] destPtr;
+                    }
+                    // Unlock and move on.
+                }
+            }
+        }
+
+        auto end = ClockT::now();
+        elapsed += end - begin;
+    }
+
+    auto total_us = std::chrono::duration_cast<std::chrono::microseconds>(elapsed);
+    auto avg_us = std::chrono::duration_cast<std::chrono::microseconds>(elapsed / kIterationCount);
+    auto total_sec = std::chrono::duration_cast<std::chrono::duration<double>>(elapsed);
+    auto avg_sec = std::chrono::duration_cast<std::chrono::duration<double>>(elapsed / kIterationCount);
+
+    ST::printf("{}\t{.4f}s\t\t{.4f}s\n", benchmarkName, total_sec.count(), avg_sec.count());
+}
+
 int compareBuffers(plSkinnedBufferGroup** fpu, plSkinnedBufferGroup** test)
 {
     for (size_t i = 0; i < kMaxBufferGroups * kMaxVertexBuffers; i++) {
@@ -242,6 +311,11 @@ static int hsMain(std::vector<ST::string> args)
 #ifdef HAVE_NEON
     SkinningBenchmark<ISkinVertexNEON>(ST_LITERAL("NEON"), blendBuffers, drawable, spans, nullptr);
 #endif
+
+    plSkinnedBufferGroup** fpuResult2 = new plSkinnedBufferGroup*[kMaxBufferGroups * kMaxVertexBuffers];
+    SkinningBenchmark2<IBlendVertBuffer2FPU>(ST_LITERAL("_FPU"), blendBuffers, drawable, spans, nullptr /* fpuResult2 */);
+
+    //hsAssert(!compareBuffers(fpuResult, fpuResult2), "Results didn't match");
 
     return 0;
 }

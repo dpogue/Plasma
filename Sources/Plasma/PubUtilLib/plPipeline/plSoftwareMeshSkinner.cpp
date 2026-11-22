@@ -303,6 +303,124 @@ namespace plSoftwareMeshSkinner::_detail
         }
     }
 
+    void IBlendVertBuffer2FPU(const plSpan* span, hsMatrix44* matrixPalette, int numMatrices,
+                                 const uint8_t* src, uint8_t format, uint32_t srcStride,
+                                 uint8_t* dest, uint32_t destStride, uint32_t count,
+                                 uint16_t localUVWChans)
+    {
+        alignas(32) float srcBuf[8]{};
+        SPLIT_SKIN_TRIPLES(srcBuf, srcPt, srcVec);
+
+        uint32_t        indices;
+        float           weights[4];
+
+        // Dropped support for localUVWChans at templatization of code
+        hsAssert(localUVWChans == 0, "support for skinned UVWs dropped. reimplement me?");
+        const size_t uvChanSize = plGBufferGroup::CalcNumUVs(format) * sizeof(float) * 3;
+        uint8_t numWeights = (format & plGBufferGroup::kSkinWeightMask) >> 4;
+
+        for (uint32_t i = 0; i < count; ++i) {
+            // Extract data
+            src = inlExtract<hsPoint3>(src, srcPt);
+
+            float weightSum = 0.f;
+            for (uint8_t j = 0; j < numWeights; ++j) {
+                src = inlExtract<float>(src, &weights[j]);
+                weightSum += weights[j];
+            }
+            weights[numWeights] = 1.f - weightSum;
+
+            if (format & plGBufferGroup::kSkinIndices)
+                src = inlExtract<uint32_t>(src, &indices);
+            else
+                indices = 1 << 8;
+            src = inlExtract<hsVector3>(src, srcVec);
+
+            // Destination buffers (float4 for SSE alignment)
+            alignas(32) float destBuf[8]{};
+            SPLIT_SKIN_TRIPLES(destBuf, destPt, destVec);
+
+            // Accumulator matrix
+            alignas(32) float xfm[3][4]{};
+            float& m00 = xfm[0][0];
+            float& m01 = xfm[0][1];
+            float& m02 = xfm[0][2];
+            float& m03 = xfm[0][3];
+            float& m10 = xfm[1][0];
+            float& m11 = xfm[1][1];
+            float& m12 = xfm[1][2];
+            float& m13 = xfm[1][3];
+            float& m20 = xfm[2][0];
+            float& m21 = xfm[2][1];
+            float& m22 = xfm[2][2];
+            float& m23 = xfm[2][3];
+
+            // Blend
+            for (uint32_t j = 0; j < numWeights + 1; ++j) {
+                if (weights[j]) {
+                    hsMatrix44& palette = matrixPalette[indices & 0xFF];
+                    float weight = weights[j];
+
+                    // Accumulate the bone transform scaled by the weight
+                    m00 += palette.fMap[0][0] * weight;
+                    m01 += palette.fMap[0][1] * weight;
+                    m02 += palette.fMap[0][2] * weight;
+                    m03 += palette.fMap[0][3] * weight;
+                    m10 += palette.fMap[1][0] * weight;
+                    m11 += palette.fMap[1][1] * weight;
+                    m12 += palette.fMap[1][2] * weight;
+                    m13 += palette.fMap[1][3] * weight;
+                    m20 += palette.fMap[2][0] * weight;
+                    m21 += palette.fMap[2][1] * weight;
+                    m22 += palette.fMap[2][2] * weight;
+                    m23 += palette.fMap[2][3] * weight;
+                }
+                indices >>= 8;
+            }
+
+            // Begin (roughly) ISkinVertexFPU without the wgt parameter
+            // and without adding into dst, just assigning
+            const float* pt_src = &srcBuf[0];
+            const float* vec_src = &srcBuf[4];
+            float* pt_dst = &destBuf[0];
+            float* vec_dst = &destBuf[4];
+
+            // position
+            {
+                const float& srcX = pt_src[0];
+                const float& srcY = pt_src[1];
+                const float& srcZ = pt_src[2];
+
+                pt_dst[0] = srcX * m00 + srcY * m01 + srcZ * m02 + m03;
+                pt_dst[1] = srcX * m10 + srcY * m11 + srcZ * m12 + m13;
+                pt_dst[2] = srcX * m20 + srcY * m21 + srcZ * m22 + m23;
+            }
+
+            // normal
+            {
+                const float& srcX = vec_src[0];
+                const float& srcY = vec_src[1];
+                const float& srcZ = vec_src[2];
+
+                vec_dst[0] = srcX * m00 + srcY * m01 + srcZ * m02;
+                vec_dst[1] = srcX * m10 + srcY * m11 + srcZ * m12;
+                vec_dst[2] = srcX * m20 + srcY * m21 + srcZ * m22;
+            }
+            // End ISkinVertexFPU
+
+            // Probably don't really need to renormalize this. There errors are
+            // going to be subtle and "smooth".
+            /* hsFastMath::NormalizeAppr(destNorm); */
+
+            // Slam data into position now
+            dest = inlStuff<hsPoint3>(dest, reinterpret_cast<hsPoint3*>(destPt));
+            dest = inlStuff<hsVector3>(dest, reinterpret_cast<hsVector3*>(destVec));
+
+            // memcpy the colors and UVs
+            inlCopy(src, dest, sizeof(uint32_t) * 2 + uvChanSize);
+        }
+    }
+
 #   undef SPLIT_SKIN_TRIPLES
 #   undef SPLIT_SKIN_BUFFER
 

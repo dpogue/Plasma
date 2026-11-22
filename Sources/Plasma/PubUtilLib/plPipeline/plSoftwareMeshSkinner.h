@@ -69,6 +69,11 @@ namespace plSoftwareMeshSkinner
                                      uint8_t* dest, uint32_t destStride, uint32_t count,
                                      uint16_t localUVWChans);
 
+        void IBlendVertBuffer2FPU(const plSpan* span, hsMatrix44* matrixPalette, int numMatrices,
+                                     const uint8_t* src, uint8_t format, uint32_t srcStride,
+                                     uint8_t* dest, uint32_t destStride, uint32_t count,
+                                     uint16_t localUVWChans);
+
         void IBlendVertBufferApple(const plSpan* span, hsMatrix44* matrixPalette, int numMatrices,
                                      const uint8_t* src, uint8_t format, uint32_t srcStride,
                                      uint8_t* dest, uint32_t destStride, uint32_t count,
